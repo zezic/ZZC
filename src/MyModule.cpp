@@ -1,4 +1,4 @@
-#include "Tutorial.hpp"
+#include "Template.hpp"
 
 
 struct MyModule : Module {
