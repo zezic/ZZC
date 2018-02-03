@@ -34,43 +34,36 @@ struct MyModule : Module {
 
 void MyModule::step() {
 	// Implement a simple sine oscillator
-	float deltaTime = 1.0 / engineGetSampleRate();
+	float deltaTime = engineGetSampleTime();
 
 	// Compute the frequency from the pitch parameter and input
 	float pitch = params[PITCH_PARAM].value;
 	pitch += inputs[PITCH_INPUT].value;
-	pitch = clampf(pitch, -4.0, 4.0);
+	pitch = clamp(pitch, -4.0f, 4.0f);
 	// The default pitch is C4
-	float freq = 261.626 * powf(2.0, pitch);
+	float freq = 261.626f * powf(2.0f, pitch);
 
 	// Accumulate the phase
 	phase += freq * deltaTime;
-	if (phase >= 1.0)
-		phase -= 1.0;
+	if (phase >= 1.0f)
+		phase -= 1.0f;
 
 	// Compute the sine output
-	float sine = sinf(2 * M_PI * phase);
-	outputs[SINE_OUTPUT].value = 5.0 * sine;
+	float sine = sinf(2.0f * M_PI * phase);
+	outputs[SINE_OUTPUT].value = 5.0f * sine;
 
 	// Blink light at 1Hz
 	blinkPhase += deltaTime;
-	if (blinkPhase >= 1.0)
-		blinkPhase -= 1.0;
-	lights[BLINK_LIGHT].value = (blinkPhase < 0.5) ? 1.0 : 0.0;
+	if (blinkPhase >= 1.0f)
+		blinkPhase -= 1.0f;
+	lights[BLINK_LIGHT].value = (blinkPhase < 0.5f) ? 1.0f : 0.0f;
 }
 
 
 MyModuleWidget::MyModuleWidget() {
 	MyModule *module = new MyModule();
 	setModule(module);
-	box.size = Vec(6 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
-
-	{
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/MyModule.svg")));
-		addChild(panel);
-	}
+	setPanel(SVG::load(assetPlugin(plugin, "res/MyModule.svg")));
 
 	addChild(createScrew<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
