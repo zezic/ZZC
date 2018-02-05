@@ -8,8 +8,6 @@ void init(rack::Plugin *p) {
 	plugin = p;
 	p->slug = TOSTRING(SLUG);
 	p->version = TOSTRING(VERSION);
-	p->website = "https://github.com/VCVRack/Template";
-	p->manual = "https://github.com/VCVRack/Template/blob/master/README.md";
 
 	// For each module, specify the ModuleWidget subclass, manufacturer slug (for saving in patches), manufacturer human-readable name, module slug, and module name
 	p->addModel(createModel<MyModuleWidget>("Template", "MyModule", "My Module", OSCILLATOR_TAG));
