@@ -1,4 +1,7 @@
+# Must follow the format in the Naming section of https://vcvrack.com/manual/PluginDevelopmentTutorial.html
 SLUG = Template
+
+# Must follow the format in the Versioning section of https://vcvrack.com/manual/PluginDevelopmentTutorial.html
 VERSION = 0.6.0dev
 
 # FLAGS will be passed to both the C and C++ compiler
@@ -17,6 +20,8 @@ SOURCES += $(wildcard src/*.cpp)
 # The compiled plugin is automatically added.
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 
-# Include the VCV plugin Makefile framework
+# If RACK_DIR is not defined when calling the Makefile, default to two levels above
 RACK_DIR ?= ../..
+
+# Include the VCV Rack plugin Makefile framework
 include $(RACK_DIR)/plugin.mk
