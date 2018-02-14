@@ -3,13 +3,8 @@
 
 using namespace rack;
 
-
+// Forward-declare the Plugin, defined in Template.cpp
 extern Plugin *plugin;
 
-////////////////////
-// module widgets
-////////////////////
-
-struct MyModuleWidget : ModuleWidget {
-	MyModuleWidget();
-};
+// Forward-declare each Model, defined in each module source file
+extern Model *modelMyModule;
