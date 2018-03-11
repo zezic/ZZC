@@ -81,7 +81,7 @@ struct MyModuleWidget : ModuleWidget {
 
 
 // Specify the Module and ModuleWidget subclass, human-readable
-// manufacturer name for categorization, module slug (should never
+// author name for categorization per plugin, module slug (should never
 // change), human-readable module name, and any number of tags
 // (found in `include/tags.hpp`) separated by commas.
 Model *modelMyModule = Model::create<MyModule, MyModuleWidget>("Template", "MyModule", "My Module", OSCILLATOR_TAG);
