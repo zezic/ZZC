@@ -4,7 +4,7 @@
 Plugin *plugin;
 
 
-void init(rack::Plugin *p) {
+void init(Plugin *p) {
 	plugin = p;
 	p->slug = TOSTRING(SLUG);
 	p->version = TOSTRING(VERSION);
