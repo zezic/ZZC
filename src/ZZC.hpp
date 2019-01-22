@@ -9,6 +9,7 @@ extern Plugin *plugin;
 // Forward-declare each Model, defined in each module source file
 extern Model *modelSCVCA;
 extern Model *modelSH8;
+extern Model *modelClock;
 
 struct ZZC_PJ301MPort : SVGPort {
 	ZZC_PJ301MPort() {
@@ -30,6 +31,21 @@ struct ZZC_BigKnob : SVGKnob {
 	}
 };
 
+struct ZZC_PreciseKnob : SVGKnob {
+	ZZC_PreciseKnob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
+		setSVG( SVG::load(assetPlugin(plugin, "res/ZZC-PreciseKnob.svg")) );
+	}
+};
+
+struct ZZC_PreciseSnapKnob : ZZC_PreciseKnob {
+	ZZC_PreciseSnapKnob() {
+		snap = true;
+		smooth = false;
+	}
+};
+
 struct ZZC_SmallKnob : SVGKnob {
 	ZZC_SmallKnob() {
 		minAngle = -0.83 * M_PI;
@@ -44,6 +60,21 @@ struct ZZC_SmallKnobInner : SVGKnob {
 		maxAngle = 0.83 * M_PI;
 		setSVG( SVG::load(assetPlugin(plugin, "res/ZZC-SmallKnobInner.svg")) );
 		shadow->opacity = 0.0;
+	}
+};
+
+struct ZZC_ToothKnob : SVGKnob {
+	ZZC_ToothKnob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
+		setSVG( SVG::load(assetPlugin(plugin, "res/ZZC-ToothKnob.svg")) );
+	}
+};
+
+struct ZZC_ToothSnapKnob : ZZC_ToothKnob {
+	ZZC_ToothSnapKnob() {
+		snap = true;
+		smooth = false;
 	}
 };
 
