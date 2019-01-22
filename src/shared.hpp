@@ -50,6 +50,7 @@ struct ClockTracker {
   float period;
   float freq;
   bool freqDetected;
+  float targetFreq;
 
   SchmittTrigger clockTrigger;
 
@@ -58,6 +59,7 @@ struct ClockTracker {
     period = 0.0f;
     freq = 0.0f;
     freqDetected = false;
+    targetFreq = 1.0f;
   }
 
   void process(float dt, float clock, float smooth) {
@@ -68,14 +70,17 @@ struct ClockTracker {
       }
       if (triggersPassed > 1) {
         freqDetected = true;
-        float targetFreq = 1.0f / period;
-        if (smooth > 1.0f) {
-          freq += (targetFreq - freq) / smooth;
-        } else {
-          freq = targetFreq;
-        }
+        targetFreq = 1.0f / period;
       }
       period = 0.0f;
+    }
+    if (freqDetected) {
+      float delta = targetFreq - freq;
+      if (smooth > 1.0f && fabsf(delta) > 0.05f) {
+        freq += delta / smooth;
+      } else {
+        freq = targetFreq;
+      }
     }
   }
 };

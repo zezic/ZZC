@@ -183,8 +183,10 @@ void Clock::step() {
         oscillator.setPitch(bpm / 60.0f);
       }
     } else if (mode == EXT_VBPS_MODE) {
-      oscillator.setPitch(params[BPM_PARAM].value / 60.0f + inputs[VBPS_INPUT].value);
-      bpm = params[BPM_PARAM].value + inputs[VBPS_INPUT].value * 60.0f;
+      float targetBpm = params[BPM_PARAM].value + inputs[VBPS_INPUT].value * 60.0f;
+      float delta = targetBpm - bpm;
+      bpm += delta / params[LAZY_PARAM].value;
+      oscillator.setPitch(bpm / 60.0f);
     } else {
       oscillator.setPitch(params[BPM_PARAM].value / 60.0f);
       bpm = params[BPM_PARAM].value;
@@ -292,7 +294,7 @@ struct ClockWidget : ModuleWidget {
 
 		addParam(ParamWidget::create<ZZC_PreciseSnapKnob>(Vec(49, 59), module, Clock::BPM_PARAM, 0.0f, 240.0f, 120.0f));
     addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(94.5f, 63), module, Clock::INTERNAL_MODE_LED));
-		addParam(ParamWidget::create<ZZC_ToothKnob>(Vec(10, 119), module, Clock::LAZY_PARAM, 1.0f, 10.0f, 1.0f));
+		addParam(ParamWidget::create<ZZC_ToothKnob>(Vec(10, 119), module, Clock::LAZY_PARAM, 1.0f, 100000.0f, 1.0f));
 		addParam(ParamWidget::create<ZZC_ToothSnapKnob>(Vec(10, 324), module, Clock::SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f));
 		addParam(ParamWidget::create<ZZC_ToothSnapKnob>(Vec(115, 324), module, Clock::SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f));
 
