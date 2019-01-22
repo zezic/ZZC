@@ -6,11 +6,11 @@
 struct Clock : Module {
   enum ParamIds {
     BPM_PARAM,
-    LAZY_PARAM,
     SWING_8THS_PARAM,
     SWING_16THS_PARAM,
     RUN_SWITCH_PARAM,
     RESET_SWITCH_PARAM,
+    REVERSE_SWITCH_PARAM,
     NUM_PARAMS
   };
   enum InputIds {
@@ -38,6 +38,7 @@ struct Clock : Module {
     CLOCK_LED,
     RUN_LED,
     RESET_LED,
+    REVERSE_LED,
     INTERNAL_MODE_LED,
     EXT_VBPS_MODE_LED,
     EXT_CLOCK_MODE_LED,
@@ -59,10 +60,12 @@ struct Clock : Module {
   enum Modes lastMode;
 
   float lastExtPhase = 0.0f;
+  bool extClockTriggered = false;
 
   LowFrequencyOscillator oscillator;
 
   bool running = true;
+  bool reverse = false;
   float bpm = 120.0f;
 
   float swing8thsFinal = 50.0f;
@@ -86,11 +89,13 @@ struct Clock : Module {
 
   float clockLight = 0.0f;
   float resetLight = 0.0f;
+  float reverseLight = 0.0f;
   
   SchmittTrigger runButtonTrigger;
   SchmittTrigger externalRunTrigger;
   SchmittTrigger resetButtonTrigger;
   SchmittTrigger externalResetTrigger;
+  SchmittTrigger reverseButtonTrigger;
   SchmittTrigger externalClockTrigger;
 
   void processButtons() {
@@ -102,6 +107,10 @@ struct Clock : Module {
     if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].value) || externalResetTrigger.process(inputs[EXT_RESET_INPUT].value)) {
       resetWasHit = true;
       resetPulseGenerator.trigger(1e-3f);
+    }
+
+    if (reverseButtonTrigger.process(params[REVERSE_SWITCH_PARAM].value)) {
+      reverse = !reverse;
     }
   }
 
@@ -170,54 +179,62 @@ void Clock::step() {
   processButtons();
   processSwingInputs();
 
+  extClockTriggered = inputs[CLOCK_INPUT].active && externalClockTrigger.process(inputs[CLOCK_INPUT].value);
+
   if (mode == INTERNAL_MODE || mode == EXT_VBPS_MODE || mode == EXT_CLOCK_MODE) {
 
     if (mode == EXT_CLOCK_MODE) {
-      if (lastMode != EXT_CLOCK_MODE && lastMode != EXT_CLOCK_AND_PHASE_MODE) {
+      if ((lastMode != EXT_CLOCK_MODE && lastMode != EXT_CLOCK_AND_PHASE_MODE) || resetWasHit) {
         clockTracker.init();
-        clockTracker.freq = bpm / 60.0f;
+        clockTracker.freq = fabsf(bpm / 60.0f);
       }
-      clockTracker.process(engineGetSampleTime(), inputs[CLOCK_INPUT].value, params[LAZY_PARAM].value);
+      clockTracker.process(engineGetSampleTime(), inputs[CLOCK_INPUT].value);
       if (clockTracker.freqDetected) {
         bpm = clockTracker.freq * 60.0f;
-        oscillator.setPitch(bpm / 60.0f);
       }
     } else if (mode == EXT_VBPS_MODE) {
-      float targetBpm = params[BPM_PARAM].value + inputs[VBPS_INPUT].value * 60.0f;
-      float delta = targetBpm - bpm;
-      bpm += delta / params[LAZY_PARAM].value;
-      oscillator.setPitch(bpm / 60.0f);
+      bpm = params[BPM_PARAM].value + inputs[VBPS_INPUT].value * 60.0f;
     } else {
-      oscillator.setPitch(params[BPM_PARAM].value / 60.0f);
       bpm = params[BPM_PARAM].value;
     }
 
+    if (reverse) {
+      bpm = bpm * -1.0f;
+    }
+    oscillator.setPitch(bpm / 60.0f);
+
     if (running) {
       bool phaseFlipped = oscillator.step(engineGetSampleTime());
-      if (phaseFlipped || resetWasHit) {
+      if (phaseFlipped || resetWasHit || extClockTriggered) {
         clockPulseGenerator.trigger(1e-3f);
         clock8thsPulseGenerator.trigger(1e-3f);
         clock16thsPulseGenerator.trigger(1e-3f);
       } else {
         triggerThsByPhase(oscillator.phase, oscillator.lastPhase);
       }
-      if (resetWasHit) {
+      if (resetWasHit || extClockTriggered) {
         oscillator.reset(0.0f);
         resetWasHit = false;
       }
     }
-    if (resetWasHit) {
+    if (resetWasHit || extClockTriggered) {
       oscillator.reset(0.0f);
     }
-  } else if (mode == EXT_CLOCK_AND_PHASE_MODE || mode == EXT_PHASE_MODE) {
+  }
+  if (mode == EXT_PHASE_MODE || mode == EXT_CLOCK_AND_PHASE_MODE) {
     bool triggered = false;
-    if (lastMode == EXT_PHASE_MODE || lastMode == EXT_CLOCK_AND_PHASE_MODE) { // Trust lastExtPhase
+
+    // Trust lastExtPhase if previous step was done with the PHASE_INPUT plugged in
+    if (lastMode == EXT_PHASE_MODE || lastMode == EXT_CLOCK_AND_PHASE_MODE) {
       float delta = inputs[PHASE_INPUT].value - lastExtPhase;
       if ((delta >= -10.0f && delta < -9.5f) || (delta > 9.5f && delta <= 10.0f)) {
-        // It's just a phase flip
+
+        // Probably, it was a phase flip, don't twitch our BPM and take it as a beat trigger
         if (mode == EXT_PHASE_MODE) {
           triggered = true;
         }
+
+        // Compensate phase flip
         if (delta < 0.0f) {
           delta = 10.0f + delta;
         } else {
@@ -226,17 +243,20 @@ void Clock::step() {
       }
       bpm = delta / engineGetSampleTime() * 6.0f;
     }
+
     if (mode == EXT_CLOCK_AND_PHASE_MODE) {
-      triggered = externalClockTrigger.process(inputs[CLOCK_INPUT].value);
+      triggered = extClockTriggered;
     }
 
-    if (triggered) {
-      clockPulseGenerator.trigger(1e-3f);
-      clock8thsPulseGenerator.trigger(1e-3f);
-      clock16thsPulseGenerator.trigger(1e-3f);
-    } else {
-      if (lastMode == EXT_PHASE_MODE || lastMode == EXT_CLOCK_AND_PHASE_MODE) {
-        triggerThsByPhase(inputs[PHASE_INPUT].value / 10.0f, lastExtPhase  / 10.0f);
+    if (running) {
+      if (triggered) {
+        clockPulseGenerator.trigger(1e-3f);
+        clock8thsPulseGenerator.trigger(1e-3f);
+        clock16thsPulseGenerator.trigger(1e-3f);
+      } else {
+        if (lastMode == EXT_PHASE_MODE || lastMode == EXT_CLOCK_AND_PHASE_MODE) {
+          triggerThsByPhase(inputs[PHASE_INPUT].value / 10.0f, lastExtPhase  / 10.0f);
+        }
       }
     }
     lastExtPhase = inputs[PHASE_INPUT].value;
@@ -285,6 +305,13 @@ void Clock::step() {
     resetLight = fmaxf(0.0f, resetLight - (resetLight / 0.1f * engineGetSampleTime()));
   }
 
+  // Reverse Light
+  if (bpm < 0.0f) { reverseLight = 0.5f; }
+  lights[REVERSE_LED].value = reverseLight;
+  if (reverseLight > 0.0f) {
+    reverseLight = fmaxf(0.0f, reverseLight - (reverseLight / 0.01f * engineGetSampleTime()));
+  }
+
 }
 
 
@@ -294,9 +321,11 @@ struct ClockWidget : ModuleWidget {
 
 		addParam(ParamWidget::create<ZZC_PreciseSnapKnob>(Vec(49, 59), module, Clock::BPM_PARAM, 0.0f, 240.0f, 120.0f));
     addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(94.5f, 63), module, Clock::INTERNAL_MODE_LED));
-		addParam(ParamWidget::create<ZZC_ToothKnob>(Vec(10, 119), module, Clock::LAZY_PARAM, 1.0f, 100000.0f, 1.0f));
 		addParam(ParamWidget::create<ZZC_ToothSnapKnob>(Vec(10, 324), module, Clock::SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f));
 		addParam(ParamWidget::create<ZZC_ToothSnapKnob>(Vec(115, 324), module, Clock::SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f));
+
+    addParam(ParamWidget::create<LEDBezelDark>(Vec(11.3f, 119.0f), module, Clock::REVERSE_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
+    addChild(ModuleLightWidget::create<LedLight<YellowLight>>(Vec(13.1f, 120.7f), module, Clock::REVERSE_LED));
 
     addInput(Port::create<ZZC_PJ301MPort>(Vec(10, 72), Port::INPUT, module, Clock::VBPS_INPUT));
     addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(32, 72), module, Clock::EXT_VBPS_MODE_LED));
@@ -323,7 +352,7 @@ struct ClockWidget : ModuleWidget {
     addChild(bpmDisplay);
 
     addInput(Port::create<ZZC_PJ301MPort>(Vec(10, 168), Port::INPUT, module, Clock::EXT_RUN_INPUT));
-    addParam(ParamWidget::create<LEDBezelDark>(Vec(11.3f, 199.0f), module, Clock::RUN_SWITCH_PARAM, 0.0f, 1.0f, 1.0f));
+    addParam(ParamWidget::create<LEDBezelDark>(Vec(11.3f, 199.0f), module, Clock::RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
     addChild(ModuleLightWidget::create<LedLight<YellowLight>>(Vec(13.1f, 200.7f), module, Clock::RUN_LED));
     addOutput(Port::create<ZZC_PJ301MIPort>(Vec(10, 231), Port::OUTPUT, module, Clock::RUN_OUTPUT));
 

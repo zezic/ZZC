@@ -44,12 +44,12 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2"
-     inkscape:cx="60.0187"
-     inkscape:cy="193.10809"
+     inkscape:zoom="16"
+     inkscape:cx="12.62502"
+     inkscape:cy="274.40821"
      inkscape:document-units="px"
      inkscape:current-layer="svg8"
-     showgrid="false"
+     showgrid="true"
      units="px"
      inkscape:snap-bbox="true"
      inkscape:snap-page="true"
@@ -75,7 +75,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -735,24 +735,20 @@
        id="path5667" />
   </g>
   <g
-     aria-label="LAZY"
+     aria-label="REV"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.9615593px;line-height:1.25;font-family:'Gotham Rounded';-inkscape-font-specification:'Gotham Rounded';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#cccccc;fill-opacity:1;stroke:none;stroke-width:0.99999988"
-     id="text4208">
+     id="text4208-3">
     <path
-       d="m 13.004883,113.39706 c 0,0.29934 0.236693,0.53604 0.53604,0.53604 h 2.520084 c 0.271501,0 0.48731,-0.21581 0.48731,-0.48731 0,-0.2715 -0.215809,-0.48731 -0.48731,-0.48731 h -1.984044 v -3.4042 c 0,-0.29935 -0.236693,-0.53604 -0.53604,-0.53604 -0.299347,0 -0.53604,0.23669 -0.53604,0.53604 z"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Gotham Rounded';-inkscape-font-specification:'Gotham Rounded';text-align:center;text-anchor:middle;fill:#cccccc;fill-opacity:1;stroke-width:0.99999988"
-       id="path958" />
-    <path
-       d="m 16.980912,113.47363 c 0,0.27847 0.215808,0.50124 0.494271,0.50124 0.22277,0 0.40377,-0.12531 0.49427,-0.33416 l 0.341117,-0.80058 h 2.14416 l 0.327193,0.76577 c 0.09746,0.22277 0.26454,0.36897 0.515156,0.36897 0.285424,0 0.508194,-0.22973 0.508194,-0.51516 0,-0.0696 -0.02088,-0.13923 -0.05569,-0.21581 l -1.69862,-3.83582 c -0.118347,-0.26453 -0.327194,-0.42465 -0.619579,-0.42465 h -0.06265 c -0.292386,0 -0.508194,0.16012 -0.62654,0.42465 l -1.698621,3.83582 c -0.03481,0.0766 -0.06265,0.15316 -0.06265,0.22973 z m 1.726467,-1.58027 0.675271,-1.60812 0.675271,1.60812 z"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Gotham Rounded';-inkscape-font-specification:'Gotham Rounded';text-align:center;text-anchor:middle;fill:#cccccc;fill-opacity:1;stroke-width:0.99999988"
-       id="path960" />
-    <path
-       d="M 22.889644,113.9331 H 26.085 c 0.257578,0 0.473386,-0.20885 0.473386,-0.46643 0,-0.25757 -0.215808,-0.47338 -0.473386,-0.47338 h -2.248584 l 2.527046,-2.93778 c 0.125309,-0.15315 0.194924,-0.31327 0.194924,-0.50123 v -0.0209 c 0,-0.25758 -0.215808,-0.47338 -0.473386,-0.47338 h -3.111817 c -0.257578,0 -0.473386,0.2158 -0.473386,0.47338 0,0.25758 0.215808,0.46643 0.473386,0.46643 h 2.165045 l -2.527046,2.93777 c -0.125308,0.1462 -0.194924,0.31328 -0.194924,0.50124 v 0.0209 c 0,0.25758 0.215809,0.47339 0.473386,0.47339 z"
+       d="m 15.882894,113.43882 c 0,0.29935 0.236694,0.53604 0.536041,0.53604 0.299347,0 0.53604,-0.23669 0.53604,-0.53604 v -1.06512 h 0.856271 l 1.044234,1.3227 c 0.125308,0.16011 0.285424,0.27846 0.529079,0.27846 0.257578,0 0.508194,-0.19492 0.508194,-0.49427 0,-0.16708 -0.06962,-0.27846 -0.174039,-0.41073 l -0.744887,-0.90501 c 0.591732,-0.24365 0.974618,-0.71704 0.974618,-1.48281 v -0.0139 c 0,-0.45946 -0.146193,-0.84235 -0.417693,-1.11385 C 19.21052,109.23404 18.730172,109.06 18.110593,109.06 h -1.691658 c -0.299347,0 -0.536041,0.23669 -0.536041,0.53604 z m 1.072081,-2.01189 v -1.39927 h 1.065118 c 0.522117,0 0.842349,0.23669 0.842349,0.69615 v 0.0139 c 0,0.41074 -0.299347,0.6892 -0.821464,0.6892 z"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Gotham Rounded';-inkscape-font-specification:'Gotham Rounded';text-align:center;text-anchor:middle;fill:#cccccc;fill-opacity:1;stroke-width:0.99999988"
        id="path962" />
     <path
-       d="m 28.813823,113.43883 c 0,0.29934 0.236693,0.53604 0.53604,0.53604 0.299347,0 0.53604,-0.2367 0.53604,-0.53604 v -1.40624 l 1.573313,-2.12327 c 0.06961,-0.0975 0.139231,-0.22973 0.139231,-0.37593 0,-0.29238 -0.194924,-0.52211 -0.522117,-0.52211 -0.22277,0 -0.382886,0.1253 -0.515155,0.32023 l -1.20435,1.7195 -1.183465,-1.70558 c -0.13227,-0.19492 -0.285424,-0.32719 -0.529079,-0.32719 -0.299347,0 -0.53604,0.22973 -0.53604,0.51515 0,0.15316 0.05569,0.27846 0.13227,0.38289 l 1.573312,2.1372 z"
+       d="m 21.449749,113.93309 h 2.735893 c 0.264539,0 0.480347,-0.20885 0.480347,-0.47339 0,-0.26454 -0.215808,-0.48034 -0.480347,-0.48034 h -2.206815 v -1.02335 h 1.858737 c 0.264539,0 0.480347,-0.20885 0.480347,-0.47339 0,-0.26454 -0.215808,-0.48035 -0.480347,-0.48035 h -1.858737 v -0.98854 h 2.172007 c 0.264539,0 0.480347,-0.20884 0.480347,-0.47338 0,-0.26454 -0.215808,-0.48035 -0.480347,-0.48035 h -2.701085 c -0.299347,0 -0.53604,0.23669 -0.53604,0.53604 v 3.80101 c 0,0.29935 0.236693,0.53604 0.53604,0.53604 z"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Gotham Rounded';-inkscape-font-specification:'Gotham Rounded';text-align:center;text-anchor:middle;fill:#cccccc;fill-opacity:1;stroke-width:0.99999988"
        id="path964" />
+    <path
+       d="m 27.484877,114.00967 h 0.06962 c 0.292385,0 0.49427,-0.16012 0.605655,-0.42466 l 1.594197,-3.81493 c 0.02785,-0.0627 0.05569,-0.15316 0.05569,-0.2367 0,-0.29238 -0.236693,-0.51515 -0.529079,-0.51515 -0.257577,0 -0.44554,0.16708 -0.515155,0.34112 l -1.232196,3.18839 -1.218273,-3.15359 c -0.08354,-0.2158 -0.264539,-0.37592 -0.543002,-0.37592 -0.299347,0 -0.53604,0.22973 -0.53604,0.52908 0,0.0905 0.02785,0.17404 0.06265,0.25758 l 1.580274,3.78012 c 0.111385,0.26454 0.31327,0.42466 0.605656,0.42466 z"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Gotham Rounded';-inkscape-font-specification:'Gotham Rounded';text-align:center;text-anchor:middle;fill:#cccccc;fill-opacity:1;stroke-width:0.99999988"
+       id="path966" />
   </g>
 </svg>

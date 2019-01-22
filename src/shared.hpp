@@ -16,9 +16,10 @@ struct LowFrequencyOscillator {
     freq = pitch;
   }
 
-  void reset(float value) {
+  bool reset(float value) {
     NormalizationResult result = normalize(value);
     phase = result.value;
+    return result.normalized;
   } 
 
   NormalizationResult normalize(float value) {
@@ -50,7 +51,6 @@ struct ClockTracker {
   float period;
   float freq;
   bool freqDetected;
-  float targetFreq;
 
   SchmittTrigger clockTrigger;
 
@@ -59,28 +59,19 @@ struct ClockTracker {
     period = 0.0f;
     freq = 0.0f;
     freqDetected = false;
-    targetFreq = 1.0f;
   }
 
-  void process(float dt, float clock, float smooth) {
+  void process(float dt, float clock) {
     period += dt;
     if (clockTrigger.process(clock)) {
-      if (triggersPassed < 2) {
+      if (triggersPassed < 3) {
         triggersPassed += 1;
       }
-      if (triggersPassed > 1) {
+      if (triggersPassed > 2) {
         freqDetected = true;
-        targetFreq = 1.0f / period;
+        freq = 1.0f / period;
       }
       period = 0.0f;
-    }
-    if (freqDetected) {
-      float delta = targetFreq - freq;
-      if (smooth > 1.0f && fabsf(delta) > 0.05f) {
-        freq += delta / smooth;
-      } else {
-        freq = targetFreq;
-      }
     }
   }
 };
