@@ -169,6 +169,19 @@ struct Clock : Module {
     clockTracker.init();
   }
   void step() override;
+
+  json_t *toJson() override {
+    json_t *rootJ = json_object();
+    json_object_set_new(rootJ, "running", json_integer((int) running));
+    return rootJ;
+  }
+
+  void fromJson(json_t *rootJ) override {
+    json_t *runningJ = json_object_get(rootJ, "running");
+    if (runningJ) {
+      running = json_integer_value(runningJ);
+    }
+  }
 };
 
 
