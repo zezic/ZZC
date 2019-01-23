@@ -10,6 +10,7 @@ extern Plugin *plugin;
 extern Model *modelSCVCA;
 extern Model *modelSH8;
 extern Model *modelClock;
+extern Model *modelDivider;
 
 struct ZZC_PJ301MPort : SVGPort {
 	ZZC_PJ301MPort() {
