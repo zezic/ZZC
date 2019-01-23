@@ -60,12 +60,12 @@ struct Divider : Module {
 
   void processRatioInputs() {
     if (inputs[IN_RATIO_INPUT].active) {
-      from = logMap(clamp(inputs[IN_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f, params[IN_RATIO_PARAM].value);
+      from = floorf(logMap(clamp(inputs[IN_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f, params[IN_RATIO_PARAM].value));
     } else {
       from = params[IN_RATIO_PARAM].value;
     }
     if (inputs[OUT_RATIO_INPUT].active) {
-      to = logMap(clamp(inputs[OUT_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f, params[OUT_RATIO_PARAM].value);
+      to = floorf(logMap(clamp(inputs[OUT_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f, params[OUT_RATIO_PARAM].value));
     } else {
       to = params[OUT_RATIO_PARAM].value;
     }
