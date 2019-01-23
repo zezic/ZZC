@@ -11,6 +11,7 @@ extern Model *modelSCVCA;
 extern Model *modelSH8;
 extern Model *modelClock;
 extern Model *modelDivider;
+extern Model *modelFN3;
 
 struct ZZC_PJ301MPort : SVGPort {
 	ZZC_PJ301MPort() {
@@ -91,5 +92,20 @@ struct ZZC_CKSSThree : SVGSwitch, ToggleSwitch {
 		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-CKSSThree_0.svg")));
 		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-CKSSThree_1.svg")));
 		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-CKSSThree_2.svg")));
+	}
+};
+
+struct ZZC_FN3_Wave : SVGSwitch, ToggleSwitch {
+	ZZC_FN3_Wave() {
+		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-FN-3-Wave_0.svg")));
+		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-FN-3-Wave_1.svg")));
+		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-FN-3-Wave_2.svg")));
+	}
+};
+
+struct ZZC_FN3_UniBi : SVGSwitch, ToggleSwitch {
+	ZZC_FN3_UniBi() {
+		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-FN-3-UniBi_0.svg")));
+		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-FN-3-UniBi_1.svg")));
 	}
 };
