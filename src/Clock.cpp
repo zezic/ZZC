@@ -218,6 +218,11 @@ void Clock::step() {
     oscillator.setPitch(bpm / 60.0f);
 
     if (running) {
+
+      if (resetWasHit || extClockTriggered) {
+        oscillator.reset((reverse ? 1.0f : 0.0f));
+      }
+
       bool phaseFlipped = oscillator.step(engineGetSampleTime());
       if (phaseFlipped || resetWasHit || extClockTriggered) {
         clockPulseGenerator.trigger(1e-3f);
@@ -226,10 +231,11 @@ void Clock::step() {
       } else {
         triggerThsByPhase(oscillator.phase, oscillator.lastPhase);
       }
-      if (resetWasHit || extClockTriggered) {
-        oscillator.reset((reverse ? 1.0f : 0.0f));
+
+      if (resetWasHit) {
         resetWasHit = false;
       }
+
     }
     if (resetWasHit || extClockTriggered) {
       oscillator.reset((reverse ? 1.0f : 0.0f));
