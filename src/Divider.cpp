@@ -40,8 +40,8 @@ struct Divider : Module {
   float lastPhaseInDelta = 0.0f;
   bool lastPhaseInState = false;
 
-  float halfPhaseOut = 0.0f;
-  float lastHalfPhaseOut = 0.0f;
+  double halfPhaseOut = 0.0;
+  double lastHalfPhaseOut = 0.0;
   float phaseOut = 0.0f;
 
   PulseGenerator clockPulseGenerator;
@@ -98,7 +98,7 @@ void Divider::step() {
 
   if (resetTrigger.process(inputs[RESET_INPUT].value)) {
     phaseOut = 0.0f;
-    halfPhaseOut = 0.0f;
+    halfPhaseOut = 0.0;
     lastHalfPhaseOut = 0.0f;
     clockPulseGenerator.trigger(1e-3f);
   } else if (inputs[PHASE_INPUT].active) {
@@ -112,10 +112,17 @@ void Divider::step() {
       halfPhaseOut += phaseInDelta * ratio * 0.5f;
     }
   } else if (inputs[VBPS_INPUT].active) {
-    halfPhaseOut += inputs[VBPS_INPUT].value * engineGetSampleTime() * 10.0f * ratio * 0.5f;
+    float del = inputs[VBPS_INPUT].value * engineGetSampleTime() * 10.0f * ratio * 0.5f;
+    halfPhaseOut += del;
   }
 
-  halfPhaseOut = eucmod(halfPhaseOut, 10.0f);
+  // halfPhaseOut = eucmod(halfPhaseOut, 10.0f);
+  while (halfPhaseOut >= 10.0) {
+    halfPhaseOut = halfPhaseOut - 10.0;
+  }
+  while (halfPhaseOut < 0.0) {
+    halfPhaseOut = halfPhaseOut + 10.0;
+  }
 
   // Swing resulting phase
   float swingTresh = swing / 10.0f;
