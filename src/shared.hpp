@@ -23,18 +23,8 @@ struct LowFrequencyOscillator {
   } 
 
   NormalizationResult normalize(float value) {
-    if (value >= 1.0f) {
-      value = fmod(value, 1.0f);
-      NormalizationResult result = { value, true };
-      return result;
-    }
-    if (value < 0.0f) {
-      value = 1.0f - fmod(fabs(value), 1.0f);
-      NormalizationResult result = { value, true };
-      return result;
-    }
-    NormalizationResult result = { value, false };
-    return result;
+    float output = eucmod(value, 1.0f);
+    return NormalizationResult { output, output != value };
   }
 
   bool step(float dt) {

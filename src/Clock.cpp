@@ -173,14 +173,15 @@ struct Clock : Module {
   json_t *toJson() override {
     json_t *rootJ = json_object();
     json_object_set_new(rootJ, "running", json_integer((int) running));
+    json_object_set_new(rootJ, "reverse", json_integer((int) reverse));
     return rootJ;
   }
 
   void fromJson(json_t *rootJ) override {
     json_t *runningJ = json_object_get(rootJ, "running");
-    if (runningJ) {
-      running = json_integer_value(runningJ);
-    }
+    json_t *reverseJ = json_object_get(rootJ, "reverse");
+    running = json_integer_value(runningJ);
+    reverse = json_integer_value(reverseJ);
   }
 };
 
@@ -226,12 +227,12 @@ void Clock::step() {
         triggerThsByPhase(oscillator.phase, oscillator.lastPhase);
       }
       if (resetWasHit || extClockTriggered) {
-        oscillator.reset(0.0f);
+        oscillator.reset((reverse ? 1.0f : 0.0f));
         resetWasHit = false;
       }
     }
     if (resetWasHit || extClockTriggered) {
-      oscillator.reset(0.0f);
+      oscillator.reset((reverse ? 1.0f : 0.0f));
     }
   }
   if (mode == EXT_PHASE_MODE || mode == EXT_CLOCK_AND_PHASE_MODE) {
