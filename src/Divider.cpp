@@ -25,6 +25,8 @@ struct Divider : Module {
     NUM_OUTPUTS
   };
   enum LightIds {
+    EXT_PHASE_MODE_LED,
+    EXT_VBPS_MODE_LED,
     NUM_LIGHTS
   };
 
@@ -149,6 +151,9 @@ void Divider::step() {
 
   outputs[PHASE_OUTPUT].value = phaseOut;
   outputs[CLOCK_OUTPUT].value = clockPulse ? 10.0f : 0.0f;
+
+  lights[EXT_PHASE_MODE_LED].value = inputs[PHASE_INPUT].active ? 0.5f : 0.0f;
+  lights[EXT_VBPS_MODE_LED].value = !inputs[PHASE_INPUT].active && inputs[VBPS_INPUT].active ? 0.5f : 0.0f;
 }
 
 struct DividerWidget : ModuleWidget {
@@ -177,7 +182,9 @@ struct DividerWidget : ModuleWidget {
 
     addInput(Port::create<ZZC_PJ301MPort>(Vec(8, 233), Port::INPUT, module, Divider::SWING_INPUT));
     addInput(Port::create<ZZC_PJ301MPort>(Vec(42, 233), Port::INPUT, module, Divider::PHASE_INPUT));
+    addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(64, 233), module, Divider::EXT_PHASE_MODE_LED));
     addInput(Port::create<ZZC_PJ301MPort>(Vec(8, 275), Port::INPUT, module, Divider::VBPS_INPUT));
+    addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(30, 275), module, Divider::EXT_VBPS_MODE_LED));
     addInput(Port::create<ZZC_PJ301MPort>(Vec(42, 275), Port::INPUT, module, Divider::RESET_INPUT));
     addOutput(Port::create<ZZC_PJ301MIPort>(Vec(8, 319), Port::OUTPUT, module, Divider::CLOCK_OUTPUT));
     addOutput(Port::create<ZZC_PJ301MIPort>(Vec(42, 319), Port::OUTPUT, module, Divider::PHASE_OUTPUT));
