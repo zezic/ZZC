@@ -60,8 +60,6 @@ struct Clock : Module {
   enum Modes lastMode;
 
   float lastExtPhase = 0.0f;
-  bool extClockTriggered = false;
-
   LowFrequencyOscillator oscillator;
 
   bool running = true;
@@ -193,7 +191,6 @@ void Clock::step() {
   processButtons();
   processSwingInputs();
 
-  extClockTriggered = inputs[CLOCK_INPUT].active && externalClockTrigger.process(inputs[CLOCK_INPUT].value);
 
   if (mode == INTERNAL_MODE || mode == EXT_VBPS_MODE || mode == EXT_CLOCK_MODE) {
 
@@ -219,12 +216,12 @@ void Clock::step() {
 
     if (running) {
 
-      if (resetWasHit || extClockTriggered) {
+      if (resetWasHit) {
         oscillator.reset((reverse ? 1.0f : 0.0f));
       }
 
       bool phaseFlipped = oscillator.step(engineGetSampleTime());
-      if (phaseFlipped || resetWasHit || extClockTriggered) {
+      if (phaseFlipped || resetWasHit) {
         clockPulseGenerator.trigger(1e-3f);
         clock8thsPulseGenerator.trigger(1e-3f);
         clock16thsPulseGenerator.trigger(1e-3f);
@@ -237,7 +234,7 @@ void Clock::step() {
       }
 
     }
-    if (resetWasHit || extClockTriggered) {
+    if (resetWasHit) {
       oscillator.reset((reverse ? 1.0f : 0.0f));
     }
   }
@@ -265,7 +262,7 @@ void Clock::step() {
     }
 
     if (mode == EXT_CLOCK_AND_PHASE_MODE) {
-      triggered = extClockTriggered;
+      triggered = externalClockTrigger.process(inputs[CLOCK_INPUT].value);
     }
 
     if (running) {
