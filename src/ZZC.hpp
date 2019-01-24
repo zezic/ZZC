@@ -30,6 +30,8 @@ struct ZZC_BigKnob : SVGKnob {
 		minAngle = -0.83 * M_PI;
 		maxAngle = 0.83 * M_PI;
 		setSVG( SVG::load(assetPlugin(plugin, "res/ZZC-BigKnob.svg")) );
+		shadow->box.size = Vec(55, 55);
+		shadow->box.pos = Vec(2, 10);
 	}
 };
 
@@ -38,6 +40,8 @@ struct ZZC_PreciseKnob : SVGKnob {
 		minAngle = -0.83 * M_PI;
 		maxAngle = 0.83 * M_PI;
 		setSVG( SVG::load(assetPlugin(plugin, "res/ZZC-PreciseKnob.svg")) );
+		shadow->box.size = Vec(44, 44);
+		shadow->box.pos = Vec(3.5f, 10);
 	}
 };
 
