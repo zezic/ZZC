@@ -37,6 +37,7 @@ struct Divider : Module {
 
   float phaseIn = 0.0f;
   float lastPhaseIn = 0.0f;
+  float lastPhaseInDelta = 0.0f;
   bool lastPhaseInState = false;
 
   float halfPhaseOut = 0.0f;
@@ -104,23 +105,17 @@ void Divider::step() {
     if (lastPhaseInState) {
       phaseIn = inputs[PHASE_INPUT].value;
       float phaseInDelta = phaseIn - lastPhaseIn;
-      if (phaseInDelta < -9.9f) {
-        phaseInDelta = 10.0f + phaseInDelta;
-      } else if (phaseInDelta > 9.9f) {
-        phaseInDelta = phaseInDelta - 10.0f;
+      if (fabsf(phaseInDelta) > 0.1f && (sgn(phaseInDelta) != sgn(lastPhaseInDelta))) {
+        phaseInDelta = lastPhaseInDelta;
       }
+      lastPhaseInDelta = phaseInDelta;
       halfPhaseOut += phaseInDelta * ratio * 0.5f;
     }
   } else if (inputs[VBPS_INPUT].active) {
     halfPhaseOut += inputs[VBPS_INPUT].value * engineGetSampleTime() * 10.0f * ratio * 0.5f;
   }
 
-  // Wrap half-freq-phase
-  if (halfPhaseOut >= 10.0f) {
-    halfPhaseOut = fmodf(halfPhaseOut, 10.0f);
-  } else if (halfPhaseOut < 0.0f) {
-    halfPhaseOut = 10.0f + fmodf(halfPhaseOut, 10.0f);
-  }
+  halfPhaseOut = eucmod(halfPhaseOut, 10.0f);
 
   // Swing resulting phase
   float swingTresh = swing / 10.0f;
