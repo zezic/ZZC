@@ -80,6 +80,12 @@ struct ZZC_ToothSnapKnob : ZZC_ToothKnob {
 	}
 };
 
+struct ZZC_ToothFastKnob : ZZC_ToothKnob {
+	ZZC_ToothFastKnob() {
+		smooth = false;
+	}
+};
+
 struct ZZC_CKSSTwo : SVGSwitch, ToggleSwitch {
 	ZZC_CKSSTwo() {
 		addFrame(SVG::load(assetPlugin(plugin,"res/ZZC-CKSSTwo_0.svg")));

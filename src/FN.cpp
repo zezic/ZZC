@@ -14,14 +14,10 @@ float fn3Tri(float value) {
   return value < 0.5f ? value * 2.0f : (1.0f - value) * 2.0f;
 }
 
-float applyShift(float phase, float shift) {
-  if (shift < 0.0f) {
-    shift = 1.0f - fmodf(fabsf(shift), 1.0f);
-  }
-  return fmodf(phase + shift, 1.0f);
-}
-
 float applyPW(float phase, float pw) {
+  if (pw == 0.0f) {
+    return 0.5f + phase / 2.0f;
+  }
   return phase > pw ? (phase - pw) / (1.0f - pw) / 2.0f + 0.5f : phase / pw / 2.0f;
 }
 
@@ -37,11 +33,11 @@ struct FN3DisplayWidget : BaseDisplayWidget {
 
 		nvgBeginPath(vg);
     float firstCoord = true;
-    for (float i = 0.0f; i <= 1.0f; i = i + 0.01f) {
+    for (float i = 0.0f; i < 1.01f; i = i + 0.01f) {
       float x, y, value, phase;
       value = 0.0f;
       x = 2.0f + (box.size.x - 4.0f) * i;
-      phase = applyPW(applyShift(i, *shift), *pw);
+      phase = applyPW(eucmod(i + *shift, 1.0f), *pw);
       if (*wave == 0.0f) {
         value = fn3Sin(phase);
       } else if (*wave == 1.0f) {
@@ -105,18 +101,15 @@ struct FN3 : Module {
 void FN3::step() {
   pw = clamp(params[PW_PARAM].value + (inputs[PW_INPUT].active ? inputs[PW_INPUT].value / 10.0f : 0.0f), 0.0f, 1.0f);
   shift = params[SHIFT_PARAM].value + (inputs[SHIFT_INPUT].active ? inputs[SHIFT_INPUT].value / -5.0f : 0.0f);
-  phase = applyPW(
-    applyShift((inputs[PHASE_INPUT].active ? inputs[PHASE_INPUT].value / 10.0f : 0.0f), shift),
-    pw
-  );
+  phase = applyPW(eucmod((inputs[PHASE_INPUT].active ? inputs[PHASE_INPUT].value / 10.0f : 0.0f) + shift, 1.0f), pw);
   wave = params[WAVE_PARAM].value;
 
   if (wave == 0.0f) {
-    outputs[WAVE_OUTPUT].value = fn3Sin(phase) * 10.0f;
+    outputs[WAVE_OUTPUT].value = fn3Sin(phase) * 10.0f - (params[OFFSET_PARAM].value == 1.0f ? 5.0f : 0.0f);
   } else if (wave == 1.0f) {
-    outputs[WAVE_OUTPUT].value = fn3Tri(phase) * 10.0f;
+    outputs[WAVE_OUTPUT].value = fn3Tri(phase) * 10.0f - (params[OFFSET_PARAM].value == 1.0f ? 5.0f : 0.0f);
   } else {
-    outputs[WAVE_OUTPUT].value = fn3Sqr(phase) * 10.0f;
+    outputs[WAVE_OUTPUT].value = fn3Sqr(phase) * 10.0f - (params[OFFSET_PARAM].value == 1.0f ? 5.0f : 0.0f);
   }
 }
 
@@ -125,7 +118,7 @@ struct FN3Widget : ModuleWidget {
   FN3Widget(FN3 *module) : ModuleWidget(module) {
     setPanel(SVG::load(assetPlugin(plugin, "res/FN-3.svg")));
 
-		addParam(ParamWidget::create<ZZC_ToothKnob>(Vec(10, 60), module, FN3::PW_PARAM, 0.0f, 1.0f, 0.5f));
+		addParam(ParamWidget::create<ZZC_ToothFastKnob>(Vec(10, 60), module, FN3::PW_PARAM, 0.0f, 1.0f, 0.5f));
     addInput(Port::create<ZZC_PJ301MPort>(Vec(10, 93), Port::INPUT, module, FN3::PW_INPUT));
 
     FN3DisplayWidget *display = new FN3DisplayWidget();
