@@ -195,7 +195,7 @@ void Clock::step() {
   if (mode == INTERNAL_MODE || mode == EXT_VBPS_MODE || mode == EXT_CLOCK_MODE) {
 
     if (mode == EXT_CLOCK_MODE) {
-      if ((lastMode != EXT_CLOCK_MODE && lastMode != EXT_CLOCK_AND_PHASE_MODE) || resetWasHit) {
+      if ((lastMode != EXT_CLOCK_MODE && lastMode != EXT_CLOCK_AND_PHASE_MODE)) {
         clockTracker.init();
         clockTracker.freq = fabsf(bpm / 60.0f);
       }
