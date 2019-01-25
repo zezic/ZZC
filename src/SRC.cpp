@@ -270,4 +270,4 @@ void SRCWidget::appendContextMenu(Menu *menu) {
 
 
 
-Model *modelSRC = Model::create<SRC, SRCWidget>("ZZC", "SRC", "Voltage Source", UTILITY_TAG);
+Model *modelSRC = Model::create<SRC, SRCWidget>("ZZC", "SRC", "Voltage Source", UTILITY_TAG, QUANTIZER_TAG);

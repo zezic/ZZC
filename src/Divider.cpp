@@ -178,7 +178,7 @@ struct DividerWidget : ModuleWidget {
     swingDisplay->value = &module->swing;
     addChild(swingDisplay);
 
-		addParam(ParamWidget::create<ZZC_ToothKnob>(Vec(42, 176), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
+		addParam(ParamWidget::create<ZZC_Tooth5Knob>(Vec(43, 177), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
 
     addInput(Port::create<ZZC_PJ301MPort>(Vec(8, 233), Port::INPUT, module, Divider::SWING_INPUT));
     addInput(Port::create<ZZC_PJ301MPort>(Vec(42, 233), Port::INPUT, module, Divider::PHASE_INPUT));

@@ -1,7 +1,7 @@
 # ZZC
 
 ZZC is a pack of VCV Rack plugins developed by [Sergey Ukolov (zezic)](https://github.com/zezic).
-The target of this pack is to make operations from classic-DAW world easier to reproduce in VCV patches and don't loose the advantages of CV-control.
+The purpose of this pack is to make operations from the world of classic DAW easier to reproduce in VCV patches and not loose the advantages of CV control.
 
 ## Why it's not listed in VCV Plugin Manager yet?
 
