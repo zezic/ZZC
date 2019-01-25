@@ -167,6 +167,38 @@ struct RatioDisplayWidget : BaseDisplayWidget {
   }
 };
 
+struct VoltageDisplayWidget : BaseDisplayWidget {
+  float *value;
+  std::shared_ptr<Font> font;
+
+  VoltageDisplayWidget() {
+    font = Font::load(assetPlugin(plugin, "res/DSEG7ClassicMini-Italic.ttf"));
+  };
+
+  void draw(NVGcontext *vg) override {
+    drawBackground(vg);
+    NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
+    NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+
+    // Text (integer part)
+    nvgFontSize(vg, 11);
+    nvgFontFaceId(vg, font->handle);
+    nvgTextLetterSpacing(vg, 1.0);
+    nvgTextAlign(vg, NVG_ALIGN_RIGHT);
+
+    char integerPartString[10];
+    sprintf(integerPartString, "%2.1f", fabsf(*value));
+
+    Vec textPos = Vec(box.size.x - 5.0f, 16.0f); 
+
+    nvgFillColor(vg, lcdGhostColor);
+    nvgText(vg, textPos.x, textPos.y, "18.8", NULL);
+    nvgFillColor(vg, lcdTextColor);
+    nvgText(vg, textPos.x, textPos.y, integerPartString, NULL);
+  }
+};
+
+
 template <typename BASE>
 struct LedLight : BASE {
 	LedLight() {

@@ -12,6 +12,7 @@ extern Model *modelSH8;
 extern Model *modelClock;
 extern Model *modelDivider;
 extern Model *modelFN3;
+extern Model *modelSRC;
 
 struct ZZC_PJ301MPort : SVGPort {
 	ZZC_PJ301MPort() {
@@ -86,6 +87,36 @@ struct ZZC_ToothSnapKnob : ZZC_ToothKnob {
 
 struct ZZC_ToothFastKnob : ZZC_ToothKnob {
 	ZZC_ToothFastKnob() {
+		smooth = false;
+	}
+};
+
+struct ZZC_Tooth5Knob : SVGKnob {
+	ZZC_Tooth5Knob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
+		setSVG( SVG::load(assetPlugin(plugin, "res/ZZC-Tooth5Knob.svg")) );
+	}
+};
+
+struct ZZC_Tooth5SnapKnob : ZZC_Tooth5Knob {
+	ZZC_Tooth5SnapKnob() {
+		snap = true;
+		smooth = false;
+	}
+};
+
+struct ZZC_Tooth3Knob : SVGKnob {
+	ZZC_Tooth3Knob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
+		setSVG( SVG::load(assetPlugin(plugin, "res/ZZC-Tooth3Knob.svg")) );
+	}
+};
+
+struct ZZC_Tooth3SnapKnob : ZZC_Tooth3Knob {
+	ZZC_Tooth3SnapKnob() {
+		snap = true;
 		smooth = false;
 	}
 };

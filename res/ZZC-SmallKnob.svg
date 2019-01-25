@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="64"
-     inkscape:cx="8.8151939"
-     inkscape:cy="15.501893"
+     inkscape:zoom="16"
+     inkscape:cx="-7.75342"
+     inkscape:cy="4.7652536"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -70,7 +70,7 @@
        id="circle2261"
        style="opacity:1;fill:#454545;fill-opacity:1;stroke:none;stroke-width:0.26500002;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     <path
-       style="opacity:1;fill:#6d6d6d;fill-opacity:1;stroke:none;stroke-width:0.26500002;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="opacity:1;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.26500002;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        d="m 84.140556,104.47563 a 3.3073004,3.3073004 0 0 0 -0.945683,0.14056 v 6.33448 a 3.3073004,3.3073004 0 0 0 0.945683,0.13954 3.3073004,3.3073004 0 0 0 0.94568,-0.14057 v -6.33448 a 3.3073004,3.3073004 0 0 0 -0.94568,-0.13953 z"
        id="circle2540"
        inkscape:connector-curvature="0" />
@@ -82,7 +82,7 @@
        id="rect2191"
        style="opacity:1;fill:#202321;fill-opacity:1;stroke:none;stroke-width:0.5291667;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     <rect
-       style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.5291667;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="opacity:1;fill:#808080;fill-opacity:1;stroke:none;stroke-width:0.5291667;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="rect2193"
        width="0.49089524"
        height="2.8931291"
