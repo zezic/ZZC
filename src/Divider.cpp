@@ -49,6 +49,7 @@ struct Divider : Module {
   PulseGenerator resetPulseGenerator;
   bool clockPulse = false;
   bool resetPulse = false;
+  bool gateMode = false;
 
   SchmittTrigger clockTrigger;
   SchmittTrigger resetTrigger;
@@ -88,9 +89,19 @@ struct Divider : Module {
     }
   }
 
-  Divider() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
-  }
+  Divider() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
   void step() override;
+
+  json_t *toJson() override {
+    json_t *rootJ = json_object();
+    json_object_set_new(rootJ, "gateMode", json_boolean(gateMode));
+    return rootJ;
+  }
+
+  void fromJson(json_t *rootJ) override {
+    json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+    if (gateModeJ) { gateMode = json_boolean_value(gateModeJ); }
+  }
 };
 
 
@@ -102,7 +113,7 @@ void Divider::step() {
     phaseOut = 0.0f;
     halfPhaseOut = 0.0;
     lastHalfPhaseOut = 0.0f;
-    clockPulseGenerator.trigger(1e-3f);
+    clockPulseGenerator.trigger(gateMode ? 1e-4f : 1e-3f);
   } else if (inputs[PHASE_INPUT].active) {
     if (lastPhaseInState) {
       phaseIn = inputs[PHASE_INPUT].value;
@@ -137,9 +148,11 @@ void Divider::step() {
   }
 
   // Trigger swinged beat
-  if ((lastHalfPhaseOut < swingTresh && swingTresh <= halfPhaseOut) ||
-      (lastHalfPhaseOut > swingTresh && swingTresh >= halfPhaseOut)) {
-    clockPulseGenerator.trigger(1e-3f);
+  if (!gateMode) {
+    if ((lastHalfPhaseOut < swingTresh && swingTresh <= halfPhaseOut) ||
+        (lastHalfPhaseOut > swingTresh && swingTresh >= halfPhaseOut)) {
+      clockPulseGenerator.trigger(gateMode ? 1e-4f : 1e-3f);
+    }
   }
 
   lastHalfPhaseOut = halfPhaseOut;
@@ -147,54 +160,85 @@ void Divider::step() {
   lastPhaseIn = inputs[PHASE_INPUT].value;
   lastPhaseInState = inputs[PHASE_INPUT].active;
 
-  clockPulse = clockPulseGenerator.process(engineGetSampleTime());
 
   outputs[PHASE_OUTPUT].value = phaseOut;
-  outputs[CLOCK_OUTPUT].value = clockPulse ? 10.0f : 0.0f;
+
+  clockPulse = clockPulseGenerator.process(engineGetSampleTime());
+  if (gateMode) {
+    outputs[CLOCK_OUTPUT].value = phaseOut < 5.0f && !clockPulse ? 10.0f : 0.0f;
+  } else {
+    outputs[CLOCK_OUTPUT].value = clockPulse ? 10.0f : 0.0f;
+  }
 
   lights[EXT_PHASE_MODE_LED].value = inputs[PHASE_INPUT].active ? 0.5f : 0.0f;
   lights[EXT_VBPS_MODE_LED].value = !inputs[PHASE_INPUT].active && inputs[VBPS_INPUT].active ? 0.5f : 0.0f;
 }
 
+
 struct DividerWidget : ModuleWidget {
-  DividerWidget(Divider *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(plugin, "res/panels/Divider.svg")));
+  DividerWidget(Divider *module);
+  void appendContextMenu(Menu *menu) override;
+};
 
-    RatioDisplayWidget *ratioDisplay = new RatioDisplayWidget();
-    ratioDisplay->box.pos = Vec(9.0f, 60.0f);
-    ratioDisplay->box.size = Vec(57.0f, 21.0f);
-    ratioDisplay->from = &module->from;
-    ratioDisplay->to = &module->to;
-    addChild(ratioDisplay);
+DividerWidget::DividerWidget(Divider *module) : ModuleWidget(module) {
+  setPanel(SVG::load(assetPlugin(plugin, "res/panels/Divider.svg")));
 
-		addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(5, 88), module, Divider::IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
-		addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(39, 88), module, Divider::OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
-    addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 126), Port::INPUT, module, Divider::IN_RATIO_INPUT));
-    addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 126), Port::INPUT, module, Divider::OUT_RATIO_INPUT));
+  RatioDisplayWidget *ratioDisplay = new RatioDisplayWidget();
+  ratioDisplay->box.pos = Vec(9.0f, 60.0f);
+  ratioDisplay->box.size = Vec(57.0f, 21.0f);
+  ratioDisplay->from = &module->from;
+  ratioDisplay->to = &module->to;
+  addChild(ratioDisplay);
 
-    DisplayIntpartWidget *swingDisplay = new DisplayIntpartWidget();
-    swingDisplay->box.pos = Vec(7.0f, 178.0f);
-    swingDisplay->box.size = Vec(29.0f, 21.0f);
-    swingDisplay->value = &module->swing;
-    addChild(swingDisplay);
+  addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(5, 88), module, Divider::IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
+  addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(39, 88), module, Divider::OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
+  addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 126), Port::INPUT, module, Divider::IN_RATIO_INPUT));
+  addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 126), Port::INPUT, module, Divider::OUT_RATIO_INPUT));
 
-		addParam(ParamWidget::create<ZZC_Knob23>(Vec(43, 177), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
+  DisplayIntpartWidget *swingDisplay = new DisplayIntpartWidget();
+  swingDisplay->box.pos = Vec(7.0f, 178.0f);
+  swingDisplay->box.size = Vec(29.0f, 21.0f);
+  swingDisplay->value = &module->swing;
+  addChild(swingDisplay);
 
-    addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 233), Port::INPUT, module, Divider::SWING_INPUT));
-    addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 233), Port::INPUT, module, Divider::PHASE_INPUT));
-    addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(64, 233), module, Divider::EXT_PHASE_MODE_LED));
-    addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 275), Port::INPUT, module, Divider::VBPS_INPUT));
-    addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(30, 275), module, Divider::EXT_VBPS_MODE_LED));
-    addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 275), Port::INPUT, module, Divider::RESET_INPUT));
-    addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(8, 319), Port::OUTPUT, module, Divider::CLOCK_OUTPUT));
-    addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(42, 319), Port::OUTPUT, module, Divider::PHASE_OUTPUT));
+  addParam(ParamWidget::create<ZZC_Knob23>(Vec(43, 177), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
 
-		addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+  addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 233), Port::INPUT, module, Divider::SWING_INPUT));
+  addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 233), Port::INPUT, module, Divider::PHASE_INPUT));
+  addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(64, 233), module, Divider::EXT_PHASE_MODE_LED));
+  addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 275), Port::INPUT, module, Divider::VBPS_INPUT));
+  addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(30, 275), module, Divider::EXT_VBPS_MODE_LED));
+  addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 275), Port::INPUT, module, Divider::RESET_INPUT));
+  addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(8, 319), Port::OUTPUT, module, Divider::CLOCK_OUTPUT));
+  addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(42, 319), Port::OUTPUT, module, Divider::PHASE_OUTPUT));
+
+  addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
+  addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+  addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+  addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+}
+
+
+struct DividerGateModeItem : MenuItem {
+  Divider *divider;
+  void onAction(EventAction &e) override {
+    divider->gateMode ^= true;
+  }
+  void step() override {
+    rightText = CHECKMARK(divider->gateMode);
   }
 };
+
+void DividerWidget::appendContextMenu(Menu *menu) {
+  menu->addChild(new MenuSeparator());
+
+  Divider *divider = dynamic_cast<Divider*>(module);
+  assert(divider);
+
+  DividerGateModeItem *gateModeItem = MenuItem::create<DividerGateModeItem>("Gate Mode");
+  gateModeItem->divider = divider;
+  menu->addChild(gateModeItem);
+}
 
 
 Model *modelDivider = Model::create<Divider, DividerWidget>("ZZC", "Divider", "Divider", CLOCK_MODULATOR_TAG);
