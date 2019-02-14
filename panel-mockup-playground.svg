@@ -1101,9 +1101,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.8284271"
-     inkscape:cx="-185.28024"
-     inkscape:cy="-539.3789"
+     inkscape:zoom="2"
+     inkscape:cx="-357.02967"
+     inkscape:cy="-482.60982"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -15038,6 +15038,42 @@
          xlink:href="#g5642"
          y="0"
          x="0" />
+      <use
+         x="0"
+         y="0"
+         xlink:href="#circle8617-4"
+         id="use20200-6"
+         transform="matrix(0.55555559,0,0,0.55555559,-317.62771,299.3236)"
+         width="100%"
+         height="100%"
+         style="stroke-width:1.79999995" />
+      <use
+         style="stroke-width:1.79999995"
+         height="100%"
+         width="100%"
+         transform="matrix(0.55555559,0,0,0.55555559,-308.36741,299.3236)"
+         id="use20217"
+         xlink:href="#circle8617-4"
+         y="0"
+         x="0" />
+      <use
+         x="0"
+         y="0"
+         xlink:href="#circle8617-4"
+         id="use20219"
+         transform="matrix(0.55555559,0,0,0.55555559,-326.88801,273.92392)"
+         width="100%"
+         height="100%"
+         style="stroke-width:1.79999995" />
+      <use
+         style="stroke-width:1.79999995"
+         height="100%"
+         width="100%"
+         transform="matrix(0.55555559,0,0,0.55555559,-310.21947,271.5427)"
+         id="use20221"
+         xlink:href="#circle8617-4"
+         y="0"
+         x="0" />
     </g>
     <use
        x="0"
@@ -15442,6 +15478,24 @@
          xlink:href="#g5972"
          y="0"
          x="0" />
+      <use
+         style="stroke-width:1.79999995"
+         height="100%"
+         width="100%"
+         transform="matrix(0.55555559,0,0,0.55555559,-278.73445,316.5213)"
+         id="use6324-5"
+         xlink:href="#circle8617-4"
+         y="0"
+         x="0" />
+      <use
+         x="0"
+         y="0"
+         xlink:href="#circle8617-4"
+         id="use20200"
+         transform="matrix(0.55555559,0,0,0.55555559,-287.73017,327.63366)"
+         width="100%"
+         height="100%"
+         style="stroke-width:1.79999995" />
     </g>
     <g
        id="g4596"
@@ -16825,17 +16879,5 @@
          sodipodi:role="line"
          style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-family:'Gotham Rounded';-inkscape-font-specification:'Gotham Rounded Light';text-align:end;text-anchor:end;fill:#cccccc;fill-opacity:1;stroke-width:0.26458329"
          id="tspan7677">The Next Big Module</tspan></text>
-    <circle
-       style="opacity:1;fill:#cccccc;fill-opacity:1;stroke:none;stroke-width:0.29103801;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.98705498"
-       id="path19678"
-       cx="-113.63849"
-       cy="424.92609"
-       r="4.1023688" />
-    <circle
-       r="4.1023688"
-       cy="424.92609"
-       cx="-104.64279"
-       id="circle19680"
-       style="opacity:1;fill:#cccccc;fill-opacity:1;stroke:none;stroke-width:0.29103801;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.98705498" />
   </g>
 </svg>
