@@ -1,0 +1,69 @@
+#include "rack.hpp"
+
+static const NVGcolor COLOR_ZZC_YELLOW = nvgRGB(0xff, 0xd4, 0x2a);
+
+using namespace rack;
+
+extern Plugin *plugin;
+
+template <typename BASE>
+struct LedLight : BASE {
+	LedLight() {
+	  this->box.size = mm2px(Vec(6.3f, 6.3f));
+	}
+};
+
+struct ZZC_YellowLight : GrayModuleLightWidget {
+  float values[2];
+  double lastStepAt;
+
+	ZZC_YellowLight() {
+		addBaseColor(COLOR_ZZC_YELLOW);
+	}
+  void drawHalo(NVGcontext *vg) override {
+    float radius = box.size.x / 2.0;
+    float oradius = radius + 15.0;
+
+    nvgBeginPath(vg);
+    nvgRect(vg, radius - oradius, radius - oradius, 2*oradius, 2*oradius);
+
+    NVGpaint paint;
+    NVGcolor icol = colorMult(color, 0.04);
+    NVGcolor ocol = nvgRGB(0, 0, 0);
+    paint = nvgRadialGradient(vg, radius, radius, radius, oradius, icol, ocol);
+    nvgFillPaint(vg, paint);
+    nvgGlobalCompositeOperation(vg, NVG_LIGHTER);
+    nvgFill(vg);
+  }
+  void step() override {
+    assert(module);
+    assert(module->lights.size() >= firstLightId + baseColors.size());
+
+    double now = glfwGetTime();
+    double timeDelta = now - lastStepAt;
+    for (size_t i = 0; i < baseColors.size(); i++) {
+      float value = module->lights[firstLightId + i].value;
+      if (value == 1.0f) {
+        values[i] = 1.0f;
+      } else if (value == 1.1f) {
+        module->lights[firstLightId + i].value = 0.0f;
+        values[i] = 1.0f;
+      } else if (value > 0.0f) {
+        values[i] = value;
+      } else if (values[i] > 0.0f){
+        values[i] = fmaxf(0.0f, values[i] - values[i] * 8.0f * timeDelta);
+      }
+    }
+    lastStepAt = now;
+    setValues(values);
+  }
+  void setValues(float values[2]) {
+    color = nvgRGBAf(0, 0, 0, 0);
+    for (size_t i = 0; i < baseColors.size(); i++) {
+      NVGcolor c = baseColors[i];
+      c.a *= clamp(values[i], 0.f, 1.f);
+      color = colorScreen(color, c);
+    }
+    color = colorClip(color);
+  }
+};

@@ -1,8 +1,6 @@
 #include "ZZC.hpp"
 
-
 Plugin *plugin;
-
 
 void init(Plugin *p) {
 	plugin = p;
@@ -10,11 +8,11 @@ void init(Plugin *p) {
 	p->version = TOSTRING(VERSION);
 
 	// Add all Models defined throughout the plugin
-	p->addModel(modelSCVCA);
-	p->addModel(modelSH8);
 	p->addModel(modelClock);
 	p->addModel(modelDivider);
 	p->addModel(modelFN3);
+	p->addModel(modelSCVCA);
+	p->addModel(modelSH8);
 	p->addModel(modelSRC);
 
 	// Any other plugin initialization may go here.

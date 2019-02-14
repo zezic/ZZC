@@ -30,7 +30,7 @@ struct VoltageDisplayWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   VoltageDisplayWidget() {
-    font = Font::load(assetPlugin(plugin, "res/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -127,10 +127,10 @@ struct SRC : Module {
     json_t *modeJ = json_object_get(rootJ, "mode");
     json_t *quantizeInputJ = json_object_get(rootJ, "quantizeInput");
     json_t *onHoldJ = json_object_get(rootJ, "onHold");
-    on = json_boolean_value(onJ);
-    mode = json_integer_value(modeJ);
-    quantizeInput = json_boolean_value(quantizeInputJ);
-    onHold = json_boolean_value(onHoldJ);
+    if (onJ) { on = json_boolean_value(onJ); }
+    if (modeJ) { mode = json_integer_value(modeJ); }
+    if (quantizeInputJ) { quantizeInput = json_boolean_value(quantizeInputJ); }
+    if (onHoldJ) { onHold = json_boolean_value(onHoldJ); }
   }
 };
 
@@ -144,9 +144,11 @@ void SRC::step() {
   if (outputs[VOLTAGE_OUTPUT].active) {
     outputs[VOLTAGE_OUTPUT].value = on ? voltage : 0.0f;
   }
-	lights[VOLTAGE_POS_LIGHT].setBrightnessSmooth(fmaxf(0.0f, voltage / 11.0f));
-	lights[VOLTAGE_NEG_LIGHT].setBrightnessSmooth(fmaxf(0.0f, voltage / -11.0f));
-  lights[ON_LED].value = on ? 0.5f : 0.0f;
+	lights[VOLTAGE_POS_LIGHT].setBrightness(fmaxf(0.0f, voltage / 11.0f));
+	lights[VOLTAGE_NEG_LIGHT].setBrightness(fmaxf(0.0f, voltage / -11.0f));
+  if (on) {
+    lights[ON_LED].value = 1.1f;
+  }
 }
 
 
@@ -156,7 +158,7 @@ struct SRCWidget : ModuleWidget {
 };
 
 SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
-  setPanel(SVG::load(assetPlugin(plugin, "res/SRC.svg")));
+  setPanel(SVG::load(assetPlugin(plugin, "res/panels/SRC.svg")));
 
   addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(25.0f, 42.5f), module, SRC::VOLTAGE_POS_LIGHT));
 
@@ -167,21 +169,21 @@ SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
   display->mode = &module->mode;
   addChild(display);
 
-  addParam(ParamWidget::create<ZZC_ToothSnapKnob>(Vec(10, 104), module, SRC::COARSE_PARAM, -10.0f, 10.0f, 0.0f));
-  addParam(ParamWidget::create<ZZC_Tooth5Knob>(Vec(11, 151), module, SRC::FINE_PARAM, -1.0f, 1.0f, 0.0f));
+  addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(7, 101), module, SRC::COARSE_PARAM, -10.0f, 10.0f, 0.0f));
+  addParam(ParamWidget::create<ZZC_Knob21>(Vec(12, 154), module, SRC::FINE_PARAM, -1.0f, 1.0f, 0.0f));
 
-  addInput(Port::create<ZZC_PJ301MPort>(Vec(10, 196), Port::INPUT, module, SRC::CV_INPUT));
-  addInput(Port::create<ZZC_PJ301MPort>(Vec(10, 242), Port::INPUT, module, SRC::ON_INPUT));
+  addInput(Port::create<ZZC_PJ_In_Port>(Vec(10, 196), Port::INPUT, module, SRC::CV_INPUT));
+  addInput(Port::create<ZZC_PJ_In_Port>(Vec(10, 242), Port::INPUT, module, SRC::ON_INPUT));
 
-  addParam(ParamWidget::create<LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
-  addChild(ModuleLightWidget::create<LedLight<YellowLight>>(Vec(13.1f, 277.7f), module, SRC::ON_LED));
+  addParam(ParamWidget::create<ZZC_LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
+  addChild(ModuleLightWidget::create<LedLight<ZZC_YellowLight>>(Vec(13.1f, 277.7f), module, SRC::ON_LED));
 
-  addOutput(Port::create<ZZC_PJ301MIPort>(Vec(10, 319), Port::OUTPUT, module, SRC::VOLTAGE_OUTPUT));
+  addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(10, 319), Port::OUTPUT, module, SRC::VOLTAGE_OUTPUT));
 
-  addChild(Widget::create<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
-  addChild(Widget::create<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-  addChild(Widget::create<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-  addChild(Widget::create<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+  addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
+  addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+  addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+  addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 }
 
 
@@ -241,7 +243,7 @@ struct SRCQuantizeItem : MenuItem {
 };
 
 void SRCWidget::appendContextMenu(Menu *menu) {
-	menu->addChild(MenuEntry::create());
+	menu->addChild(new MenuSeparator());
 
 	SRC *src = dynamic_cast<SRC*>(module);
 	assert(src);
@@ -261,10 +263,10 @@ void SRCWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(musicalItem);
 	menu->addChild(decimalItem);
 	menu->addChild(freeItem);
-	menu->addChild(MenuEntry::create());
+	menu->addChild(new MenuSeparator());
 	menu->addChild(onToggleItem);
 	menu->addChild(onHoldItem);
-	menu->addChild(MenuEntry::create());
+	menu->addChild(new MenuSeparator());
 	menu->addChild(quantizeItem);
 }
 

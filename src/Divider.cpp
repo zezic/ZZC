@@ -1,6 +1,5 @@
 #include "ZZC.hpp"
 #include "shared.hpp"
-#include "widgets.hpp"
 
 
 struct Divider : Module {
@@ -54,14 +53,14 @@ struct Divider : Module {
   SchmittTrigger clockTrigger;
   SchmittTrigger resetTrigger;
 
-  float logMap(float input, float range) {
+  inline float logMap(float input, float range) {
     if (input == 0.0f) {
       return 1.0f;
     } 
     return max(1.0f, powf(2, log2f(input * range)));
   }
 
-  void processRatioInputs() {
+  inline void processRatioInputs() {
     if (inputs[IN_RATIO_INPUT].active) {
       from = floorf(logMap(clamp(inputs[IN_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f, params[IN_RATIO_PARAM].value) + 0.01);
     } else {
@@ -75,16 +74,17 @@ struct Divider : Module {
     ratio = to / from;
   }
 
-  void processSwingInput() {
-    swing = params[SWING_PARAM].value;
-
+  inline void processSwingInput() {
     if (inputs[SWING_INPUT].active) {
+      float swingParam = params[SWING_PARAM].value;
       float swingInput = clamp(inputs[SWING_INPUT].value / 5.0f, -1.0f, 1.0f);
       if (swingInput < 0.0f) {
-        swing += (swing - 1.0f) * swingInput;
+        swing = swingParam + (swingParam - 1.0f) * swingInput;
       } else if (swingInput > 0.0f) {
-        swing += (99.0f - swing) * swingInput;
+        swing = swingParam + (99.0f - swingParam) * swingInput;
       }
+    } else {
+      swing = params[SWING_PARAM].value;
     }
   }
 
@@ -158,7 +158,7 @@ void Divider::step() {
 
 struct DividerWidget : ModuleWidget {
   DividerWidget(Divider *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(plugin, "res/Divider.svg")));
+    setPanel(SVG::load(assetPlugin(plugin, "res/panels/Divider.svg")));
 
     RatioDisplayWidget *ratioDisplay = new RatioDisplayWidget();
     ratioDisplay->box.pos = Vec(9.0f, 60.0f);
@@ -167,10 +167,10 @@ struct DividerWidget : ModuleWidget {
     ratioDisplay->to = &module->to;
     addChild(ratioDisplay);
 
-		addParam(ParamWidget::create<ZZC_ToothSnapKnob>(Vec(8, 91), module, Divider::IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
-		addParam(ParamWidget::create<ZZC_ToothSnapKnob>(Vec(42, 91), module, Divider::OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(8, 126), Port::INPUT, module, Divider::IN_RATIO_INPUT));
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(42, 126), Port::INPUT, module, Divider::OUT_RATIO_INPUT));
+		addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(5, 88), module, Divider::IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
+		addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(39, 88), module, Divider::OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 126), Port::INPUT, module, Divider::IN_RATIO_INPUT));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 126), Port::INPUT, module, Divider::OUT_RATIO_INPUT));
 
     DisplayIntpartWidget *swingDisplay = new DisplayIntpartWidget();
     swingDisplay->box.pos = Vec(7.0f, 178.0f);
@@ -178,21 +178,21 @@ struct DividerWidget : ModuleWidget {
     swingDisplay->value = &module->swing;
     addChild(swingDisplay);
 
-		addParam(ParamWidget::create<ZZC_Tooth5Knob>(Vec(43, 177), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
+		addParam(ParamWidget::create<ZZC_Knob23>(Vec(43, 177), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
 
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(8, 233), Port::INPUT, module, Divider::SWING_INPUT));
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(42, 233), Port::INPUT, module, Divider::PHASE_INPUT));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 233), Port::INPUT, module, Divider::SWING_INPUT));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 233), Port::INPUT, module, Divider::PHASE_INPUT));
     addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(64, 233), module, Divider::EXT_PHASE_MODE_LED));
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(8, 275), Port::INPUT, module, Divider::VBPS_INPUT));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 275), Port::INPUT, module, Divider::VBPS_INPUT));
     addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(30, 275), module, Divider::EXT_VBPS_MODE_LED));
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(42, 275), Port::INPUT, module, Divider::RESET_INPUT));
-    addOutput(Port::create<ZZC_PJ301MIPort>(Vec(8, 319), Port::OUTPUT, module, Divider::CLOCK_OUTPUT));
-    addOutput(Port::create<ZZC_PJ301MIPort>(Vec(42, 319), Port::OUTPUT, module, Divider::PHASE_OUTPUT));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 275), Port::INPUT, module, Divider::RESET_INPUT));
+    addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(8, 319), Port::OUTPUT, module, Divider::CLOCK_OUTPUT));
+    addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(42, 319), Port::OUTPUT, module, Divider::PHASE_OUTPUT));
 
-		addChild(Widget::create<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(Widget::create<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   }
 };
 

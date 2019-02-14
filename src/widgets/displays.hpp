@@ -1,3 +1,7 @@
+using namespace rack;
+
+extern Plugin *plugin;
+
 struct BaseDisplayWidget : TransparentWidget {
 
   void drawBackground(NVGcontext *vg) {
@@ -23,7 +27,7 @@ struct Display32Widget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   Display32Widget() {
-    font = Font::load(assetPlugin(plugin, "res/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -40,7 +44,7 @@ struct Display32Widget : BaseDisplayWidget {
 
     char integerPartString[10];
     if (valueToDraw >= 1000.0f) {
-      sprintf(integerPartString, "F00.");
+      sprintf(integerPartString, "---.");
     } else {
       sprintf(integerPartString, "%3.0f.", floor(valueToDraw));
     }
@@ -60,8 +64,10 @@ struct Display32Widget : BaseDisplayWidget {
     float remainder = fmod(valueToDraw, 1.0f) * 100.0f;
     float intpart;
     modf(remainder, &intpart);
-    if (intpart == 0.0f || valueToDraw >= 1000.0f) {
+    if (intpart == 0.0f) {
       sprintf(fractionalPartString, "00");
+    } else if (valueToDraw >= 1000.0f) {
+      sprintf(fractionalPartString, "--");
     } else {
       sprintf(fractionalPartString, "%2.0f", intpart);
       if (fractionalPartString[0] == ' ') {
@@ -83,7 +89,7 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   DisplayIntpartWidget() {
-    font = Font::load(assetPlugin(plugin, "res/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -109,13 +115,43 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
   }
 };
 
+struct IntDisplayWidget : BaseDisplayWidget {
+  int *value;
+  std::shared_ptr<Font> font;
+  NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
+  NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+
+  IntDisplayWidget() {
+    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+  };
+
+  void draw(NVGcontext *vg) override {
+    drawBackground(vg);
+
+    nvgFontSize(vg, 11);
+    nvgFontFaceId(vg, font->handle);
+    nvgTextLetterSpacing(vg, 1.0);
+    nvgTextAlign(vg, NVG_ALIGN_RIGHT);
+
+    char integerString[10];
+    sprintf(integerString, "%d", *value);
+
+    Vec textPos = Vec(box.size.x - 5.0f, 16.0f); 
+
+    nvgFillColor(vg, lcdGhostColor);
+    nvgText(vg, textPos.x, textPos.y, "88", NULL);
+    nvgFillColor(vg, lcdTextColor);
+    nvgText(vg, textPos.x, textPos.y, integerString, NULL);
+  }
+};
+
 struct RatioDisplayWidget : BaseDisplayWidget {
   float *from;
   float *to;
   std::shared_ptr<Font> font;
 
   RatioDisplayWidget() {
-    font = Font::load(assetPlugin(plugin, "res/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -165,18 +201,4 @@ struct RatioDisplayWidget : BaseDisplayWidget {
     nvgFillColor(vg, lcdTextColor);
     nvgText(vg, textPos.x, textPos.y, ":", NULL);
   }
-};
-
-
-template <typename BASE>
-struct LedLight : BASE {
-	LedLight() {
-	  this->box.size = mm2px(Vec(6.3f, 6.3f));
-	}
-};
-
-struct LEDBezelDark : SVGSwitch, MomentarySwitch {
-	LEDBezelDark() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/LEDBezelDark.svg")));
-	}
 };

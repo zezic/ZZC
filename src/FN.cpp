@@ -1,26 +1,31 @@
 #include "ZZC.hpp"
 #include "shared.hpp"
-#include "widgets.hpp"
 
 #include "window.hpp"
 
-float fn3Sin(float phase) {
-  return (sinf(phase * M_PI * 2.0f - M_PI / 2.0f) + 1.0f) / 2.0f;
+const float M_PI_X2 = M_PI * 2.0f;
+
+inline float fn3Sin(float phase) {
+  return (sinf(phase * M_PI_X2 - M_PI_2) + 1.0f) * 0.5f;
 }
 
-float fn3Sqr(float value) {
-  return value < 0.5f ? 1.0f : 0.0f;
+inline float fn3Sqr(float phase) {
+  return phase < 0.5f ? 1.0f : 0.0f;
 }
 
-float fn3Tri(float value) {
-  return value < 0.5f ? value * 2.0f : (1.0f - value) * 2.0f;
+inline float fn3Tri(float phase) {
+  return phase < 0.5f ? phase * 2.0f : (1.0f - phase) * 2.0f;
 }
 
-float applyPW(float phase, float pw) {
+inline float applyPW(float phase, float pw) {
   if (pw == 0.0f) {
     return 0.5f + phase / 2.0f;
   }
-  return phase > pw ? (phase - pw) / (1.0f - pw) / 2.0f + 0.5f : phase / pw / 2.0f;
+  if (phase > pw) {
+    return (phase - pw) / (1.0f - pw) / 2.0f + 0.5f;
+  } else {
+    return phase / pw / 2.0f;
+  }
 }
 
 struct FN3TextDisplayWidget : TransparentWidget {
@@ -33,13 +38,13 @@ struct FN3TextDisplayWidget : TransparentWidget {
   std::shared_ptr<Font> font;
 
   FN3TextDisplayWidget() {
-    font = Font::load(assetPlugin(plugin, "res/nunito/Nunito-Black.ttf"));
+    font = Font::load(assetPlugin(plugin, "res/fonts/Nunito/Nunito-Black.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
     NVGcolor lcdColor = nvgRGB(0x12, 0x12, 0x12);
     NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
-    
+
     if (prevHook == *hook) {
       double curTime = glfwGetTime();
       if ((curTime - textUpdatedAt) > 2.0) {
@@ -83,7 +88,7 @@ struct FN3DisplayWidget : BaseDisplayWidget {
 
 		nvgBeginPath(vg);
     float firstCoord = true;
-    for (float i = 0.0f; i < 1.01f; i = i + 0.01f) {
+    for (float i = 0.0f; i < 1.00f; i = i + 0.01f) {
       float x, y, value, phase;
       value = 0.0f;
       x = 2.0f + (box.size.x - 4.0f) * i;
@@ -142,12 +147,14 @@ struct FN3 : Module {
   float wave;
 
   float pwParam;
-  float pwDisplay;
+  float lastPwParam;
+  float pwDisplay = 50.0f;
 
   float shiftParam;
+  float lastShiftParam;
   float shiftDisplay;
 
-  float snap(float value) {
+  inline float snap(float value) {
     if (value > 0.33f && value < 0.34f) {
       return 1.0f / 3.0f;
     } else if (value > 0.66f && value < 0.67f) {
@@ -168,11 +175,17 @@ struct FN3 : Module {
 
 
 void FN3::step() {
-  pwParam = snap(params[PW_PARAM].value);
+  if (params[PW_PARAM].value != lastPwParam) {
+    pwParam = snap(params[PW_PARAM].value);
+    lastPwParam = params[PW_PARAM].value;
+  }
   pw = clamp(pwParam + (inputs[PW_INPUT].active ? inputs[PW_INPUT].value / 10.0f : 0.0f), 0.0f, 1.0f);
   pwDisplay = pw * 100.0f;
 
-  shiftParam = snap(params[SHIFT_PARAM].value);
+  if (params[SHIFT_PARAM].value != lastShiftParam) {
+    shiftParam = snap(params[SHIFT_PARAM].value);
+    lastShiftParam = params[SHIFT_PARAM].value;
+  }
   shift = shiftParam + (inputs[SHIFT_INPUT].active ? inputs[SHIFT_INPUT].value / -5.0f : 0.0f);
   shiftDisplay = shift * -100.0f;
 
@@ -191,10 +204,10 @@ void FN3::step() {
 
 struct FN3Widget : ModuleWidget {
   FN3Widget(FN3 *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(plugin, "res/FN-3.svg")));
+    setPanel(SVG::load(assetPlugin(plugin, "res/panels/FN-3.svg")));
 
-		addParam(ParamWidget::create<ZZC_ToothFastKnob>(Vec(10, 60), module, FN3::PW_PARAM, 0.0f, 1.0f, 0.5f));
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(10, 93), Port::INPUT, module, FN3::PW_INPUT));
+		addParam(ParamWidget::create<ZZC_Knob23>(Vec(11, 60), module, FN3::PW_PARAM, 0.0f, 1.0f, 0.5f));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(10, 93), Port::INPUT, module, FN3::PW_INPUT));
 
     FN3DisplayWidget *display = new FN3DisplayWidget();
     display->box.pos = Vec(8.0f, 127.0f);
@@ -203,8 +216,8 @@ struct FN3Widget : ModuleWidget {
     display->pw = &module->pw;
     display->shift = &module->shift;
     addChild(display);
-		addParam(ParamWidget::create<ZZC_FN3_Wave>(Vec(8, 127), module, FN3::WAVE_PARAM, 0.0f, 2.0f, 0.0f));
-		addParam(ParamWidget::create<ZZC_FN3_UniBi>(Vec(8, 153), module, FN3::OFFSET_PARAM, 0.0f, 1.0f, 0.0f));
+		addParam(ParamWidget::create<ZZC_FN3WaveSwitch>(Vec(8, 127), module, FN3::WAVE_PARAM, 0.0f, 2.0f, 0.0f));
+		addParam(ParamWidget::create<ZZC_FN3UniBiSwitch>(Vec(8, 153), module, FN3::OFFSET_PARAM, 0.0f, 1.0f, 0.0f));
 
     FN3TextDisplayWidget *pwDisplay = new FN3TextDisplayWidget();
     pwDisplay->box.pos = Vec(11.0f, 130.0f);
@@ -220,14 +233,14 @@ struct FN3Widget : ModuleWidget {
     shiftDisplay->text = &module->shiftDisplay;
     addChild(shiftDisplay);
 
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(10, 196), Port::INPUT, module, FN3::SHIFT_INPUT));
-		addParam(ParamWidget::create<ZZC_ToothKnob>(Vec(10, 229), module, FN3::SHIFT_PARAM, 1.0f, -1.0f, 0.0f));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(10, 196), Port::INPUT, module, FN3::SHIFT_INPUT));
+		addParam(ParamWidget::create<ZZC_Knob23>(Vec(11, 230), module, FN3::SHIFT_PARAM, 1.0f, -1.0f, 0.0f));
 
-    addInput(Port::create<ZZC_PJ301MPort>(Vec(10, 275), Port::INPUT, module, FN3::PHASE_INPUT));
-    addOutput(Port::create<ZZC_PJ301MIPort>(Vec(10, 319), Port::OUTPUT, module, FN3::WAVE_OUTPUT));
+    addInput(Port::create<ZZC_PJ_In_Port>(Vec(10, 275), Port::INPUT, module, FN3::PHASE_INPUT));
+    addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(10, 319), Port::OUTPUT, module, FN3::WAVE_OUTPUT));
 
-		addChild(Widget::create<ScrewBlack>(Vec(box.size.x / 2 - RACK_GRID_WIDTH / 2, 0)));
-		addChild(Widget::create<ScrewBlack>(Vec(box.size.x / 2 - RACK_GRID_WIDTH / 2, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x / 2 - RACK_GRID_WIDTH / 2, 0)));
+		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x / 2 - RACK_GRID_WIDTH / 2, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   }
 };
 
