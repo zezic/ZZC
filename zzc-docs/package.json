@@ -1,0 +1,28 @@
+{
+  "name": "zzc-docs",
+  "version": "1.0.0",
+  "description": "ZZC Modules Documentation",
+  "author": "Sergey Ukolov",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt",
+    "build": "nuxt build",
+    "start": "nuxt start",
+    "generate": "nuxt generate"
+  },
+  "dependencies": {
+    "@nuxtjs/axios": "^5.3.6",
+    "@nuxtjs/pwa": "^2.6.0",
+    "cross-env": "^5.2.0",
+    "node-sass": "^4.11.0",
+    "normalize.css": "^8.0.1",
+    "nuxt": "^2.4.0",
+    "nuxt-svg": "^0.1.4",
+    "pug": "^2.0.3",
+    "pug-plain-loader": "^1.0.0",
+    "sass-loader": "^7.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.9"
+  }
+}

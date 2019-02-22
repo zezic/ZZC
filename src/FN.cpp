@@ -1,6 +1,4 @@
 #include "ZZC.hpp"
-#include "shared.hpp"
-
 #include "window.hpp"
 
 const float M_PI_X2 = M_PI * 2.0f;

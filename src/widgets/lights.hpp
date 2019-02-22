@@ -1,6 +1,7 @@
 #include "rack.hpp"
 
 static const NVGcolor COLOR_ZZC_YELLOW = nvgRGB(0xff, 0xd4, 0x2a);
+static const NVGcolor COLOR_NEG = nvgRGB(0xe7, 0x34, 0x2d);
 
 using namespace rack;
 
@@ -13,12 +14,12 @@ struct LedLight : BASE {
 	}
 };
 
-struct ZZC_YellowLight : GrayModuleLightWidget {
-  float values[2];
-  double lastStepAt;
 
-	ZZC_YellowLight() {
-		addBaseColor(COLOR_ZZC_YELLOW);
+struct ZZC_BaseLight : GrayModuleLightWidget {
+  float values[2] = { 0.0f, 0.0f };
+  double lastStepAt = 0.0;
+
+	ZZC_BaseLight() {
 	}
   void drawHalo(NVGcontext *vg) override {
     float radius = box.size.x / 2.0;
@@ -66,4 +67,16 @@ struct ZZC_YellowLight : GrayModuleLightWidget {
     }
     color = colorClip(color);
   }
+};
+
+struct ZZC_YellowLight : ZZC_BaseLight {
+	ZZC_YellowLight() {
+		addBaseColor(COLOR_ZZC_YELLOW);
+	}
+};
+
+struct ZZC_RedLight : ZZC_BaseLight {
+	ZZC_RedLight() {
+		addBaseColor(COLOR_NEG);
+	}
 };

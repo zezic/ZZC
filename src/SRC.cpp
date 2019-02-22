@@ -1,6 +1,4 @@
 #include "ZZC.hpp"
-#include "shared.hpp"
-#include "widgets.hpp"
 
 
 enum ModeIds {
@@ -51,7 +49,7 @@ struct VoltageDisplayWidget : BaseDisplayWidget {
       sprintf(text, "%2.1f", fabsf(*value));
     }
 
-    Vec textPos = Vec(box.size.x - 5.0f, 16.0f); 
+    Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 
     nvgFillColor(vg, lcdGhostColor);
     nvgText(vg, textPos.x, textPos.y, *mode == MUSICAL_MODE ? "188" : "18.8", NULL);

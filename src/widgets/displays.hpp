@@ -1,13 +1,15 @@
+#include "rack.hpp"
+#include "window.hpp"
+
 using namespace rack;
 
 extern Plugin *plugin;
 
 struct BaseDisplayWidget : TransparentWidget {
+  NVGcolor backgroundColor = nvgRGB(0x01, 0x01, 0x01);
+  NVGcolor lcdColor = nvgRGB(0x12, 0x12, 0x12);
 
   void drawBackground(NVGcontext *vg) {
-    NVGcolor backgroundColor = nvgRGB(0x01, 0x01, 0x01);
-    NVGcolor lcdColor = nvgRGB(0x12, 0x12, 0x12);
-
     // Background
     nvgBeginPath(vg);
     nvgRoundedRect(vg, 0.0, 0.0, box.size.x, box.size.y, 3.0);
@@ -24,6 +26,7 @@ struct BaseDisplayWidget : TransparentWidget {
 
 struct Display32Widget : BaseDisplayWidget {
   float *value;
+  bool *disabled = nullptr;
   std::shared_ptr<Font> font;
 
   Display32Widget() {
@@ -43,13 +46,13 @@ struct Display32Widget : BaseDisplayWidget {
     nvgTextAlign(vg, NVG_ALIGN_RIGHT);
 
     char integerPartString[10];
-    if (valueToDraw >= 1000.0f) {
+    if (valueToDraw >= 1000.0f || (disabled && *disabled)) {
       sprintf(integerPartString, "---.");
     } else {
       sprintf(integerPartString, "%3.0f.", floor(valueToDraw));
     }
 
-    Vec textPos = Vec(36.0f, 16.0f); 
+    Vec textPos = Vec(36.0f, 16.0f);
 
     nvgFillColor(vg, lcdGhostColor);
     nvgText(vg, textPos.x, textPos.y, "888.", NULL);
@@ -64,10 +67,12 @@ struct Display32Widget : BaseDisplayWidget {
     float remainder = fmod(valueToDraw, 1.0f) * 100.0f;
     float intpart;
     modf(remainder, &intpart);
-    if (intpart == 0.0f) {
-      sprintf(fractionalPartString, "00");
+    if (disabled && *disabled) {
+      sprintf(fractionalPartString, "--");
     } else if (valueToDraw >= 1000.0f) {
       sprintf(fractionalPartString, "--");
+    } else if (intpart == 0.0f) {
+      sprintf(fractionalPartString, "00");
     } else {
       sprintf(fractionalPartString, "%2.0f", intpart);
       if (fractionalPartString[0] == ' ') {
@@ -75,7 +80,7 @@ struct Display32Widget : BaseDisplayWidget {
       }
     }
 
-    textPos = Vec(52.0f, 16.0f); 
+    textPos = Vec(52.0f, 16.0f);
 
     nvgFillColor(vg, lcdGhostColor);
     nvgText(vg, textPos.x, textPos.y, "88", NULL);
@@ -106,7 +111,7 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
     char integerPartString[10];
     sprintf(integerPartString, "%8.0f", *value);
 
-    Vec textPos = Vec(box.size.x - 5.0f, 16.0f); 
+    Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 
     nvgFillColor(vg, lcdGhostColor);
     nvgText(vg, textPos.x, textPos.y, "88", NULL);
@@ -136,7 +141,7 @@ struct IntDisplayWidget : BaseDisplayWidget {
     char integerString[10];
     sprintf(integerString, "%d", *value);
 
-    Vec textPos = Vec(box.size.x - 5.0f, 16.0f); 
+    Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 
     nvgFillColor(vg, lcdGhostColor);
     nvgText(vg, textPos.x, textPos.y, "88", NULL);
@@ -169,7 +174,7 @@ struct RatioDisplayWidget : BaseDisplayWidget {
     char fromString[10];
     sprintf(fromString, "%2.0f", *from);
 
-    Vec textPos = Vec(box.size.x / 2.0f - 3.0f, 16.0f); 
+    Vec textPos = Vec(box.size.x / 2.0f - 3.0f, 16.0f);
 
     nvgFillColor(vg, lcdGhostColor);
     nvgText(vg, textPos.x, textPos.y, "88", NULL);
@@ -186,7 +191,7 @@ struct RatioDisplayWidget : BaseDisplayWidget {
       toString[1] = ' ';
     }
 
-    textPos = Vec(box.size.x / 2.0f + 2.0f, 16.0f); 
+    textPos = Vec(box.size.x / 2.0f + 2.0f, 16.0f);
 
     nvgFillColor(vg, lcdGhostColor);
     nvgText(vg, textPos.x, textPos.y, "88", NULL);
@@ -196,7 +201,7 @@ struct RatioDisplayWidget : BaseDisplayWidget {
     // Text (:)
     nvgTextAlign(vg, NVG_ALIGN_CENTER);
 
-    textPos = Vec(box.size.x / 2.0f, 16.0f); 
+    textPos = Vec(box.size.x / 2.0f, 16.0f);
 
     nvgFillColor(vg, lcdTextColor);
     nvgText(vg, textPos.x, textPos.y, ":", NULL);

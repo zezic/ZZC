@@ -1,4 +1,7 @@
 #include "dsp/digital.hpp"
+#include "util/math.hpp"
+
+using namespace rack;
 
 struct LowFrequencyOscillator {
   float phase = 0.0f;
@@ -20,7 +23,7 @@ struct LowFrequencyOscillator {
     NormalizationResult result = normalize(value);
     phase = result.value;
     return result.normalized;
-  } 
+  }
 
   NormalizationResult normalize(float value) {
     float output = eucmod(value, 1.0f);

@@ -1,5 +1,4 @@
 #include "ZZC.hpp"
-#include "shared.hpp"
 
 
 struct Divider : Module {
@@ -57,7 +56,7 @@ struct Divider : Module {
   inline float logMap(float input, float range) {
     if (input == 0.0f) {
       return 1.0f;
-    } 
+    }
     return max(1.0f, powf(2, log2f(input * range)));
   }
 

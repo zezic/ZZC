@@ -1,13 +1,8 @@
 #include "rack.hpp"
 #include "window.hpp"
 
-#include "widgets/displays.hpp"
-#include "widgets/knobs.hpp"
-#include "widgets/lights.hpp"
-#include "widgets/ports.hpp"
-#include "widgets/screws.hpp"
-#include "widgets/sliders.hpp"
-#include "widgets/switches.hpp"
+#include "shared.hpp"
+#include "widgets.hpp"
 
 using namespace rack;
 

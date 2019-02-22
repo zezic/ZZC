@@ -1,7 +1,4 @@
 #include "ZZC.hpp"
-#include "shared.hpp"
-#include "widgets.hpp"
-
 
 struct Clock : Module {
   enum ParamIds {
@@ -88,7 +85,7 @@ struct Clock : Module {
   float clockLight = 0.0f;
   float resetLight = 0.0f;
   float reverseLight = 0.0f;
-  
+
   SchmittTrigger runButtonTrigger;
   SchmittTrigger externalRunTrigger;
   SchmittTrigger resetButtonTrigger;
@@ -194,7 +191,6 @@ void Clock::step() {
 
   processButtons();
   processSwingInputs();
-
 
   if (mode == INTERNAL_MODE || mode == EXT_VBPS_MODE || mode == EXT_CLOCK_MODE) {
 

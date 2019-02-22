@@ -1,6 +1,10 @@
 #include "rack.hpp"
+#include "window.hpp"
 
+#ifndef KNOB_SENSITIVITY_CONST
+#define KNOB_SENSITIVITY_CONST
 static const float KNOB_SENSITIVITY = 0.0015f;
+#endif
 
 using namespace rack;
 
@@ -50,11 +54,25 @@ struct ZZC_Knob19 : ZZC_BaseKnob {
   }
 };
 
+struct ZZC_Knob19NoRand : ZZC_Knob19 {
+  ZZC_Knob19NoRand() {
+  }
+  void randomize() override {}
+};
+
+struct ZZC_Knob19SnappyNoRand : ZZC_Knob19NoRand {
+  ZZC_Knob19SnappyNoRand() {
+    snap = true;
+    smooth = false;
+  }
+};
+
 struct ZZC_Knob21 : ZZC_BaseKnob {
   ZZC_Knob21() {
     setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Knob-21.svg")) );
   }
 };
+
 struct ZZC_Knob21Snappy : ZZC_Knob21 {
   ZZC_Knob21Snappy() {
     snap = true;

@@ -4,3 +4,6 @@
 /plugin.dll
 /plugin.so
 .DS_Store
+tags
+.clang_complete
+compile_commands.json
