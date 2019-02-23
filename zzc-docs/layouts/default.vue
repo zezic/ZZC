@@ -2,7 +2,6 @@
 .layout
   header
     site-header
-  .yellow-line
   .page-wrapper
     nuxt
   footer
@@ -21,9 +20,8 @@ export default {
 }
 </script>
 
-
 <style lang='scss'>
-@import "~/assets/sass/fonts.sass";
+@import "~/assets/sass/fonts.scss";
 
 * {
   box-sizing: border-box;
@@ -39,16 +37,15 @@ a {
 </style>
 
 <style lang='scss' scoped>
-@import "~/assets/sass/colors.sass";
+@import "~/assets/sass/colors.scss";
 
 .layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 
-  .yellow-line {
-    height: 5px;
-    background-color: $color-zzc;
+  .page-wrapper {
+    color: #202321;
   }
 
   footer {
