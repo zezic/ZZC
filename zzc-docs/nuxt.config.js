@@ -21,6 +21,7 @@ module.exports = {
     { src: 'normalize.css' }
   ],
   plugins: [
+    // { src: '~/plugins/plugin-name', ssr: false }
   ],
   modules: [
     '@nuxtjs/axios',

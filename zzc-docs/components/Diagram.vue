@@ -1,7 +1,12 @@
 <template lang='pug'>
 .diagram
-  img.blueprint(src='~/assets/images/modules/clock-blueprint.svg')
-  .list
+  img.blueprint(
+    src='~/assets/images/modules/clock-blueprint.svg',
+    :class='blueprintClass',
+    :style='blueprintStyle',
+    ref='blueprint'
+  )
+  .list(ref='list')
     section(v-for='group in widgetGroups')
       .title-layout
         component.icon(:is='`${group.slug}-icon`')
@@ -58,8 +63,45 @@ export default {
       { 'title': 'Indicators',
         'slug': 'indicators',
         'widgets': widgets }
-    ]
-  })
+    ],
+    animationId: null,
+    offset: 0,
+    blueprintClass: ''
+  }),
+  methods: {
+    updateTransform () {
+      let listRect = this.$refs.list.getBoundingClientRect()
+      let bpRect = this.$refs.blueprint.getBoundingClientRect()
+      if (listRect.top >= 50) {
+        this.offset = 0
+      } else {
+        if (listRect.bottom > window.innerHeight - 60) {
+          this.offset = 50 - listRect.top
+        } else {
+          this.offset = Math.min(50 - listRect.top, listRect.height - bpRect.height - 10)
+        }
+      }
+      this.animationId = requestAnimationFrame(this.updateTransform);
+    }
+  },
+  computed: {
+    blueprintStyle () {
+      return {
+        transform: `translateY(${this.offset}px)`
+      }
+    }
+  },
+  mounted () {
+    if (navigator.userAgent.match(/Firefox/i)) {
+      this.blueprintClass = 'smooth'
+    }
+    this.updateTransform()
+  },
+  beforeDestroy () {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId)
+    }
+  }
 }
 </script>
 
@@ -72,9 +114,17 @@ export default {
   .blueprint {
     height: calc(380px * 2);
     margin-right: 60px;
+    margin-top: 10px;
+    max-height: calc(100vh - 120px);
+    flex-shrink: 0;
+    will-change: transform;
 
     @include phone {
       display: none;
+    }
+
+    &.smooth {
+      transition: transform .2s linear;
     }
   }
 
