@@ -20,19 +20,31 @@ export default {
 .title {
   font-family: 'Montserrat';
 
-  h1 {
-    font-size: 54px;
+  h1, h2, h3, h4, h5, h6 {
     margin-top: 0;
     margin-bottom: 0;
+  }
+
+  h1 {
+    font-size: 54px;
 
     @include phone {
-      font-size: 20px;
+      font-size: 28px;
     }
   }
   h2 {
     font-size: 20px;
-    margin-top: 0;
-    margin-bottom: 0;
+
+    @include phone {
+      font-size: 18px;
+    }
+  }
+  h3 {
+    font-size: 20px;
+
+    @include phone {
+      font-size: 16px;
+    }
   }
 }
 </style>

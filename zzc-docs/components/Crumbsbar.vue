@@ -1,11 +1,12 @@
 <template lang='pug'>
-.crumbsbar.theme-gray
+.crumbsbar(:class='`theme-${theme}`')
   .yellow-line
   container(:padding='false')
     .crumbsbar-layout
       logo.logo-small
-      arrow.arrow
-      nuxt-link.crumb(to='/') Clock Manipulation
+      template(v-for='crumb in crumbs')
+        arrow.arrow
+        nuxt-link.crumb(:to='crumb.url') {{ crumb.title }}
 </template>
 
 <script>
@@ -14,6 +15,16 @@ import Container from '~/components/Container'
 import Logo from '~/components/Logo'
 
 export default {
+  props: {
+    theme: {
+      type: String,
+      default: 'gray'
+    },
+    crumbs: {
+      type: Array,
+      required: true
+    }
+  },
   components: {
     Arrow,
     Container,
@@ -43,6 +54,18 @@ $color-gray-crumbs-selection: #616464;
       height: 5px;
       background-color: $color-zzc;
     }
+
+    .crumb:last-child {
+      background-color: $color-gray-crumbs-selection;
+    }
+  }
+
+  &.theme-yellow {
+    background-color: $color-zzc;
+
+    .crumb:last-child {
+      background-color: #fff;
+    }
   }
 
   .crumbsbar-layout {
@@ -70,11 +93,12 @@ $color-gray-crumbs-selection: #616464;
       font-size: 14px;
       height: 60px;
       @include center;
-      background-color: $color-gray-crumbs-selection;
-      padding: 0 20px;
 
       &:hover {
         text-decoration: underline;
+      }
+      &:last-child {
+        padding: 0 20px;
       }
     }
   }

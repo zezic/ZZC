@@ -1,5 +1,5 @@
 <template lang='pug'>
-.module
+nuxt-link.module(to='/module')
   img.image(src='~/assets/images/modules/clock.svg')
 </template>
 

@@ -1,6 +1,6 @@
 <template lang='pug'>
 .rack
-  crumbsbar
+  crumbsbar(v-if='crumbs.length > 0', :crumbs='crumbs')
   container
     .rack-layout
       module
@@ -12,6 +12,12 @@ import Crumbsbar from '~/components/Crumbsbar'
 import Module from '~/components/Module'
 
 export default {
+  props: {
+    crumbs: {
+      type: Array,
+      default: () => ([])
+    }
+  },
   components: {
     Container,
     Crumbsbar,

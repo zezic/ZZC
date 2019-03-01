@@ -1,23 +1,23 @@
 <template lang='pug'>
-.index-page
-  rack(:crumbs='crumbs')
+.module-page
+  rack(:crumbs='rackCrumbs')
+  crumbsbar(theme='yellow', :crumbs='crumbs')
   container
-    .article-layout
+    .docs-layout
       article.article
         header
-          ttl Clock Manipulation
+          ttl Clock
           subttl.subtitle The serious source of tick-tack for your virtual rack
         article-content.content(:struct='struct')
       aside.aside
-        module-list(
-          title='Related Modules',
-          :modules='relatedModules'
-        )
+        diagram
 </template>
 
 <script>
 import ArticleContent from '~/components/ArticleContent'
 import Container from '~/components/Container'
+import Crumbsbar from '~/components/Crumbsbar'
+import Diagram from '~/components/Diagram'
 import Lorem from '~/assets/lorem-ipsum.json'
 import ModuleList from '~/components/ModuleList'
 import Rack from '~/components/Rack'
@@ -28,24 +28,21 @@ export default {
   components: {
     ArticleContent,
     Container,
-    ModuleList,
+    Crumbsbar,
+    Diagram,
     Rack,
     Subttl,
     Ttl
   },
   data: () => ({
     Lorem,
-    relatedModules: [
-      { 'name': 'Clock',
-        'function': 'Clock source',
-        'price': 0,
-        'slug': 'clock' },
-      { 'name': 'Divider',
-        'function': 'Phase divider',
-        'price': 0,
-        'slug': 'divider' }
-    ],
     crumbs: [
+      { url: '/',
+        title: 'Clock Manipulation' },
+      { url: '/module',
+        title: 'Clock' },
+    ],
+    rackCrumbs: [
       { url: '/',
         title: 'Clock Manipulation' }
     ]
@@ -61,7 +58,7 @@ export default {
 <style lang='scss' scoped>
 @import "~/assets/sass/breakpoints.scss";
 
-.article-layout {
+.docs-layout {
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 10px;
@@ -86,8 +83,8 @@ export default {
   }
 
   .article {
-    flex-basis: 700px;
-    flex-grow: 100000;
+    flex-basis: 500px;
+    flex-grow: 1;
     flex-shrink: 1;
 
     .subtitle {
@@ -100,7 +97,7 @@ export default {
 
   .aside {
     flex-basis: 420px;
-    flex-grow: 1;
+    flex-grow: 100000;
   }
 }
 </style>
