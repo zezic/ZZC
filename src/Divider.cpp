@@ -13,7 +13,6 @@ struct Divider : Module {
     OUT_RATIO_INPUT,
     SWING_INPUT,
     PHASE_INPUT,
-    VBPS_INPUT,
     RESET_INPUT,
     NUM_INPUTS
   };
@@ -24,7 +23,6 @@ struct Divider : Module {
   };
   enum LightIds {
     EXT_PHASE_MODE_LED,
-    EXT_VBPS_MODE_LED,
     NUM_LIGHTS
   };
 
@@ -123,9 +121,6 @@ void Divider::step() {
       lastPhaseInDelta = phaseInDelta;
       halfPhaseOut += phaseInDelta * ratio * 0.5f;
     }
-  } else if (inputs[VBPS_INPUT].active) {
-    float del = inputs[VBPS_INPUT].value * engineGetSampleTime() * 10.0f * ratio * 0.5f;
-    halfPhaseOut += del;
   }
 
   // halfPhaseOut = eucmod(halfPhaseOut, 10.0f);
@@ -170,7 +165,6 @@ void Divider::step() {
   }
 
   lights[EXT_PHASE_MODE_LED].value = inputs[PHASE_INPUT].active ? 0.5f : 0.0f;
-  lights[EXT_VBPS_MODE_LED].value = !inputs[PHASE_INPUT].active && inputs[VBPS_INPUT].active ? 0.5f : 0.0f;
 }
 
 
@@ -183,33 +177,26 @@ DividerWidget::DividerWidget(Divider *module) : ModuleWidget(module) {
   setPanel(SVG::load(assetPlugin(plugin, "res/panels/Divider.svg")));
 
   RatioDisplayWidget *ratioDisplay = new RatioDisplayWidget();
-  ratioDisplay->box.pos = Vec(9.0f, 60.0f);
+  ratioDisplay->box.pos = Vec(9.0f, 94.0f);
   ratioDisplay->box.size = Vec(57.0f, 21.0f);
   ratioDisplay->from = &module->from;
   ratioDisplay->to = &module->to;
   addChild(ratioDisplay);
 
-  addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(5, 88), module, Divider::IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
-  addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(39, 88), module, Divider::OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
-  addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 126), Port::INPUT, module, Divider::IN_RATIO_INPUT));
-  addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 126), Port::INPUT, module, Divider::OUT_RATIO_INPUT));
+  addParam(ParamWidget::create<ZZC_CrossKnobSnappy>(Vec(12.5, 39.5), module, Divider::IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
+  addParam(ParamWidget::create<ZZC_CrossKnobSnappy>(Vec(12.5, 123.5), module, Divider::OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
 
-  DisplayIntpartWidget *swingDisplay = new DisplayIntpartWidget();
-  swingDisplay->box.pos = Vec(7.0f, 178.0f);
-  swingDisplay->box.size = Vec(29.0f, 21.0f);
-  swingDisplay->value = &module->swing;
-  addChild(swingDisplay);
+  addInput(Port::create<ZZC_PJ_Port>(Vec(8, 191), Port::INPUT, module, Divider::SWING_INPUT));
+  addParam(ParamWidget::create<ZZC_Knob25>(Vec(42.5, 191.0), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
 
-  addParam(ParamWidget::create<ZZC_Knob23>(Vec(43, 177), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
+  addInput(Port::create<ZZC_PJ_Port>(Vec(8, 233), Port::INPUT, module, Divider::IN_RATIO_INPUT));
+  addInput(Port::create<ZZC_PJ_Port>(Vec(42.5, 233), Port::INPUT, module, Divider::OUT_RATIO_INPUT));
 
-  addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 233), Port::INPUT, module, Divider::SWING_INPUT));
-  addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 233), Port::INPUT, module, Divider::PHASE_INPUT));
-  addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(64, 233), module, Divider::EXT_PHASE_MODE_LED));
-  addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 275), Port::INPUT, module, Divider::VBPS_INPUT));
-  addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(30, 275), module, Divider::EXT_VBPS_MODE_LED));
-  addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 275), Port::INPUT, module, Divider::RESET_INPUT));
-  addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(8, 319), Port::OUTPUT, module, Divider::CLOCK_OUTPUT));
-  addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(42, 319), Port::OUTPUT, module, Divider::PHASE_OUTPUT));
+  addInput(Port::create<ZZC_PJ_Port>(Vec(8, 275), Port::INPUT, module, Divider::PHASE_INPUT));
+  addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(30, 275), module, Divider::EXT_PHASE_MODE_LED));
+  addInput(Port::create<ZZC_PJ_Port>(Vec(42.5, 275), Port::INPUT, module, Divider::RESET_INPUT));
+  addOutput(Port::create<ZZC_PJ_Port>(Vec(8, 320), Port::OUTPUT, module, Divider::CLOCK_OUTPUT));
+  addOutput(Port::create<ZZC_PJ_Port>(Vec(42.5, 320), Port::OUTPUT, module, Divider::PHASE_OUTPUT));
 
   addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
   addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

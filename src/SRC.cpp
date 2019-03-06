@@ -167,16 +167,16 @@ SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
   display->mode = &module->mode;
   addChild(display);
 
-  addParam(ParamWidget::create<ZZC_SteppedKnob>(Vec(7, 101), module, SRC::COARSE_PARAM, -10.0f, 10.0f, 0.0f));
-  addParam(ParamWidget::create<ZZC_Knob21>(Vec(12, 154), module, SRC::FINE_PARAM, -1.0f, 1.0f, 0.0f));
+  addParam(ParamWidget::create<ZZC_SelectKnob>(Vec(9, 105), module, SRC::COARSE_PARAM, -10.0f, 10.0f, 0.0f));
+  addParam(ParamWidget::create<ZZC_Knob25>(Vec(10, 156), module, SRC::FINE_PARAM, -1.0f, 1.0f, 0.0f));
 
-  addInput(Port::create<ZZC_PJ_In_Port>(Vec(10, 196), Port::INPUT, module, SRC::CV_INPUT));
-  addInput(Port::create<ZZC_PJ_In_Port>(Vec(10, 242), Port::INPUT, module, SRC::ON_INPUT));
+  addInput(Port::create<ZZC_PJ_Port>(Vec(10.5, 200), Port::INPUT, module, SRC::CV_INPUT));
+  addInput(Port::create<ZZC_PJ_Port>(Vec(10.5, 242), Port::INPUT, module, SRC::ON_INPUT));
 
   addParam(ParamWidget::create<ZZC_LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
   addChild(ModuleLightWidget::create<LedLight<ZZC_YellowLight>>(Vec(13.1f, 277.7f), module, SRC::ON_LED));
 
-  addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(10, 319), Port::OUTPUT, module, SRC::VOLTAGE_OUTPUT));
+  addOutput(Port::create<ZZC_PJ_Port>(Vec(10.5, 320), Port::OUTPUT, module, SRC::VOLTAGE_OUTPUT));
 
   addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
   addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

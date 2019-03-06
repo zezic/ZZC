@@ -12,23 +12,35 @@ extern Plugin *plugin;
 
 struct ZZC_BaseKnob : SVGKnob {
   ZZC_BaseKnob() {
-    minAngle = -0.83 * M_PI;
-    maxAngle = 0.83 * M_PI;
+    minAngle = -0.75 * M_PI;
+    maxAngle = 0.75 * M_PI;
   }
 };
 
 struct ZZC_BigKnob : ZZC_BaseKnob {
   ZZC_BigKnob() {
     setSVG(SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Big-Knob.svg")));
-    shadow->box.size = Vec(55, 55);
-    shadow->box.pos = Vec(2, 10);
+    shadow->box.size = Vec(67, 67);
+    shadow->box.pos = Vec(0, 6);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 0.7f;
+  }
+};
+
+struct ZZC_BigKnobSnappy : ZZC_BigKnob {
+  ZZC_BigKnobSnappy() {
+    snap = true;
+    smooth = false;
   }
 };
 
 struct ZZC_BigKnobInner : ZZC_BaseKnob {
   ZZC_BigKnobInner() {
     setSVG(SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Big-Knob-Inner.svg")));
-    shadow->opacity = 0.0;
+    shadow->box.size = Vec(33, 33);
+    shadow->box.pos = Vec(-3, 1);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
   }
 };
 
@@ -83,6 +95,62 @@ struct ZZC_Knob21Snappy : ZZC_Knob21 {
 struct ZZC_Knob23 : ZZC_BaseKnob {
   ZZC_Knob23() {
     setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Knob-23.svg")) );
+  }
+};
+
+struct ZZC_Knob25 : ZZC_BaseKnob {
+  ZZC_Knob25() {
+    setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Knob-25.svg")) );
+    shadow->box.size = Vec(29, 29);
+    shadow->box.pos = Vec(-2, 2);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
+  }
+};
+
+struct ZZC_Knob27 : ZZC_BaseKnob {
+  ZZC_Knob27() {
+    setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Knob-27.svg")) );
+    shadow->box.size = Vec(33, 33);
+    shadow->box.pos = Vec(-3, 2);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
+  }
+};
+
+struct ZZC_Knob27Snappy : ZZC_Knob27 {
+  ZZC_Knob27Snappy() {
+    snap = true;
+    smooth = false;
+  }
+};
+
+struct ZZC_CrossKnob : ZZC_BaseKnob {
+  ZZC_CrossKnob() {
+    setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Cross-Knob.svg")) );
+    shadow->box.size = Vec(37, 37);
+    shadow->box.pos = Vec(6, 2);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
+  }
+};
+
+struct ZZC_CrossKnobSnappy : ZZC_CrossKnob {
+  ZZC_CrossKnobSnappy() {
+    snap = true;
+    smooth = false;
+  }
+};
+
+struct ZZC_SelectKnob : ZZC_BaseKnob {
+  ZZC_SelectKnob() {
+    setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Select-Knob.svg")) );
+    shadow->box.size = Vec(33, 33);
+    shadow->box.pos = Vec(-3, 2);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
+    snap = true;
+    smooth = false;
   }
 };
 

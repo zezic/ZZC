@@ -5,7 +5,6 @@ struct SCVCA : Module {
 	enum ParamIds {
 		GAIN_PARAM,
 		CLIP_PARAM,
-		CLIP_MODE_PARAM,
 		CLIP_SOFTNESS_PARAM,
 		NUM_PARAMS
 	};
@@ -53,14 +52,6 @@ struct SCVCA : Module {
 		out.value = clamp(x, -ceiling, ceiling);
 	}
 
-	inline void ClipItMaybe(float x, float ceiling, float clip_mode, float clip_softness, Output &out) {
-		if (clip_mode == 0.0f) {
-			SoftClipTo(x, ceiling, clip_softness, out);
-		} else {
-			HardClipTo(x, ceiling, out);
-		}
-	}
-
 	SCVCA() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 };
@@ -77,8 +68,8 @@ void SCVCA::step() {
 
 	float gained_1 = inputs[SIG1_INPUT].value * gain;
 	float gained_2 = inputs[SIG2_INPUT].value * gain;
-	ClipItMaybe(gained_1, clip, params[CLIP_MODE_PARAM].value, softness, outputs[SIG1_OUTPUT]);
-	ClipItMaybe(gained_2, clip, params[CLIP_MODE_PARAM].value, softness, outputs[SIG2_OUTPUT]);
+  SoftClipTo(gained_1, clip, softness, outputs[SIG1_OUTPUT]);
+  SoftClipTo(gained_2, clip, softness, outputs[SIG2_OUTPUT]);
 
 	lights[CLIPPING_POS_LIGHT].setBrightnessSmooth(fmaxf(
 		fminf(1.0f, gained_1 - outputs[SIG1_OUTPUT].value),
@@ -95,21 +86,20 @@ struct SCVCAWidget : ModuleWidget {
 	SCVCAWidget(SCVCA *module) : ModuleWidget(module) {
 		setPanel(SVG::load(assetPlugin(plugin, "res/panels/SC-VCA.svg")));
 
-		addParam(ParamWidget::create<ZZC_BigKnob>(Vec(8, 60), module, SCVCA::GAIN_PARAM, 0.0f, 2.0f, 1.0f));
-		addParam(ParamWidget::create<ZZC_BigKnobInner>(Vec(24, 76), module, SCVCA::CLIP_PARAM, 0.0f, 10.0f, 5.0f));
-		addParam(ParamWidget::create<ZZC_Switch2>(Vec(27, 187), module, SCVCA::CLIP_MODE_PARAM, 0.0f, 1.0f, 0.0f));
-		addParam(ParamWidget::create<ZZC_Knob23>(Vec(43, 223), module, SCVCA::CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f));
+		addParam(ParamWidget::create<ZZC_BigKnob>(Vec(4, 74.7), module, SCVCA::GAIN_PARAM, 0.0f, 2.0f, 1.0f));
+		addParam(ParamWidget::create<ZZC_BigKnobInner>(Vec(24, 94.7), module, SCVCA::CLIP_PARAM, 0.0f, 10.0f, 5.0f));
+		addParam(ParamWidget::create<ZZC_Knob25>(Vec(42.5, 175.7), module, SCVCA::CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f));
 
-		addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 143), Port::INPUT, module, SCVCA::GAIN_INPUT));
-		addInput(Port::create<ZZC_PJ_In_Port>(Vec(44, 143), Port::INPUT, module, SCVCA::CLIP_INPUT));
-		addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 222), Port::INPUT, module, SCVCA::CLIP_SOFTNESS_INPUT));
+		addInput(Port::create<ZZC_PJ_Port>(Vec(8, 221), Port::INPUT, module, SCVCA::GAIN_INPUT));
+		addInput(Port::create<ZZC_PJ_Port>(Vec(42.5, 221), Port::INPUT, module, SCVCA::CLIP_INPUT));
+		addInput(Port::create<ZZC_PJ_Port>(Vec(8, 176), Port::INPUT, module, SCVCA::CLIP_SOFTNESS_INPUT));
 
-		addInput(Port::create<ZZC_PJ_In_Port>(Vec(8, 275), Port::INPUT, module, SCVCA::SIG1_INPUT));
-		addInput(Port::create<ZZC_PJ_In_Port>(Vec(42, 275), Port::INPUT, module, SCVCA::SIG2_INPUT));
-		addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(8, 319), Port::OUTPUT, module, SCVCA::SIG1_OUTPUT));
-		addOutput(Port::create<ZZC_PJ_Out_Port>(Vec(42, 319), Port::OUTPUT, module, SCVCA::SIG2_OUTPUT));
+		addInput(Port::create<ZZC_PJ_Port>(Vec(8, 275), Port::INPUT, module, SCVCA::SIG1_INPUT));
+		addInput(Port::create<ZZC_PJ_Port>(Vec(42.5, 275), Port::INPUT, module, SCVCA::SIG2_INPUT));
+		addOutput(Port::create<ZZC_PJ_Port>(Vec(8, 319.75), Port::OUTPUT, module, SCVCA::SIG1_OUTPUT));
+		addOutput(Port::create<ZZC_PJ_Port>(Vec(42.5, 319.75), Port::OUTPUT, module, SCVCA::SIG2_OUTPUT));
 
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(56.5f, 42.5f), module, SCVCA::CLIPPING_POS_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(34.2f, 43.9f), module, SCVCA::CLIPPING_POS_LIGHT));
 
 		addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

@@ -1,7 +1,7 @@
 <template lang='pug'>
 .module-page
   rack(:crumbs='rackCrumbs')
-  crumbsbar(theme='yellow', :crumbs='crumbs')
+  crumbsbar#article(theme='yellow', :crumbs='crumbs')
   container
     .docs-layout
       article.article
