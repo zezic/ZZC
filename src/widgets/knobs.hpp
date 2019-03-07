@@ -108,6 +108,20 @@ struct ZZC_Knob25 : ZZC_BaseKnob {
   }
 };
 
+struct ZZC_Knob25NoRand : ZZC_Knob25 {
+  ZZC_Knob25NoRand() {
+  }
+  void randomize() override {}
+};
+
+struct ZZC_Knob25SnappyNoRand : ZZC_Knob25 {
+  ZZC_Knob25SnappyNoRand() {
+    snap = true;
+    smooth = false;
+  }
+  void randomize() override {}
+};
+
 struct ZZC_Knob27 : ZZC_BaseKnob {
   ZZC_Knob27() {
     setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Knob-27.svg")) );
@@ -173,6 +187,10 @@ struct ZZC_EncoderKnob : SVGKnob {
     maxAngle = 1.0 * M_PI;
     smooth = false;
     setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Encoder-Knob.svg")) );
+    shadow->box.size = Vec(49, 49);
+    shadow->box.pos = Vec(6, 12);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 0.8f;
   }
 
   void randomize() override {}

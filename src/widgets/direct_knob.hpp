@@ -9,7 +9,7 @@ static const float KNOB_SENSITIVITY = 0.0015f;
 using namespace rack;
 
 struct ZZC_DirectKnobDisplay : TransparentWidget {
-  NVGcolor backdropColor = nvgRGB(0x3a, 0x3c, 0x3b);
+  NVGcolor backdropColor = nvgRGB(0x63, 0x63, 0x55);
   NVGcolor valueColor = nvgRGB(0xff, 0xd4, 0x2a);
   NVGcolor posColor = nvgRGB(0x9c, 0xd7, 0x43);
   NVGcolor negColor = nvgRGB(0xe7, 0x34, 0x2d);
@@ -44,7 +44,9 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
     if (!value) {
       return;
     }
+    lastDrawnAt = glfwGetTime();
     drawnValue = *value;
+    // return;
     nvgLineCap(vg, NSVG_CAP_ROUND);
     nvgStrokeWidth(vg, strokeWidth);
 
@@ -76,19 +78,21 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
       *value >= 0 ? 2 : 1
     );
     nvgStroke(vg);
-    lastDrawnAt = glfwGetTime();
   }
 
   bool shouldUpdate(float *newValue) {
     if (*newValue == this->drawnValue) { return false; }
-    if (glfwGetTime() - this->lastDrawnAt < 0.05) { return false; } // 20 FPS
+    if (glfwGetTime() - this->lastDrawnAt < 0.016) { return false; } // ~60FPS
     return fabsf(*newValue - this->drawnValue) > this->visibleDelta || *newValue == this->defaultValue;
   }
 };
 
+struct CachingTransformWidget : TransformWidget {
+};
+
 struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
 	SVGWidget *sw = nullptr;
-  TransformWidget *tw = nullptr;
+  CachingTransformWidget *tw = nullptr;
   CircularShadow *shadow = nullptr;
   ZZC_DirectKnobDisplay *disp = nullptr;
   float *value = nullptr;
@@ -127,7 +131,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     addChild(shadow);
     shadow->box.size = Vec();
 
-    tw = new TransformWidget();
+    tw = new CachingTransformWidget();
     addChild(tw);
 
     sw = new SVGWidget();
@@ -199,5 +203,10 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     if (disp) {
       disp->enableColor();
     }
+  }
+
+  void draw(NVGcontext *vg) override {
+    // Bypass framebuffer rendering entirely
+    Widget::draw(vg);
   }
 };

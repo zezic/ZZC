@@ -64,7 +64,7 @@ struct XYDisplayViewWidget : BaseDisplayWidget {
   }
 
   bool shouldUpdate(float *xPtr, float *yPtr) {
-    if (glfwGetTime() - this->lastDrawnAt < 0.05) { return false; } // 20 FPS
+    if (glfwGetTime() - this->lastDrawnAt < 0.016) { return false; } // ~60 FPS
     if (*xPtr == this->drawnX && *yPtr == this->drawnY) { return false; }
     if (*xPtr == 0.0f || *yPtr == 0.0f) { return true; }
     return fabsf(this->drawnX - *xPtr) > 0.05 || fabsf(this->drawnY - *yPtr) > 0.05;
@@ -132,5 +132,10 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
       lastY = *y;
     }
     FramebufferWidget::step();
+  }
+
+  void draw(NVGcontext *vg) override {
+    // Bypass framebuffer rendering entirely
+    Widget::draw(vg);
   }
 };
