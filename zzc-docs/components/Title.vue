@@ -26,6 +26,7 @@ export default {
   }
 
   h1 {
+    margin-top: -8px;
     font-size: 54px;
 
     @include phone {

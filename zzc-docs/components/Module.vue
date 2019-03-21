@@ -1,6 +1,6 @@
 <template lang='pug'>
 nuxt-link.module(to='/module#article')
-  img.image(src='~/assets/images/modules/clock.svg')
+  img.image(src='/images/modules/clock.svg')
 </template>
 
 <script>
