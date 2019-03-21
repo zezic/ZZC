@@ -4,7 +4,10 @@
     blueprint(
       slot='affix',
       ref='blueprint',
-      :widgetGroups='widgetGroups'
+      :widgetGroups='widgetGroups',
+      :spaghettiEnabledFor='spaghettiEnabledFor',
+      @spaghettiRequest='onSpaghettiRequest',
+      @spaghettiUnrequest='onSpaghettiUnrequest'
     )
     template(slot='content')
       .article
@@ -15,7 +18,9 @@
       affix-legend.legend(
         :widgetGroups='widgetGroups',
         :blueprintRect='blueprintRect',
-        @spaghettiRequest='onSpaghettiRequest'
+        :spaghettiEnabledFor='spaghettiEnabledFor',
+        @spaghettiRequest='onSpaghettiRequest',
+        @spaghettiUnrequest='onSpaghettiUnrequest'
       )
 </template>
 
@@ -35,7 +40,7 @@ const widgets = [
     'description': 'Volts per beat per second. Input affects the base BPM value. For example, adding 1V to it will raise the base BPM by 1 beat per second (60 BPM). Negative values can make transport go reverse.',
     'notices': [],
     'widget': {
-      'position': { 'x': 10.8, 'y': 52 },
+      'position': { 'x': 10, 'y': 52 },
       'type': 'labeled-socket'
     } },
   { 'title': 'Run',
@@ -45,7 +50,7 @@ const widgets = [
       'Note, that when plugged vestibulum volutpat felis porta, lacinia justo a, laoreet ex.'
     ],
     'widget': {
-      'position': { 'x': 10.8, 'y': 145 },
+      'position': { 'x': 10, 'y': 145 },
       'type': 'simple-socket'
     } }
 ]
@@ -88,6 +93,12 @@ export default {
     animationId: null,
   }),
   computed: {
+    spaghettiEnabledFor () {
+      if (this.spaghettiRequest) {
+        return this.spaghettiRequest
+      }
+      return this.$route.hash ? this.$route.hash.replace('#', '') : "null"
+    },
     struct () {
       return this.Lorem.text.split('\n');
     }

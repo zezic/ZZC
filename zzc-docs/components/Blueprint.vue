@@ -2,40 +2,49 @@
 .blueprint
   img.blueprint-img(
     src='/images/modules/clock-blueprint.svg',
-    ref='blueprint'
+    ref='blueprint',
+    :class='{dimmed}'
   )
-  .previews(:style='previewsStyle')
+  .previews
     template(v-for='group in widgetGroups')
-      .preview(
+      nuxt-link.preview(
         v-for='widget in group.widgets',
-        :style='{backgroundImage: "url(/images/modules/clock.svg)", ...styleForWidget(widget)}'
+        :key='widget.slug + group.slug',
+        :to='`#${widget.slug}-${group.slug}`',
+        :style='{backgroundImage: "url(/images/modules/clock.svg)", ...styleForWidget(widget)}',
+        :class='{active: spaghettiEnabledFor === `${widget.slug}-${group.slug}`}',
+        @mouseenter.native='activateSpaghetti(widget, group)',
+        @mouseleave.native='deactivateSpaghetti(widget, group)'
       )
 </template>
 
 <script>
 const widgetRects = {
   'labeled-socket': {
-    width: 29.5,
+    width: 30,
     height: 43,
-    x: -2.4,
+    x: -2,
     y: -15,
     radius: '3px'
   },
   'simple-socket': {
-    width: 29.5,
-    height: 31.5,
-    x: -2.4,
-    y: -3.5,
+    width: 30,
+    height: 31,
+    x: -2,
+    y: -3,
     radius: '3px'
   }
 }
-const border = 2
 
 export default {
   props: {
     widgetGroups: {
       type: Array,
       default: () => ([])
+    },
+    spaghettiEnabledFor: {
+      type: String,
+      required: true
     }
   },
   name: 'blueprint',
@@ -48,9 +57,7 @@ export default {
       const rect = widgetRects[widget.widget.type]
       const position = widget.widget.position
       return {
-        marginLeft: `${position.x}px`,
-        marginTop: `${position.y}px`,
-        transform: `translate(${rect.x - border}px, ${rect.y - border}px)`,
+        transform: `scale(${this.scale}) translate(${position.x + rect.x}px, ${position.y + rect.y}px)`,
         width: `${rect.width}px`,
         height: `${rect.height}px`,
         backgroundPosition: `-${position.x + rect.x}px -${position.y + rect.y}px`,
@@ -68,6 +75,12 @@ export default {
       if (this.animationId) {
         cancelAnimationFrame(this.animationId)
       }
+    },
+    activateSpaghetti (widget, group) {
+      this.$emit('spaghettiRequest', `${widget.slug}-${group.slug}`)
+    },
+    deactivateSpaghetti (widget, group) {
+      this.$emit('spaghettiUnrequest')
     }
   },
   computed: {
@@ -76,6 +89,11 @@ export default {
         transform: `scale(${this.scale})`,
         transformOrigin: `0 0`
       }
+    },
+    dimmed () {
+      return this.widgetGroups.map(({ slug }) => {
+        return this.spaghettiEnabledFor.indexOf(`-${slug}`) !== -1
+      }).filter(hit => hit).length > 0
     }
   },
   mounted () {
@@ -100,6 +118,10 @@ export default {
     max-height: calc(100vh - 120px);
     flex-shrink: 0;
     display: block;
+
+    &.dimmed {
+      opacity: .5;
+    }
   }
 
   .previews {
@@ -111,8 +133,20 @@ export default {
       position: absolute;
       left: 0;
       top: 0;
-      border: 2px solid $color-zzc;
-      box-sizing: content-box;
+      // border: 2px solid $color-zzc;
+      // box-sizing: content-box;
+      opacity: 0;
+      cursor: pointer;
+      transform-origin: 0 0;
+
+      &:focus {
+        outline: 0;
+      }
+
+      &.active {
+        opacity: 1;
+        box-shadow: 0 0 0 2px $color-zzc;
+      }
     }
   }
 }

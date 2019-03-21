@@ -45,6 +45,10 @@ export default {
     widgetGroups: {
       type: Array,
       default: () => ([])
+    },
+    spaghettiEnabledFor: {
+      type: String,
+      required: true
     }
   },
   data: () => ({
@@ -53,22 +57,11 @@ export default {
   methods: {
     onSpaghettiRequest (widget, group) {
       this.spaghettiRequest = `${widget.slug}-${group.slug}`
+      this.$emit('spaghettiRequest', this.spaghettiRequest)
     },
     onSpaghettiUnrequest () {
       this.spaghettiRequest = null
-    }
-  },
-  computed: {
-    spaghettiEnabledFor () {
-      if (this.spaghettiRequest) {
-        return this.spaghettiRequest
-      }
-      return this.$route.hash ? this.$route.hash.replace('#', '') : null
-    }
-  },
-  watch: {
-    spaghettiEnabledFor (newWidget) {
-      this.$emit('spaghettiRequest', newWidget)
+      this.$emit('spaghettiUnrequest', this.spaghettiRequest)
     }
   }
 }
