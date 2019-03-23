@@ -7,7 +7,9 @@ preview: clock.svg
 
 # Clock
 
-<img align='left' src='clock.svg' class='md-only'>
+<p align='center' class='md-only'>
+  <img src='clock.svg'>
+</p>
 
 > The serious source of tick-tack for your virtual rack
 
