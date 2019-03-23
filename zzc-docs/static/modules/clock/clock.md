@@ -8,7 +8,7 @@ preview: clock.svg
 # Clock
 
 <p align='center' class='md-only'>
-  <img src='clock.svg'>
+  <img src='clock-blueprint.svg'>
 </p>
 
 > The serious source of tick-tack for your virtual rack
@@ -20,8 +20,6 @@ Donec tristique porta maximus. Ut aliquet, nulla ac volutpat iaculis, lectus nul
 <!---
 start: legend
 -->
-
-<img align='left' src='clock-blueprint.svg' class='md-only'>
 
 ### Inputs
 
