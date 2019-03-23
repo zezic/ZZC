@@ -5,9 +5,9 @@ blueprint: clock-blueprint.svg
 preview: clock.svg
 -->
 
-<img align='left' src='clock.svg' class='md-only'>
-
 # Clock
+
+<img align='left' src='clock.svg' class='md-only'>
 
 > The serious source of tick-tack for your virtual rack
 
@@ -23,9 +23,20 @@ start: legend
 
 ### Inputs
 
-* [V/BPS](#inputs-vbps?x=10&y=52&type=labeled-socket) - Volts per beat per second. Input affects the base BPM value. For example, adding 1V to it will raise the base BPM by 1 beat per second (60 BPM). Negative values can make transport go reverse.
-* [RUN](#inputs-run?x=10&y=145&type=labeled-socket) - Phasellus quam felis, posuere eu consequat quis, tempor quis odio. Proin cursus vitae tortor ut sodales.
-> Note, that when plugged vestibulum volutpat felis porta, lacinia justo a, laoreet ex.
+* <!---
+  x: 10
+  y: 52
+  type: labeled-socket
+  -->
+  **V/BPS** - Volts per beat per second. Input affects the base BPM value. For example, adding 1V to it will raise the base BPM by 1 beat per second (60 BPM). Negative values can make transport go reverse.
+
+* <!---
+  x: 10
+  y: 145
+  type: simple-socket
+  -->
+  **RUN** - Phasellus quam felis, posuere eu consequat quis, tempor quis odio. Proin cursus vitae tortor ut sodales.
+  > Note, that when plugged vestibulum volutpat felis porta, lacinia justo a, laoreet ex.
 
 <!---
 end: legend
