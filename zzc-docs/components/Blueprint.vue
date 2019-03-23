@@ -118,9 +118,10 @@ export default {
     max-height: calc(100vh - 120px);
     flex-shrink: 0;
     display: block;
+    transition: opacity .2s ease;
 
     &.dimmed {
-      opacity: .5;
+      opacity: .3;
     }
   }
 

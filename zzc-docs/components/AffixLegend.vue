@@ -22,7 +22,7 @@
 <script>
 import InputIcon from '~/assets/images/icons/input.svg?inline'
 import OutputIcon from '~/assets/images/icons/output.svg?inline'
-import ParameterIcon from '~/assets/images/icons/knob.svg?inline'
+import ControlIcon from '~/assets/images/icons/knob.svg?inline'
 import IndicatorIcon from '~/assets/images/icons/levels.svg?inline'
 import Ttl from '~/components/Title'
 import WidgetLegend from '~/components/WidgetLegend'
@@ -32,7 +32,7 @@ export default {
   components: {
     InputIcon,
     OutputIcon,
-    ParameterIcon,
+    ControlIcon,
     IndicatorIcon,
     Ttl,
     WidgetLegend
