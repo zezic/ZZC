@@ -1,5 +1,5 @@
 <!---
-start: affixed
+start: affixing
 affixed: blueprint
 blueprint: clock-blueprint.svg
 preview: clock.svg
@@ -42,5 +42,5 @@ start: legend
 end: legend
 -->
 <!---
-end: affixed
+end: affixing
 -->

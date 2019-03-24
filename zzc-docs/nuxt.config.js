@@ -59,7 +59,6 @@ module.exports = {
   },
   build: {
     extend(config, ctx) {
-
     }
   }
 }

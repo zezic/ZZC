@@ -3,6 +3,7 @@
   rack(:crumbs='rackCrumbs')
   crumbsbar#article(theme='yellow', :crumbs='crumbs')
   container
+    pre.pre {{ structure }}
     .docs-layout
       docs-section
 </template>
@@ -12,6 +13,9 @@ import Container from '~/components/Container'
 import Crumbsbar from '~/components/Crumbsbar'
 import DocsSection from '~/components/DocsSection'
 import Rack from '~/components/Rack'
+import MarkdownParser from '~/lib/markdown-parser'
+
+const mdParser = new MarkdownParser()
 
 export default {
   components: {
@@ -19,6 +23,10 @@ export default {
     Crumbsbar,
     DocsSection,
     Rack
+  },
+  async asyncData ({ $axios }) {
+    const markdown = await $axios.$get('/modules/clock/clock.md')
+    return { markdown }
   },
   data: () => ({
     crumbs: [
@@ -31,12 +39,24 @@ export default {
       { url: '/',
         title: 'Clock Manipulation' }
     ]
-  })
+  }),
+  computed: {
+    structure () {
+      return mdParser.parse(this.markdown)
+    }
+  },
+  mounted () {
+    console.log(this.structure)
+  }
 }
 </script>
 
 <style lang='scss' scoped>
 @import "~/assets/sass/breakpoints.scss";
+
+.pre {
+  font-family: inherit;
+}
 
 .docs-layout {
   display: flex;
