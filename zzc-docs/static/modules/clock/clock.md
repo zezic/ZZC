@@ -17,7 +17,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus sodales velit s
 
 Donec tristique porta maximus. Ut aliquet, nulla ac volutpat iaculis, lectus nulla congue risus, pretium euismod est enim eu nulla. Fusce sollicitudin erat id nunc accumsan gravida. Fusce tempus pulvinar magna nec aliquam. Integer nec faucibus eros. Aliquam nec consectetur purus, at laoreet nulla. Donec faucibus, erat id egestas dictum, nibh erat gravida leo, vitae sagittis neque nunc sed ante. Aliquam ac suscipit ante. In at vulputate ipsum, dignissim accumsan felis. Vestibulum eleifend risus vel sem hendrerit malesuada nec finibus libero. Mauris tincidunt consectetur enim non pharetra. Aliquam elementum pretium velit non faucibus. Suspendisse quis sagittis quam. Cras viverra, felis sit amet dignissim laoreet, justo massa rutrum libero, et ultricies eros nulla a nulla.
 
-<img align='left' src='clock-blueprint.svg' class='md-only'>
+<img align='right' src='clock-blueprint.svg' class='md-only'>
 
 <!---
 start: legend
