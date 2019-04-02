@@ -1,7 +1,7 @@
 <template lang='pug'>
 .blueprint
   img.blueprint-img(
-    src='/modules/clock/clock-blueprint.svg',
+    :src='blueprintUrl',
     ref='blueprint',
     :class='{dimmed}'
   )
@@ -11,7 +11,7 @@
         v-for='widget in group.items',
         :key='makeGroupItemSlug(widget, group)',
         :to='`#${makeGroupItemSlug(widget, group)}`',
-        :style='{backgroundImage: "url(/modules/clock/clock.svg)", ...styleForWidget(widget)}',
+        :style='{backgroundImage: `url(${previewUrl})`, ...styleForWidget(widget)}',
         :class='{active: spaghettiEnabledFor === makeGroupItemSlug(widget, group)}',
         @mouseenter.native='activateSpaghetti(widget, group)',
         @mouseleave.native='deactivateSpaghetti(widget, group)'
@@ -45,6 +45,14 @@ export default {
       default: () => ([])
     },
     spaghettiEnabledFor: {
+      type: String,
+      required: true
+    },
+    blueprintUrl: {
+      type: String,
+      required: true
+    },
+    previewUrl: {
       type: String,
       required: true
     }

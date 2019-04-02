@@ -4,6 +4,8 @@
     blueprint(
       slot='affix',
       ref='blueprint',
+      :blueprintUrl='`/modules/${moduleSlug}/${affixed.affixed.blueprint}`',
+      :previewUrl='`/modules/${moduleSlug}/${affixed.affixed.preview}`',
       :widgetGroups='widgetGroups',
       :spaghettiEnabledFor='spaghettiEnabledFor',
       @spaghettiRequest='onSpaghettiRequest',
@@ -67,6 +69,10 @@ export default {
     },
     article: {
       type: Array,
+      required: true
+    },
+    moduleSlug: {
+      type: String,
       required: true
     }
   },
