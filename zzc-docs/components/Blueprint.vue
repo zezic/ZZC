@@ -8,17 +8,19 @@
   .previews
     template(v-for='group in widgetGroups')
       nuxt-link.preview(
-        v-for='widget in group.widgets',
-        :key='widget.slug + group.slug',
-        :to='`#${widget.slug}-${group.slug}`',
+        v-for='widget in group.items',
+        :key='makeGroupItemSlug(widget, group)',
+        :to='`#${makeGroupItemSlug(widget, group)}`',
         :style='{backgroundImage: "url(/modules/clock/clock.svg)", ...styleForWidget(widget)}',
-        :class='{active: spaghettiEnabledFor === `${widget.slug}-${group.slug}`}',
+        :class='{active: spaghettiEnabledFor === makeGroupItemSlug(widget, group)}',
         @mouseenter.native='activateSpaghetti(widget, group)',
         @mouseleave.native='deactivateSpaghetti(widget, group)'
       )
 </template>
 
 <script>
+import { makeGroupItemSlug } from '~/lib/shared'
+
 const widgetRects = {
   'labeled-socket': {
     width: 30,
@@ -54,8 +56,8 @@ export default {
   }),
   methods: {
     styleForWidget (widget) {
-      const rect = widgetRects[widget.widget.type]
-      const position = widget.widget.position
+      const rect = widgetRects[widget.options.type]
+      const position = { x: parseInt(widget.options.x), y: parseInt(widget.options.y) }
       return {
         transform: `scale(${this.scale}) translate(${position.x + rect.x}px, ${position.y + rect.y}px)`,
         width: `${rect.width}px`,
@@ -77,11 +79,12 @@ export default {
       }
     },
     activateSpaghetti (widget, group) {
-      this.$emit('spaghettiRequest', `${widget.slug}-${group.slug}`)
+      this.$emit('spaghettiRequest', this.makeGroupItemSlug(widget, group))
     },
     deactivateSpaghetti (widget, group) {
       this.$emit('spaghettiUnrequest')
-    }
+    },
+    makeGroupItemSlug
   },
   computed: {
     previewsStyle () {

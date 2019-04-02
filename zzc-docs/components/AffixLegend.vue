@@ -2,38 +2,39 @@
 .affix-legend(ref='legend')
   section(v-for='group in widgetGroups')
     .title-layout
-      component.icon(:is='`${group.slug}-icon`')
+      component.icon(:is='`${group.title.toLowerCase()}-icon`')
       ttl(:level='3') {{ group.title }}
     ul.widgets
       li.widget(
-        v-for='widget in group.widgets',
-        :id='`${widget.slug}-${group.slug}`',
+        v-for='widget in group.items',
+        :id='makeGroupItemSlug(widget, group)',
       )
         widget-legend(
           :widget='widget',
-          :slug='`${widget.slug}-${group.slug}`',
+          :slug='makeGroupItemSlug(widget, group)',
           :blueprintRect='blueprintRect',
-          :spaghettiEnabled='spaghettiEnabledFor === `${widget.slug}-${group.slug}`',
+          :spaghettiEnabled='spaghettiEnabledFor === makeGroupItemSlug(widget, group)',
           @spaghettiRequest='onSpaghettiRequest(widget, group)',
           @spaghettiUnrequest='onSpaghettiUnrequest(widget, group)',
         )
 </template>
 
 <script>
-import InputIcon from '~/assets/images/icons/input.svg?inline'
-import OutputIcon from '~/assets/images/icons/output.svg?inline'
-import ControlIcon from '~/assets/images/icons/knob.svg?inline'
-import IndicatorIcon from '~/assets/images/icons/levels.svg?inline'
+import { makeGroupItemSlug } from '~/lib/shared'
+import InputsIcon from '~/assets/images/icons/input.svg?inline'
+import OutputsIcon from '~/assets/images/icons/output.svg?inline'
+import ControlsIcon from '~/assets/images/icons/knob.svg?inline'
+import IndicatorsIcon from '~/assets/images/icons/levels.svg?inline'
 import Ttl from '~/components/Title'
 import WidgetLegend from '~/components/WidgetLegend'
 
 export default {
   name: 'affix-legend',
   components: {
-    InputIcon,
-    OutputIcon,
-    ControlIcon,
-    IndicatorIcon,
+    InputsIcon,
+    OutputsIcon,
+    ControlsIcon,
+    IndicatorsIcon,
     Ttl,
     WidgetLegend
   },
@@ -56,13 +57,14 @@ export default {
   }),
   methods: {
     onSpaghettiRequest (widget, group) {
-      this.spaghettiRequest = `${widget.slug}-${group.slug}`
+      this.spaghettiRequest = this.makeGroupItemSlug(widget, group)
       this.$emit('spaghettiRequest', this.spaghettiRequest)
     },
     onSpaghettiUnrequest () {
       this.spaghettiRequest = null
       this.$emit('spaghettiUnrequest', this.spaghettiRequest)
-    }
+    },
+    makeGroupItemSlug
   }
 }
 </script>
@@ -100,19 +102,6 @@ export default {
 
       .widget {
         list-style: none;
-
-        &::before {
-          content: "";
-          display: block;
-          height: 60px;
-          margin: -60px 0 0;
-          visibility: hidden;
-          pointer-events: none;
-        }
-
-        &:not(:last-child) {
-          margin-bottom: 10px;
-        }
       }
     }
   }

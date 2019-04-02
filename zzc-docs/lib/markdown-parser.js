@@ -39,29 +39,25 @@ class TokenScraper {
     if (tokens.length === 0) { return { tokens, items } }
     const token = tokens.shift()
     if (haltFunc && haltFunc(token)) {
-      console.log('HALT:', token)
       return {
         tokens,
         items
       }
     }
-    if (isZzcDoc(token)) {
-      const doc = parseZzcDoc(token.text)
-      if (doc.start) {
-        const newItem = sectionFactory(doc)
-        tokens = newItem.collectTokens(tokens)
-        items.push(newItem)
-        return this.scrapeTokens(tokens, items, haltFunc)
-      }
-    } else if (token.type.endsWith('_start')) {
-      const sectionType = token.type.split('_start')[0]
-      const newItem = new MarkdownSection(sectionType)
+    const isZzcSection = isZzcDoc(token) && parseZzcDoc(token.text).start
+    const isSectionStart = isZzcSection || token.type.endsWith('_start')
+    if (isSectionStart) {
+      const newItem = (this.sectionFactory && this.sectionFactory(token)) || sectionFactory(token)
       tokens = newItem.collectTokens(tokens)
       items.push(newItem)
       return this.scrapeTokens(tokens, items, haltFunc)
     }
-    items.push(token)
+    items = this.consumeItem(items, token)
     return this.scrapeTokens(tokens, items, haltFunc)
+  }
+  consumeItem (items, token) {
+    items.push(token)
+    return items
   }
 }
 
@@ -100,15 +96,59 @@ class Affixing extends Section {
   }
 }
 
+class LegendListItem extends MarkdownSection {
+  constructor (type) {
+    super(type)
+  }
+  consumeItem (items, token) {
+    if (isZzcDoc(token)) {
+      const doc = parseZzcDoc(token.text)
+      this.options = doc
+    } else {
+      items.push(token)
+    }
+    return items
+  }
+}
+
+class LegendList extends MarkdownSection {
+  constructor (type, title) {
+    super(type)
+    this.title = title
+  }
+  sectionFactory (token) {
+    const sectionType = token.type.split('_start')[0]
+    if (sectionType === 'list_item') { return new LegendListItem(sectionType) }
+  }
+}
+
 class Legend extends Section {
   constructor (doc) {
     super(doc)
   }
+  sectionFactory (token) {
+    const sectionType = token.type.split('_start')[0]
+    if (sectionType === 'list') { return new LegendList(sectionType, this.currentGroupTitle) }
+  }
+  consumeItem (items, token) {
+    if (token.type === 'heading') {
+      this.currentGroupTitle = token.text
+    } else {
+      items.push(token)
+    }
+    return items
+  }
 }
 
-function sectionFactory (doc) {
-  if (doc.start === 'affixing') { return new Affixing(doc) }
-  if (doc.start === 'legend') { return new Legend(doc) }
+function sectionFactory (token) {
+  if (isZzcDoc(token)) {
+    const doc = parseZzcDoc(token.text)
+    if (doc.start === 'affixing') { return new Affixing(doc) }
+    if (doc.start === 'legend') { return new Legend(doc) }
+  } else {
+    const sectionType = token.type.split('_start')[0]
+    return new MarkdownSection(sectionType)
+  }
 }
 
 class MarkdownParser extends TokenScraper {

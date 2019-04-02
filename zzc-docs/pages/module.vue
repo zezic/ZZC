@@ -3,9 +3,13 @@
   rack(:crumbs='rackCrumbs')
   crumbsbar#article(theme='yellow', :crumbs='crumbs')
   container
-    pre.pre {{ structure }}
     .docs-layout
-      docs-section
+      docs-section(
+        v-for='(section, idx) in structure',
+        :key='idx'
+        :section='section',
+        moduleSlug='clock'
+      )
 </template>
 
 <script>
@@ -46,7 +50,6 @@ export default {
     }
   },
   mounted () {
-    console.log(this.structure)
   }
 }
 </script>

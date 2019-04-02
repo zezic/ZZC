@@ -26,16 +26,18 @@ start: legend
 * <!---
   x: 10
   y: 52
+  slug: vbps
   type: labeled-socket
   -->
-  **V/BPS** - Volts per beat per second. Input affects the base BPM value. For example, adding 1V to it will raise the base BPM by 1 beat per second (60 BPM). Negative values can make transport go reverse.
+  [V/BPS](#inputs-vbps) - Volts per beat per second. Input affects the base BPM value. For example, adding 1V to it will raise the base BPM by 1 beat per second (60 BPM). Negative values can make transport go reverse.
 
 * <!---
   x: 10
   y: 145
+  slug: run
   type: simple-socket
   -->
-  **RUN** - Phasellus quam felis, posuere eu consequat quis, tempor quis odio. Proin cursus vitae tortor ut sodales.
+  [RUN](#inputs-run) - Phasellus quam felis, posuere eu consequat quis, tempor quis odio. Proin cursus vitae tortor ut sodales.
   > Note, that when plugged vestibulum volutpat felis porta, lacinia justo a, laoreet ex.
 
 <!---

@@ -36,6 +36,41 @@ a {
 }
 </style>
 
+<style lang='scss'>
+@import "~/assets/sass/breakpoints.scss";
+@import "~/assets/sass/colors.scss";
+
+.md-item {
+
+  .md-only {
+    display: none;
+  }
+
+  p {
+    font-family: 'Montserrat';
+    color: transparentize($color-fg, .2);
+    line-height: 1.65;
+    font-size: 14px;
+    margin: 1.5em 0;
+
+    @include phone {
+      font-size: 12px;
+    }
+  }
+
+  a {
+    color: transparentize($color-fg, .0);
+    font-family: 'agave';
+    font-size: 1.3em;
+    line-height: 1.0;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+</style>
+
 <style lang='scss' scoped>
 @import "~/assets/sass/colors.scss";
 

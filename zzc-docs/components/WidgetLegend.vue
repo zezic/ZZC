@@ -6,13 +6,12 @@
     :class='{highlight: spaghettiEnabledInternal}',
     ref='hoverArea'
   )
-    nuxt-link.title(
-      :to='`#${slug}`'
-    ) {{ widget.title }}
-    span.description {{ widget.description }}
-    .notice(v-for='notice in widget.notices')
-      notice-icon.notice-icon
-      .notice-text {{ notice }}
+    .description
+      template(v-for='item in widget.items')
+        .notice(v-if='item.type === "blockquote"')
+          notice-icon.notice-icon
+          .notice-text(v-html='renderTokens(item.items)')
+        .md-item(v-else, v-html='renderToken(item)')
     spaghetti.spaghetti(
       v-if='spaghettiEnabledInternal',
       :width='spaghetti.width',
@@ -22,6 +21,8 @@
 </template>
 
 <script>
+import marked from 'marked'
+
 import Spaghetti from '~/components/Spaghetti'
 import NoticeIcon from '~/assets/images/icons/notice.svg?inline'
 
@@ -85,8 +86,8 @@ export default {
       const bpScale = this.blueprintRect.height / 380
       const hoverAreaRect = this.$refs.hoverArea.getBoundingClientRect()
       const hoverAreaMidY = hoverAreaRect.top + hoverAreaRect.height / 2
-      this.spaghetti.width = hoverAreaRect.left - this.blueprintRect.left - (bpScale * this.widget.widget.position.x) - (bpScale * widgetOffsets[this.widget.widget.type].x)
-      this.spaghetti.height = hoverAreaMidY - this.blueprintRect.top - (bpScale * this.widget.widget.position.y) - (bpScale * widgetOffsets[this.widget.widget.type].y)
+      this.spaghetti.width = hoverAreaRect.left - this.blueprintRect.left - (bpScale * this.widget.options.x) - (bpScale * widgetOffsets[this.widget.options.type].x)
+      this.spaghetti.height = hoverAreaMidY - this.blueprintRect.top - (bpScale * this.widget.options.y) - (bpScale * widgetOffsets[this.widget.options.type].y)
       this.animationId = requestAnimationFrame(this.updateSpaghetti)
     },
     cleanupAnimation () {
@@ -103,6 +104,14 @@ export default {
       } else {
         this.cleanupAnimation()
       }
+    },
+    renderToken (token) {
+      return this.renderTokens([token])
+    },
+    renderTokens (tokens) {
+      var tokensCopy = [...tokens]
+      tokensCopy.links = Object.create(null)
+      return marked.parser(tokensCopy)
     }
   },
   beforeDestroy () {
@@ -173,11 +182,6 @@ export default {
   .description {
     font-family: 'Montserrat';
     font-size: 14px;
-    opacity: .75;
-
-    &::before {
-      content: ' - '
-    }
 
     @include phone {
       font-size: 12px;
@@ -188,7 +192,7 @@ export default {
     display: flex;
     background-color: #f6f6f6;
     border-radius: 4px;
-    padding: 15px;
+    padding: 5px 15px;
     align-items: center;
     margin-top: 15px;
 
