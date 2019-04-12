@@ -29,7 +29,7 @@ export default {
     Rack
   },
   async asyncData ({ $axios }) {
-    const markdown = await $axios.$get('/modules/clock/clock.md')
+    const markdown = await $axios.$get('/modules/clock/clock.ru.md')
     return { markdown }
   },
   data: () => ({

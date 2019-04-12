@@ -7,15 +7,17 @@
   )
   .previews
     template(v-for='group in widgetGroups')
-      nuxt-link.preview(
-        v-for='widget in group.items',
-        :key='makeGroupItemSlug(widget, group)',
-        :to='`#${makeGroupItemSlug(widget, group)}`',
-        :style='{backgroundImage: `url(${previewUrl})`, ...styleForWidget(widget)}',
-        :class='{active: spaghettiEnabledFor === makeGroupItemSlug(widget, group)}',
-        @mouseenter.native='activateSpaghetti(widget, group)',
-        @mouseleave.native='deactivateSpaghetti(widget, group)'
-      )
+      template(v-for='groupItem in group.items')
+        nuxt-link.preview(
+          v-if='groupItem.type === "list"',
+          v-for='widget in groupItem.items',
+          :key='makeGroupItemSlug(widget, group)',
+          :to='`#${makeGroupItemSlug(widget, group)}`',
+          :style='{backgroundImage: `url(${previewUrl})`, ...styleForWidget(widget)}',
+          :class='{active: spaghettiEnabledFor === makeGroupItemSlug(widget, group)}',
+          @mouseenter.native='activateSpaghetti(widget, group)',
+          @mouseleave.native='deactivateSpaghetti(widget, group)'
+        )
 </template>
 
 <script>
@@ -64,6 +66,7 @@ export default {
   }),
   methods: {
     styleForWidget (widget) {
+      if (!widget.options) { return {} }
       const rect = widgetRects[widget.options.type]
       const position = { x: parseInt(widget.options.x), y: parseInt(widget.options.y) }
       return {

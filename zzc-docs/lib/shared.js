@@ -1,4 +1,4 @@
 export function makeGroupItemSlug (item, group) {
-  return `${group.title.toLowerCase()}-${item.options.slug}`
+  return `${group.slug}-${item.options.slug}`
 }
 

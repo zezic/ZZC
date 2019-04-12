@@ -24,7 +24,7 @@
               @spaghettiRequest='onSpaghettiRequest',
               @spaghettiUnrequest='onSpaghettiUnrequest'
             )
-          .md-item(v-else, v-html='renderToken(item)')
+          md-item(v-else, :token='item', :moduleSlug='moduleSlug')
 </template>
 
 <script>
@@ -36,6 +36,7 @@ import ArticleContent from '~/components/ArticleContent'
 import Blueprint from '~/components/Blueprint'
 import Subttl from '~/components/SubTitle'
 import Ttl from '~/components/Title'
+import MdItem from '~/components/MdItem'
 
 import Lorem from '~/assets/lorem-ipsum.json'
 
@@ -82,7 +83,8 @@ export default {
     ArticleContent,
     Blueprint,
     Subttl,
-    Ttl
+    Ttl,
+    MdItem
   },
   data: () => ({
     Lorem,
@@ -171,12 +173,6 @@ export default {
   .subtitle {
     margin-top: 10px;
     margin-bottom: 40px;
-  }
-}
-
-.legend {
-  &:not(:first-child) {
-    margin-top: 50px;
   }
 }
 </style>

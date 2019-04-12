@@ -112,13 +112,23 @@ class LegendListItem extends MarkdownSection {
 }
 
 class LegendList extends MarkdownSection {
-  constructor (type, title) {
+  constructor (type) {
     super(type)
-    this.title = title
   }
   sectionFactory (token) {
     const sectionType = token.type.split('_start')[0]
     if (sectionType === 'list_item') { return new LegendListItem(sectionType) }
+  }
+}
+
+class LegendGroup extends Section {
+  constructor (doc) {
+    super(doc)
+    this.slug = doc.slug
+  }
+  sectionFactory (token) {
+    const sectionType = token.type.split('_start')[0]
+    if (sectionType === 'list') { return new LegendList(sectionType) }
   }
 }
 
@@ -127,8 +137,10 @@ class Legend extends Section {
     super(doc)
   }
   sectionFactory (token) {
-    const sectionType = token.type.split('_start')[0]
-    if (sectionType === 'list') { return new LegendList(sectionType, this.currentGroupTitle) }
+    if (isZzcDoc(token)) {
+      const doc = parseZzcDoc(token.text)
+      if (doc.start === 'legend-group') { return new LegendGroup(doc) }
+    }
   }
   consumeItem (items, token) {
     if (token.type === 'heading') {

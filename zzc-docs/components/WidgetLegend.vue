@@ -215,3 +215,20 @@ export default {
   }
 }
 </style>
+
+<style lang='scss'>
+@import "~/assets/sass/colors.scss";
+
+.widget-legend {
+  .description {
+    .md-item {
+      p:first-child {
+        a:first-child {
+          color: $color-fg;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}
+</style>

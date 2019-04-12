@@ -1,22 +1,24 @@
 <template lang='pug'>
 .affix-legend(ref='legend')
   section(v-for='group in widgetGroups')
-    .title-layout
-      component.icon(:is='`${group.title.toLowerCase()}-icon`')
-      ttl(:level='3') {{ group.title }}
-    ul.widgets
-      li.widget(
-        v-for='widget in group.items',
-        :id='makeGroupItemSlug(widget, group)',
-      )
-        widget-legend(
-          :widget='widget',
-          :slug='makeGroupItemSlug(widget, group)',
-          :blueprintRect='blueprintRect',
-          :spaghettiEnabled='spaghettiEnabledFor === makeGroupItemSlug(widget, group)',
-          @spaghettiRequest='onSpaghettiRequest(widget, group)',
-          @spaghettiUnrequest='onSpaghettiUnrequest(widget, group)',
+    template(v-for='item in group.items')
+      .title-layout(v-if='item.type === "heading"')
+        ttl(:level='3', :center='true')
+          component.icon(:is='`${group.slug}-icon`')
+          span {{ item.text }}
+      ul.widgets(v-else)
+        li.widget(
+          v-for='widget in item.items',
+          :id='makeGroupItemSlug(widget, group)',
         )
+          widget-legend(
+            :widget='widget',
+            :slug='makeGroupItemSlug(widget, group)',
+            :blueprintRect='blueprintRect',
+            :spaghettiEnabled='spaghettiEnabledFor === makeGroupItemSlug(widget, group)',
+            @spaghettiRequest='onSpaghettiRequest(widget, group)',
+            @spaghettiUnrequest='onSpaghettiUnrequest(widget, group)',
+          )
 </template>
 
 <script>
@@ -77,13 +79,6 @@ export default {
   position: relative;
 
   section {
-
-    &:not(:last-child) {
-      margin-bottom: 40px;
-      @include phone {
-        margin-bottom: 20px;
-      }
-    }
 
     .title-layout {
       display: flex;

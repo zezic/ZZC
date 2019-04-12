@@ -29,11 +29,10 @@ struct SH8 : Module {
 
 
 void SH8::step() {
-  float noise = inputs[NOISE_INPUT].active ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
 	for (int i = 0; i < NUM_CHANNELS; i++) {
     if (inputs[TRIG_INPUT + i].active) {
       if (triggers[i].process(inputs[TRIG_INPUT + i].value)) {
-        outputs[HOLD_OUTPUT + i].value = noise;
+        outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].active ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
       }
     } else {
       if (i > 0) {
