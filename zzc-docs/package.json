@@ -22,7 +22,9 @@
     "nuxt-svg": "^0.1.4",
     "pug": "^2.0.3",
     "pug-plain-loader": "^1.0.0",
-    "sass-loader": "^7.1.0"
+    "sass-loader": "^7.1.0",
+    "vue": "^2.6.10",
+    "vue-template-compiler": "^2.6.10"
   },
   "devDependencies": {
     "nodemon": "^1.18.9"
