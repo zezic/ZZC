@@ -29,14 +29,18 @@ struct SH8 : Module {
 
 
 void SH8::step() {
+  bool previousIsTriggered = false;
 	for (int i = 0; i < NUM_CHANNELS; i++) {
     if (inputs[TRIG_INPUT + i].active) {
       if (triggers[i].process(inputs[TRIG_INPUT + i].value)) {
         outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].active ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
+        previousIsTriggered = true;
+      } else {
+        previousIsTriggered = false;
       }
     } else {
-      if (i > 0) {
-        outputs[HOLD_OUTPUT + i].value = outputs[HOLD_OUTPUT + i - 1].value;
+      if (i > 0 && previousIsTriggered) {
+        outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].active ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
       }
     }
 	}
