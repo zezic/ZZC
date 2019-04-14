@@ -9,9 +9,9 @@ extern Plugin *plugin;
 
 template <typename BASE>
 struct LedLight : BASE {
-	LedLight() {
-	  this->box.size = mm2px(Vec(6.3f, 6.3f));
-	}
+  LedLight() {
+    this->box.size = mm2px(Vec(6.3f, 6.3f));
+  }
 };
 
 
@@ -19,8 +19,8 @@ struct ZZC_BaseLight : GrayModuleLightWidget {
   float values[2] = { 0.0f, 0.0f };
   double lastStepAt = 0.0;
 
-	ZZC_BaseLight() {
-	}
+  ZZC_BaseLight() {
+  }
   void drawHalo(NVGcontext *vg) override {
     float radius = box.size.x / 2.0;
     float oradius = radius + 15.0;
@@ -70,13 +70,13 @@ struct ZZC_BaseLight : GrayModuleLightWidget {
 };
 
 struct ZZC_YellowLight : ZZC_BaseLight {
-	ZZC_YellowLight() {
-		addBaseColor(COLOR_ZZC_YELLOW);
-	}
+  ZZC_YellowLight() {
+    addBaseColor(COLOR_ZZC_YELLOW);
+  }
 };
 
 struct ZZC_RedLight : ZZC_BaseLight {
-	ZZC_RedLight() {
-		addBaseColor(COLOR_NEG);
-	}
+  ZZC_RedLight() {
+    addBaseColor(COLOR_NEG);
+  }
 };

@@ -37,17 +37,17 @@ struct XYDisplayViewWidget : BaseDisplayWidget {
     } else {
       nvgStrokeColor(vg, posColor);
     }
-		nvgStrokeWidth(vg, 1.0f);
+    nvgStrokeWidth(vg, 1.0f);
 
     nvgBeginPath(vg);
     nvgMoveTo(vg, position.x - 5.5f, position.y);
     nvgLineTo(vg, position.x + 5.5f, position.y);
-		nvgStroke(vg);
+    nvgStroke(vg);
 
     nvgBeginPath(vg);
     nvgMoveTo(vg, position.x, position.y - 5.5f);
     nvgLineTo(vg, position.x, position.y + 5.5f);
-		nvgStroke(vg);
+    nvgStroke(vg);
   }
 
   void draw(NVGcontext *vg) override {
@@ -78,7 +78,7 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
   float lastY = 0.0f;
   float dragDelta;
   XYDisplayViewWidget *disp;
-	float speed = 4.0;
+  float speed = 4.0;
 
   XYDisplayWidget() {
     disp = new XYDisplayViewWidget();

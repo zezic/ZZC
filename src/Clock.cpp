@@ -341,8 +341,8 @@ struct ClockWidget : ModuleWidget {
 
     addParam(ParamWidget::create<ZZC_BigKnobSnappy>(Vec(41.5, 82.5), module, Clock::BPM_PARAM, 0.0f, 240.0f, 120.0f));
     addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(111.5f, 83), module, Clock::INTERNAL_MODE_LED));
-		addParam(ParamWidget::create<ZZC_Knob27Snappy>(Vec(13.5, 186), module, Clock::SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f));
-		addParam(ParamWidget::create<ZZC_Knob27Snappy>(Vec(109.5, 186), module, Clock::SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f));
+    addParam(ParamWidget::create<ZZC_Knob27Snappy>(Vec(13.5, 186), module, Clock::SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f));
+    addParam(ParamWidget::create<ZZC_Knob27Snappy>(Vec(109.5, 186), module, Clock::SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f));
 
     addInput(Port::create<ZZC_PJ_Port>(Vec(45.5, 224), Port::INPUT, module, Clock::CLOCK_INPUT));
     addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(67.5, 224), module, Clock::EXT_CLOCK_MODE_LED));
@@ -370,10 +370,10 @@ struct ClockWidget : ModuleWidget {
     addOutput(Port::create<ZZC_PJ_Port>(Vec(10.8f, 272), Port::OUTPUT, module, Clock::CLOCK_8THS_OUTPUT));
     addOutput(Port::create<ZZC_PJ_Port>(Vec(114.8f, 272), Port::OUTPUT, module, Clock::CLOCK_16THS_OUTPUT));
 
-		addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
+    addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+    addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   }
 };
 

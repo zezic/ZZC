@@ -91,13 +91,13 @@ struct CachingTransformWidget : TransformWidget {
 };
 
 struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
-	SVGWidget *sw = nullptr;
+  SVGWidget *sw = nullptr;
   CachingTransformWidget *tw = nullptr;
   CircularShadow *shadow = nullptr;
   ZZC_DirectKnobDisplay *disp = nullptr;
   float *value = nullptr;
   bool randomizable = true;
-	float speed = 2.0;
+  float speed = 2.0;
   float rotation = 0.0f;
   float lastRotation = 0.0f;
   float minAngle = -1.0 * M_PI;

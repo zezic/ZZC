@@ -35,7 +35,7 @@ struct ZZC_FN3UniBiSwitch : SVGSwitch, ToggleSwitch {
 };
 
 struct ZZC_LEDBezelDark : SVGSwitch, MomentarySwitch {
-	ZZC_LEDBezelDark() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/switches/ZZC-LED-Bezel-Dark.svg")));
-	}
+  ZZC_LEDBezelDark() {
+    addFrame(SVG::load(assetPlugin(plugin, "res/switches/ZZC-LED-Bezel-Dark.svg")));
+  }
 };

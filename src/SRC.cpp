@@ -108,8 +108,8 @@ struct SRC : Module {
     return voltage;
   }
 
-	SRC() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step() override;
+  SRC() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+  void step() override;
 
   json_t *toJson() override {
     json_t *rootJ = json_object();
@@ -142,8 +142,8 @@ void SRC::step() {
   if (outputs[VOLTAGE_OUTPUT].active) {
     outputs[VOLTAGE_OUTPUT].value = on ? voltage : 0.0f;
   }
-	lights[VOLTAGE_POS_LIGHT].setBrightness(fmaxf(0.0f, voltage / 11.0f));
-	lights[VOLTAGE_NEG_LIGHT].setBrightness(fmaxf(0.0f, voltage / -11.0f));
+  lights[VOLTAGE_POS_LIGHT].setBrightness(fmaxf(0.0f, voltage / 11.0f));
+  lights[VOLTAGE_NEG_LIGHT].setBrightness(fmaxf(0.0f, voltage / -11.0f));
   if (on) {
     lights[ON_LED].value = 1.1f;
   }
@@ -151,8 +151,8 @@ void SRC::step() {
 
 
 struct SRCWidget : ModuleWidget {
-	SRCWidget(SRC *module);
-	void appendContextMenu(Menu *menu) override;
+  SRCWidget(SRC *module);
+  void appendContextMenu(Menu *menu) override;
 };
 
 SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
@@ -186,86 +186,86 @@ SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
 
 
 struct SRCMusicalItem : MenuItem {
-	SRC *src;
-	void onAction(EventAction &e) override {
-		src->mode = MUSICAL_MODE;
-	}
-	void step() override {
-		rightText = CHECKMARK(src->mode == MUSICAL_MODE);
-	}
+  SRC *src;
+  void onAction(EventAction &e) override {
+    src->mode = MUSICAL_MODE;
+  }
+  void step() override {
+    rightText = CHECKMARK(src->mode == MUSICAL_MODE);
+  }
 };
 struct SRCDecimalItem : MenuItem {
-	SRC *src;
-	void onAction(EventAction &e) override {
-		src->mode = DECIMAL_MODE;
-	}
-	void step() override {
-		rightText = CHECKMARK(src->mode == DECIMAL_MODE);
-	}
+  SRC *src;
+  void onAction(EventAction &e) override {
+    src->mode = DECIMAL_MODE;
+  }
+  void step() override {
+    rightText = CHECKMARK(src->mode == DECIMAL_MODE);
+  }
 };
 struct SRCFreeItem : MenuItem {
-	SRC *src;
-	void onAction(EventAction &e) override {
-		src->mode = FREE_MODE;
-	}
-	void step() override {
-		rightText = CHECKMARK(src->mode == FREE_MODE);
-	}
+  SRC *src;
+  void onAction(EventAction &e) override {
+    src->mode = FREE_MODE;
+  }
+  void step() override {
+    rightText = CHECKMARK(src->mode == FREE_MODE);
+  }
 };
 struct SRCOnToggleItem : MenuItem {
-	SRC *src;
-	void onAction(EventAction &e) override {
-		src->onHold = false;
-	}
-	void step() override {
-		rightText = CHECKMARK(!src->onHold);
-	}
+  SRC *src;
+  void onAction(EventAction &e) override {
+    src->onHold = false;
+  }
+  void step() override {
+    rightText = CHECKMARK(!src->onHold);
+  }
 };
 struct SRCOnHoldItem : MenuItem {
-	SRC *src;
-	void onAction(EventAction &e) override {
-		src->onHold = true;
-	}
-	void step() override {
-		rightText = CHECKMARK(src->onHold);
-	}
+  SRC *src;
+  void onAction(EventAction &e) override {
+    src->onHold = true;
+  }
+  void step() override {
+    rightText = CHECKMARK(src->onHold);
+  }
 };
 struct SRCQuantizeItem : MenuItem {
-	SRC *src;
-	void onAction(EventAction &e) override {
-		src->quantizeInput ^= true;
-	}
-	void step() override {
-		rightText = CHECKMARK(src->quantizeInput);
-	}
+  SRC *src;
+  void onAction(EventAction &e) override {
+    src->quantizeInput ^= true;
+  }
+  void step() override {
+    rightText = CHECKMARK(src->quantizeInput);
+  }
 };
 
 void SRCWidget::appendContextMenu(Menu *menu) {
-	menu->addChild(new MenuSeparator());
+  menu->addChild(new MenuSeparator());
 
-	SRC *src = dynamic_cast<SRC*>(module);
-	assert(src);
+  SRC *src = dynamic_cast<SRC*>(module);
+  assert(src);
 
-	SRCMusicalItem *musicalItem = MenuItem::create<SRCMusicalItem>("Fine: Snap to 1/12V");
-	SRCDecimalItem *decimalItem = MenuItem::create<SRCDecimalItem>("Fine: Snap to 1/10V");
-	SRCFreeItem *freeItem = MenuItem::create<SRCFreeItem>("Fine: Don't snap");
-	SRCOnToggleItem *onToggleItem = MenuItem::create<SRCOnToggleItem>("ON: Toggle");
-	SRCOnHoldItem *onHoldItem = MenuItem::create<SRCOnHoldItem>("ON: Hold");
-	SRCQuantizeItem *quantizeItem = MenuItem::create<SRCQuantizeItem>("Quantize CV like Fine knob");
-	musicalItem->src = src;
-	decimalItem->src = src;
-	freeItem->src = src;
-	onToggleItem->src = src;
-	onHoldItem->src = src;
-	quantizeItem->src = src;
-	menu->addChild(musicalItem);
-	menu->addChild(decimalItem);
-	menu->addChild(freeItem);
-	menu->addChild(new MenuSeparator());
-	menu->addChild(onToggleItem);
-	menu->addChild(onHoldItem);
-	menu->addChild(new MenuSeparator());
-	menu->addChild(quantizeItem);
+  SRCMusicalItem *musicalItem = MenuItem::create<SRCMusicalItem>("Fine: Snap to 1/12V");
+  SRCDecimalItem *decimalItem = MenuItem::create<SRCDecimalItem>("Fine: Snap to 1/10V");
+  SRCFreeItem *freeItem = MenuItem::create<SRCFreeItem>("Fine: Don't snap");
+  SRCOnToggleItem *onToggleItem = MenuItem::create<SRCOnToggleItem>("ON: Toggle");
+  SRCOnHoldItem *onHoldItem = MenuItem::create<SRCOnHoldItem>("ON: Hold");
+  SRCQuantizeItem *quantizeItem = MenuItem::create<SRCQuantizeItem>("Quantize CV like Fine knob");
+  musicalItem->src = src;
+  decimalItem->src = src;
+  freeItem->src = src;
+  onToggleItem->src = src;
+  onHoldItem->src = src;
+  quantizeItem->src = src;
+  menu->addChild(musicalItem);
+  menu->addChild(decimalItem);
+  menu->addChild(freeItem);
+  menu->addChild(new MenuSeparator());
+  menu->addChild(onToggleItem);
+  menu->addChild(onHoldItem);
+  menu->addChild(new MenuSeparator());
+  menu->addChild(quantizeItem);
 }
 
 
