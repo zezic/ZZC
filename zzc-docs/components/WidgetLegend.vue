@@ -10,8 +10,9 @@
       template(v-for='item in widget.items')
         .notice(v-if='item.type === "blockquote"')
           notice-icon.notice-icon
-          .notice-text(v-html='renderTokens(item.items)')
-        .md-item(v-else, v-html='renderToken(item)')
+          .notice-text
+            md-item(v-for='(token, idx) in item.items', :token='token', moduleSlug='TODO', :key='idx')
+        md-item(v-else, :token='item', moduleSlug='TODO')
     spaghetti.spaghetti(
       v-if='spaghettiEnabledInternal',
       :width='spaghetti.width',
@@ -24,18 +25,10 @@
 import marked from 'marked'
 
 import Spaghetti from '~/components/Spaghetti'
+import MdItem from '~/components/MdItem'
 import NoticeIcon from '~/assets/images/icons/notice.svg?inline'
 
-const widgetOffsets = {
-  'labeled-socket': {
-    x: 29,
-    y: 13
-  },
-  'simple-socket': {
-    x: 29,
-    y: 13
-  }
-}
+import widgetRects from '~/lib/widget-rects'
 
 export default {
   props: {
@@ -57,6 +50,7 @@ export default {
     }
   },
   components: {
+    MdItem,
     Spaghetti,
     NoticeIcon
   },
@@ -83,11 +77,12 @@ export default {
     },
     updateSpaghetti () {
       if (!this.spaghettiEnabled) { return }
+      const widgetRect = widgetRects[this.widget.options.type]
       const bpScale = this.blueprintRect.height / 380
       const hoverAreaRect = this.$refs.hoverArea.getBoundingClientRect()
       const hoverAreaMidY = hoverAreaRect.top + hoverAreaRect.height / 2
-      this.spaghetti.width = hoverAreaRect.left - this.blueprintRect.left - (bpScale * this.widget.options.x) - (bpScale * widgetOffsets[this.widget.options.type].x)
-      this.spaghetti.height = hoverAreaMidY - this.blueprintRect.top - (bpScale * this.widget.options.y) - (bpScale * widgetOffsets[this.widget.options.type].y)
+      this.spaghetti.width = hoverAreaRect.left - this.blueprintRect.left - (bpScale * this.widget.options.x) - (bpScale * (widgetRect.width + widgetRect.x))
+      this.spaghetti.height = hoverAreaMidY - this.blueprintRect.top - (bpScale * this.widget.options.y) - (bpScale * (widgetRect.height / 2 + widgetRect.y))
       this.animationId = requestAnimationFrame(this.updateSpaghetti)
     },
     cleanupAnimation () {
@@ -195,6 +190,7 @@ export default {
     padding: 5px 15px;
     align-items: center;
     margin-top: 15px;
+    margin-bottom: 15px;
 
     .notice-icon {
       flex-shrink: 0;
@@ -228,6 +224,11 @@ export default {
           font-weight: 600;
         }
       }
+    }
+    .notice-text .md-item p {
+      margin: .5em 0;
+      line-height: 1.35;
+      font-size: .9em;
     }
   }
 }

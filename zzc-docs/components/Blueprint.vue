@@ -22,23 +22,7 @@
 
 <script>
 import { makeGroupItemSlug } from '~/lib/shared'
-
-const widgetRects = {
-  'labeled-socket': {
-    width: 30,
-    height: 43,
-    x: -2,
-    y: -15,
-    radius: '3px'
-  },
-  'simple-socket': {
-    width: 30,
-    height: 31,
-    x: -2,
-    y: -3,
-    radius: '3px'
-  }
-}
+import widgetRects from '~/lib/widget-rects'
 
 export default {
   props: {
@@ -106,7 +90,7 @@ export default {
     },
     dimmed () {
       return this.widgetGroups.map(({ slug }) => {
-        return this.spaghettiEnabledFor.indexOf(`-${slug}`) !== -1
+        return this.spaghettiEnabledFor.indexOf(`${slug}-`) !== -1
       }).filter(hit => hit).length > 0
     }
   },
