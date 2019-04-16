@@ -7,12 +7,12 @@
       .group.group-1
         logo
         menu-item(to='https://github.com/zezic') Sergey Ukolov • {{ (new Date()).getFullYear() }}
-        menu-item(to='/contact') Contact
-        menu-item(to='/about') About
+        //- menu-item(to='/contact') Contact
+        //- menu-item(to='/about') About
       .group.group-2
-        menu-item(to='/all') All Modules
-        menu-item(to='/free') Free Modules
-        menu-item(to='/paid') Paid Modules
+        menu-item(:to='localePath({ name: "index" })') All Modules
+        menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "free" } })') Free Modules
+        menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "paid" } })') Paid Modules
       .group.group-3
         main-menu(:column='true')
 </template>

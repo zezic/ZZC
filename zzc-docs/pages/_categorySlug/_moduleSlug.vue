@@ -28,11 +28,11 @@ export default {
     DocsSection,
     Rack
   },
-  async asyncData ({ $axios, params, query }) {
-    console.log(params, query)
-    const directory = `/modules/${params.moduleSlug}/`
-    const filename = `${params.moduleSlug}` + query.lang ? `.${query.lang}.md` : '.md'
-    const markdown = await $axios.$get(directory + filename)
+  async asyncData ({ $axios, app, params }) {
+    const locale = app.i18n.locale
+    const path = `/modules/${params.moduleSlug}/${params.moduleSlug}${locale ? '.' + locale : ''}.md`
+    console.log(path)
+    const markdown = await $axios.$get(path)
     return { markdown }
   },
   data: () => ({

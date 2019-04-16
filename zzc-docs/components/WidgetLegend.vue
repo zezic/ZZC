@@ -217,7 +217,7 @@ export default {
 
 .widget-legend {
   .description {
-    .md-item {
+    & > .md-item {
       p:first-child {
         a:first-child {
           color: $color-fg;

@@ -1,15 +1,18 @@
 <template lang='pug'>
 .main-menu(:class='{column}')
-  menu-item(:solid='column', to='/clock-manipulation') Clock Manipulation
+  menu-item(
+    :solid='column',
+    :to='localePath({ name: "categorySlug", params: { categorySlug: "clock-manipulation" } })'
+  ) {{ $t('menu.clockManipulation') }}
     metronome(slot='icon')
-  menu-item(:solid='column', to='/sequencers') Sequencers
-    sequence(slot='icon')
-  menu-item(:solid='column', to='/amps') Amps
-    amp(slot='icon')
-  menu-item(:solid='column', to='/mixing') Mixing
-    levels(slot='icon')
-  menu-item(:solid='column', to='/tools') Tools
-    bulb(slot='icon')
+  //- menu-item(:solid='column', to='/sequencers') Sequencers
+  //-   sequence(slot='icon')
+  //- menu-item(:solid='column', to='/amps') Amps
+  //-   amp(slot='icon')
+  //- menu-item(:solid='column', to='/mixing') Mixing
+  //-   levels(slot='icon')
+  //- menu-item(:solid='column', to='/tools') Tools
+  //-   bulb(slot='icon')
 </template>
 
 <script>

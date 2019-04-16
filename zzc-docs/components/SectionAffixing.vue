@@ -38,29 +38,6 @@ import Subttl from '~/components/SubTitle'
 import Ttl from '~/components/Title'
 import MdItem from '~/components/MdItem'
 
-import Lorem from '~/assets/lorem-ipsum.json'
-
-const widgets = [
-  { 'title': 'V/BPS',
-    'slug': 'vbps',
-    'description': 'Volts per beat per second. Input affects the base BPM value. For example, adding 1V to it will raise the base BPM by 1 beat per second (60 BPM). Negative values can make transport go reverse.',
-    'notices': [],
-    'widget': {
-      'position': { 'x': 10, 'y': 52 },
-      'type': 'labeled-socket'
-    } },
-  { 'title': 'Run',
-    'slug': 'run',
-    'description': 'Phasellus quam felis, posuere eu consequat quis, tempor quis odio. Proin cursus vitae tortor ut sodales.',
-    'notices': [
-      'Note, that when plugged vestibulum volutpat felis porta, lacinia justo a, laoreet ex.'
-    ],
-    'widget': {
-      'position': { 'x': 10, 'y': 145 },
-      'type': 'simple-socket'
-    } }
-]
-
 export default {
   name: 'section-affixing',
   props: {
@@ -87,7 +64,6 @@ export default {
     MdItem
   },
   data: () => ({
-    Lorem,
     blueprintRect: {
       top: 0,
       left: 0,

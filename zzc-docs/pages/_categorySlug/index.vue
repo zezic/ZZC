@@ -39,16 +39,10 @@ export default {
       { 'name': 'Clock',
         'function': 'Clock source',
         'price': 0,
-        'category': {
-          'slug': 'clock-manipulation'
-        },
         'slug': 'clock' },
       { 'name': 'Divider',
         'function': 'Phase divider',
         'price': 0,
-        'category': {
-          'slug': 'clock-manipulation'
-        },
         'slug': 'divider' }
     ],
     crumbs: [

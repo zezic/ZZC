@@ -3,7 +3,9 @@
   ttl.title(v-if='title', :level='2') {{ title }}
   ul
     li(v-for='module in modules')
-      nuxt-link.module-link(to='/clock')
+      nuxt-link.module-link(
+        :to='localePath({ name: "categorySlug-moduleSlug", params: { categorySlug: module.category.slug, moduleSlug: module.slug } })'
+      )
         .name-section
           .module-name {{ module.name }}
           .module-function {{ module.function }}

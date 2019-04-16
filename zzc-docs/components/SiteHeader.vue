@@ -11,12 +11,12 @@
           main-menu
           .group
             .separator: .dot
-            menu-item(to='/all') All
-            menu-item(to='/free') Free
-            menu-item(to='/paid') Paid
-          .group
-            .separator: .dot
-            menu-item(to='/about') About
+            menu-item(:to='localePath({ name: "index" })') All
+            menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "free" } })') Free
+            menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "paid" } })') Paid
+          //- .group
+          //-   .separator: .dot
+          //-   menu-item(to='/about') About
 </template>
 
 <script>

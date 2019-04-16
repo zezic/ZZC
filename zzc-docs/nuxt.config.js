@@ -26,7 +26,25 @@ module.exports = {
   modules: [
     '@nuxtjs/axios',
     '@nuxtjs/pwa',
-    'nuxt-svg'
+    'nuxt-svg',
+    ['nuxt-i18n', {
+      locales: ['en', 'ru'],
+      vueI18n: {
+        fallbackLocale: 'en',
+        messages: {
+          en: {
+            menu: {
+              clockManipulation: 'Clock Manipulation'
+            }
+          },
+          ru: {
+            menu: {
+              clockManipulation: 'Управление Временем'
+            }
+          }
+        }
+      }
+    } ]
   ],
   axios: {
     // See https://github.com/nuxt-community/axios-module#options

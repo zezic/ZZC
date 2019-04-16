@@ -1,10 +1,20 @@
 <template lang='pug'>
-nuxt-link.module(to='/module#article')
-  img.image(src='/modules/clock/clock.svg')
+nuxt-link.module(:to='localePath({ name: "categorySlug-moduleSlug", params: { categorySlug, moduleSlug } })')
+  img.image(:src='`/modules/${moduleSlug}/${moduleSlug}.svg`')
 </template>
 
 <script>
 export default {
+  props: {
+    categorySlug: {
+      type: String,
+      required: true
+    },
+    moduleSlug: {
+      type: String,
+      required: true
+    }
+  }
 }
 </script>
 
