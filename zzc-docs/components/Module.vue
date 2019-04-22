@@ -1,17 +1,13 @@
 <template lang='pug'>
-nuxt-link.module(:to='localePath({ name: "categorySlug-moduleSlug", params: { categorySlug, moduleSlug } })')
-  img.image(:src='`/modules/${moduleSlug}/${moduleSlug}.svg`')
+nuxt-link.module(:to='localePath({ name: "categorySlug-moduleSlug", params: { categorySlug: module.category.slug, moduleSlug: module.slug } })')
+  img.image(:src='`/markdown/${module.slug}/${module.slug}.svg`')
 </template>
 
 <script>
 export default {
   props: {
-    categorySlug: {
-      type: String,
-      required: true
-    },
-    moduleSlug: {
-      type: String,
+    module: {
+      type: Object,
       required: true
     }
   }

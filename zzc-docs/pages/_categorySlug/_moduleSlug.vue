@@ -1,6 +1,9 @@
 <template lang='pug'>
 .module-page
-  rack(:crumbs='rackCrumbs')
+  rack(
+    :crumbs='rackCrumbs',
+    :modules='[module]'
+  )
   crumbsbar#article(theme='yellow', :crumbs='crumbs')
   container
     .docs-layout
@@ -8,7 +11,7 @@
         v-for='(section, idx) in structure',
         :key='idx'
         :section='section',
-        moduleSlug='clock'
+        :moduleSlug='$route.params.moduleSlug'
       )
 </template>
 
@@ -18,6 +21,8 @@ import Crumbsbar from '~/components/Crumbsbar'
 import DocsSection from '~/components/DocsSection'
 import Rack from '~/components/Rack'
 import MarkdownParser from '~/lib/markdown-parser'
+import categories from '~/lib/categories'
+import modules from '~/lib/modules'
 
 const mdParser = new MarkdownParser()
 
@@ -30,26 +35,34 @@ export default {
   },
   async asyncData ({ $axios, app, params }) {
     const locale = app.i18n.locale
-    const path = `/modules/${params.moduleSlug}/${params.moduleSlug}${locale ? '.' + locale : ''}.md`
+    const path = `/markdown/${params.moduleSlug}/${params.moduleSlug}${locale ? '.' + locale : ''}.md`
     console.log(path)
     const markdown = await $axios.$get(path)
     return { markdown }
   },
   data: () => ({
-    crumbs: [
-      { url: '/',
-        title: 'Clock Manipulation' },
-      { url: '/module',
-        title: 'Clock' },
-    ],
-    rackCrumbs: [
-      { url: '/',
-        title: 'Clock Manipulation' }
-    ]
   }),
   computed: {
     structure () {
       return mdParser.parse(this.markdown)
+    },
+    module () {
+      return modules.find(module => module.slug === this.$route.params.moduleSlug)
+    },
+    rackCrumbs () {
+      return [
+        { url: this.localePath({ name: 'categorySlug', params: { categorySlug: this.$route.params.categorySlug } }),
+          title: categories.find(category => {
+            return category.slug === this.$route.params.categorySlug
+          }).name[this.$i18n.locale] }
+      ]
+    },
+    crumbs () {
+      return [
+        ...this.rackCrumbs,
+        { url: this.$route,
+          title: modules.find(module => module.slug === this.$route.params.moduleSlug).name }
+      ]
     }
   },
   mounted () {

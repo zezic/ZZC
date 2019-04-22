@@ -4,8 +4,8 @@
     blueprint(
       slot='affix',
       ref='blueprint',
-      :blueprintUrl='`/modules/${moduleSlug}/${affixed.affixed.blueprint}`',
-      :previewUrl='`/modules/${moduleSlug}/${affixed.affixed.preview}`',
+      :blueprintUrl='`/markdown/${moduleSlug}/${affixed.affixed.blueprint}`',
+      :previewUrl='`/markdown/${moduleSlug}/${affixed.affixed.preview}`',
       :widgetGroups='widgetGroups',
       :spaghettiEnabledFor='spaghettiEnabledFor',
       @spaghettiRequest='onSpaghettiRequest',
@@ -84,7 +84,8 @@ export default {
     },
     widgetGroups () {
       if (!this.article) { return [] }
-      return this.article.find(item => item.type === 'legend').items
+      const legend = this.article.find(item => item.type === 'legend')
+      return legend ? legend.items : []
     }
   },
   methods: {

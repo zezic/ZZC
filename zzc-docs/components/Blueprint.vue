@@ -12,7 +12,7 @@
           v-if='groupItem.type === "list"',
           v-for='widget in groupItem.items',
           :key='makeGroupItemSlug(widget, group)',
-          :to='localePath({ ...$route, hash: `#${makeGroupItemSlug(widget, group)}` })',
+          :to='{ ...$route, hash: `#${makeGroupItemSlug(widget, group)}` }',
           :style='{backgroundImage: `url(${previewUrl})`, ...styleForWidget(widget)}',
           :class='{active: spaghettiEnabledFor === makeGroupItemSlug(widget, group)}',
           @mouseenter.native='activateSpaghetti(widget, group)',

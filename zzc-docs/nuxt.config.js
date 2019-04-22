@@ -28,19 +28,34 @@ module.exports = {
     '@nuxtjs/pwa',
     'nuxt-svg',
     ['nuxt-i18n', {
-      locales: ['en', 'ru'],
+      locales: [
+        { code: 'en',
+          iso: 'en-US' },
+        { code: 'ru',
+          iso: 'ru-RU' }
+      ],
       vueI18n: {
         fallbackLocale: 'en',
         messages: {
           en: {
             menu: {
-              clockManipulation: 'Clock Manipulation'
-            }
+              all: 'All',
+              free: 'Free',
+              paid: 'Paid',
+              author: 'Sergey Ukolov'
+            },
+            relatedModules: 'Related Modules',
+            free: 'Free'
           },
           ru: {
             menu: {
-              clockManipulation: 'Управление Временем'
-            }
+              all: 'Все',
+              free: 'Бесплатные',
+              paid: 'Платные',
+              author: 'Сергей Уколов'
+            },
+            relatedModules: 'Модули по теме',
+            free: 'Бесплатно'
           }
         }
       }

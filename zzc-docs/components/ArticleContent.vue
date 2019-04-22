@@ -1,10 +1,22 @@
 <template lang='pug'>
 .content
-  p(v-for='item in struct') {{ item }}
+  template(v-for='(item, idx) in struct')
+    ttl(v-if='item.type === "heading"', :level='item.depth') {{ item.text }}
+    subttl.subtitle(v-else-if='item.type === "blockquote" && idx < 3') {{ item.items[0].text }}
+    md-item(v-else, :token='item', moduleSlug='index')
 </template>
 
 <script>
+import Subttl from '~/components/SubTitle'
+import Ttl from '~/components/Title'
+import MdItem from '~/components/MdItem'
+
 export default {
+  components: {
+    Subttl,
+    Ttl,
+    MdItem
+  },
   props: {
     struct: {
       type: Array,

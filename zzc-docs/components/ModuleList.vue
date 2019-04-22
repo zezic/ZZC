@@ -8,10 +8,10 @@
       )
         .name-section
           .module-name {{ module.name }}
-          .module-function {{ module.function }}
+          .module-function {{ module.function[$i18n.locale] }}
         .price-section
           price-label.label
-          | {{ module.price || 'FREE' }}
+          | {{ module.price ? '$' + module.price : $t('free') }}
         arrow
 </template>
 

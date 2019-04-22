@@ -23,7 +23,7 @@ export default {
       const doc = parseXml(this.token.text)
       const img = doc.children[0]
       return {
-        src: `/modules/${this.moduleSlug}/${img.attributes.src}`,
+        src: `/markdown/${this.moduleSlug}/${img.attributes.src}`,
         class: `align-${img.attributes.align}`
       }
     }

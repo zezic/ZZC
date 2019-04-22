@@ -3,7 +3,7 @@
   crumbsbar(v-if='crumbs.length > 0', :crumbs='crumbs')
   container
     .rack-layout
-      module
+      module.module(v-for='module in modules', :key='module.slug', :module='module')
 </template>
 
 <script>
@@ -16,6 +16,10 @@ export default {
     crumbs: {
       type: Array,
       default: () => ([])
+    },
+    modules: {
+      typ : Array,
+      default: () => ([])
     }
   },
   components: {
@@ -27,6 +31,8 @@ export default {
 </script>
 
 <style lang='scss' scoped>
+@import "~/assets/sass/breakpoints.scss";
+
 $color-rack-background: #616464;
 
 .rack {
@@ -36,6 +42,27 @@ $color-rack-background: #616464;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    margin-left: -7.5px;
+    margin-right: -7.5px;
+
+    @include phone {
+      margin-left: -3.75px;
+      margin-right: -3.75px;
+    }
+
+    .module {
+      margin-left: 7.5px;
+      margin-right: 7.5px;
+
+      &:hover {
+        opacity: .75;
+      }
+
+      @include phone {
+        margin-left: 3.75px;
+        margin-right: 3.75px;
+      }
+    }
   }
 }
 </style>

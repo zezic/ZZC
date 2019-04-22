@@ -1,10 +1,12 @@
 <template lang='pug'>
 .main-menu(:class='{column}')
   menu-item(
+    v-for='category in categories',
+    :key='category.slug',
     :solid='column',
-    :to='localePath({ name: "categorySlug", params: { categorySlug: "clock-manipulation" } })'
-  ) {{ $t('menu.clockManipulation') }}
-    metronome(slot='icon')
+    :to='localePath({ name: "categorySlug", params: { categorySlug: category.slug } })'
+  ) {{ category.name[$i18n.locale] }}
+    component.icon(:is='category.icon', slot='icon')
   //- menu-item(:solid='column', to='/sequencers') Sequencers
   //-   sequence(slot='icon')
   //- menu-item(:solid='column', to='/amps') Amps
@@ -24,6 +26,8 @@ import Amp from '~/assets/images/icons/amp.svg?inline'
 import Levels from '~/assets/images/icons/levels.svg?inline'
 import Bulb from '~/assets/images/icons/bulb.svg?inline'
 
+import categories from '~/lib/categories'
+
 export default {
   components: {
     MenuItem,
@@ -38,6 +42,12 @@ export default {
       type: Boolean,
       default: false
     }
+  },
+  data: () => ({
+    categories
+  }),
+  mounted () {
+    console.log('locale:', this.$i18n.locale)
   }
 }
 </script>

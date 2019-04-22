@@ -11,9 +11,13 @@
           main-menu
           .group
             .separator: .dot
-            menu-item(:to='localePath({ name: "index" })') All
-            menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "free" } })') Free
-            menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "paid" } })') Paid
+            menu-item(:to='localePath({ name: "index" })') {{ $t('menu.all') }}
+            menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "free" } })') {{ $t('menu.free') }}
+            menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "paid" } })') {{ $t('menu.paid') }}
+          .group
+            .separator: .dot
+            menu-item(:to='switchLocalePath("en")') En
+            menu-item(:to='switchLocalePath("ru")') Ru
           //- .group
           //-   .separator: .dot
           //-   menu-item(to='/about') About
