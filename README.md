@@ -1,4 +1,4 @@
-![ZZC Modules](https://raw.github.com/zezic/ZZC/master/screenshot.png?sanitize=true)
+![ZZC Modules](screenshot.png)
 
 # ZZC Modules
 
