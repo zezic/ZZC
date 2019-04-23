@@ -27,6 +27,13 @@ const widgetRects = {
     y: -6,
     radius: '50%'
   },
+  'knob-25': {
+    width: 36,
+    height: 36,
+    x: -5,
+    y: -6,
+    radius: '50%'
+  },
   'knob-27': {
     width: 40,
     height: 40,
@@ -41,11 +48,25 @@ const widgetRects = {
     y: -3,
     radius: '3px'
   },
+  'ratio-display': {
+    width: 64,
+    height: 26,
+    x: -3,
+    y: -3,
+    radius: '3px'
+  },
   'medium-led': {
     width: 13,
     height: 13,
     x: -2.5,
     y: -3,
+    radius: '50%'
+  },
+  'cross-knob': {
+    width: 50,
+    height: 50,
+    x: -0,
+    y: -0,
     radius: '50%'
   }
 }
