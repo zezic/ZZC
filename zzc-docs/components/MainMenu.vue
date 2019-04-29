@@ -25,6 +25,7 @@ import Sequence from '~/assets/images/icons/sequence.svg?inline'
 import Amp from '~/assets/images/icons/amp.svg?inline'
 import Levels from '~/assets/images/icons/levels.svg?inline'
 import Bulb from '~/assets/images/icons/bulb.svg?inline'
+import Sine from '~/assets/images/icons/sine.svg?inline'
 
 import categories from '~/lib/categories'
 
@@ -35,7 +36,8 @@ export default {
     Sequence,
     Amp,
     Levels,
-    Bulb
+    Bulb,
+    Sine
   },
   props: {
     column: {

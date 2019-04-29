@@ -18,7 +18,17 @@ const modules = [
     category: {
       slug: 'clock-manipulation'
     },
-    slug: 'divider' }
+    slug: 'divider' },
+  { name: 'FN-3',
+    function: {
+      en: 'Function Generator',
+      ru: 'Генератор функций'
+    },
+    price: 0,
+    category: {
+      slug: 'generators'
+    },
+    slug: 'fn-3' }
 ]
 
 export default modules

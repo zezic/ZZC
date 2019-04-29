@@ -4,7 +4,15 @@ const categories = [
     icon: 'metronome',
     name: {
       en: 'Clock Manipulation',
-      ru: 'Управление Клоком'
+      ru: 'Манипуляции клоком'
+    }
+  },
+  {
+    slug: 'generators',
+    icon: 'sine',
+    name: {
+      en: 'Generators',
+      ru: 'Генераторы'
     }
   }
 ]

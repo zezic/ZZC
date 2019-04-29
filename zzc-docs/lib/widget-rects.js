@@ -68,6 +68,20 @@ const widgetRects = {
     x: -0,
     y: -0,
     radius: '50%'
+  },
+  'display-switch': {
+    width: 31,
+    height: 26,
+    x: -1,
+    y: -1,
+    radius: '3px'
+  },
+  'fn-3-display': {
+    width: 29,
+    height: 20,
+    x: 0,
+    y: 14,
+    radius: '3px'
   }
 }
 

@@ -44,10 +44,12 @@ $color-rack-background: #616464;
     justify-content: center;
     margin-left: -7.5px;
     margin-right: -7.5px;
+    min-height: 380px;
 
     @include phone {
       margin-left: -3.75px;
       margin-right: -3.75px;
+      min-height: 190px;
     }
 
     .module {
