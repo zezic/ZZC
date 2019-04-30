@@ -42,9 +42,19 @@ export default {
   },
   data: () => ({
   }),
+  head () {
+    return {
+      title: `ZZC | ${this.module.name}`
+    }
+  },
   computed: {
     structure () {
       return mdParser.parse(this.markdown)
+    },
+    category () {
+      return categories.find(category => {
+        return category.slug === this.$route.params.categorySlug
+      })
     },
     module () {
       return modules.find(module => module.slug === this.$route.params.moduleSlug)
@@ -52,16 +62,14 @@ export default {
     rackCrumbs () {
       return [
         { url: this.localePath({ name: 'categorySlug', params: { categorySlug: this.$route.params.categorySlug } }),
-          title: categories.find(category => {
-            return category.slug === this.$route.params.categorySlug
-          }).name[this.$i18n.locale] }
+          title: this.category.name[this.$i18n.locale] }
       ]
     },
     crumbs () {
       return [
         ...this.rackCrumbs,
         { url: this.$route,
-          title: modules.find(module => module.slug === this.$route.params.moduleSlug).name }
+          title: this.module.name }
       ]
     }
   },
