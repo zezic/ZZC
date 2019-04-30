@@ -1,4 +1,4 @@
-![ZZC Modules](screenshot.png)
+<a href="https://zzc-cv.github.io/"><img src='https://github.com/zezic/zzc/raw/master/screenshot.png' alt='ZZC Modules'></a>
 
 # ZZC Modules
 
