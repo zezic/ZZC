@@ -28,6 +28,8 @@ module.exports = {
     '@nuxtjs/pwa',
     'nuxt-svg',
     ['nuxt-i18n', {
+      strategy: 'prefix_and_default',
+      defaultLocale: 'en',
       locales: [
         { code: 'en',
           iso: 'en-US' },

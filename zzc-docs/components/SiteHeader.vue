@@ -9,11 +9,11 @@
           logo
         .menu-container
           main-menu
-          .group
-            .separator: .dot
-            menu-item(:to='localePath({ name: "index" })') {{ $t('menu.all') }}
-            menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "free" } })') {{ $t('menu.free') }}
-            menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "paid" } })') {{ $t('menu.paid') }}
+          //- .group
+          //-   .separator: .dot
+          //-   menu-item(:to='localePath({ name: "index" })') {{ $t('menu.all') }}
+          //-   menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "free" } })') {{ $t('menu.free') }}
+          //-   menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "paid" } })') {{ $t('menu.paid') }}
           .group
             .separator: .dot
             menu-item(:to='switchLocalePath("en")') En

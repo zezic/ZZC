@@ -26,16 +26,23 @@ export default {
       modules: modules.filter(module => module.category.slug === params.categorySlug)
     }
   },
+  head () {
+    return {
+      title: `ZZC | ${this.category.name[this.$i18n.locale]}`
+    }
+  },
   computed: {
+    category () {
+      return categories.find(category => {
+        return category.slug === this.$route.params.categorySlug
+      })
+    },
     crumbs () {
       return [
         { url: this.$route,
-          title: categories.find(category => {
-            return category.slug === this.$route.params.categorySlug
-          }).name[this.$i18n.locale] }
+          title: this.category.name[this.$i18n.locale] }
       ]
     }
   }
 }
 </script>
-

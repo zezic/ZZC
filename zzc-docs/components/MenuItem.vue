@@ -1,5 +1,8 @@
 <template lang='pug'>
-nuxt-link.menu-item(:to='to')
+a.menu-item(:href='to', v-if='typeof to === "string" && to.startsWith("http")')
+  .icon(v-if='$slots.icon', :class='{solid}'): slot(name='icon')
+  .text: slot
+nuxt-link.menu-item(:to='to', v-else)
   .icon(v-if='$slots.icon', :class='{solid}'): slot(name='icon')
   .text: slot
 </template>

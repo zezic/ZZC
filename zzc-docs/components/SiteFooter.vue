@@ -12,10 +12,10 @@
           menu-item(:to='switchLocalePath("ru")') Ru
         //- menu-item(to='/contact') Contact
         //- menu-item(to='/about') About
-      .group.group-2
-        menu-item(:to='localePath({ name: "index" })') {{ $t('menu.all') }}
-        menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "free" } })') {{ $t('menu.free') }}
-        menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "paid" } })') {{ $t('menu.paid') }}
+      //- .group.group-2
+      //-   menu-item(:to='localePath({ name: "index" })') {{ $t('menu.all') }}
+      //-   menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "free" } })') {{ $t('menu.free') }}
+      //-   menu-item(:to='localePath({ name: "categorySlug", params: { categorySlug: "paid" } })') {{ $t('menu.paid') }}
       .group.group-3
         main-menu(:column='true')
 </template>
