@@ -11,7 +11,8 @@
                 "${default}",
                 "/home/zezic/Documents/Soft/Audio/Rack-SDK/include",
                 "/home/zezic/Documents/Soft/Audio/Rack-SDK/dep/include"
-            ]
+            ],
+            "compileCommands": "${workspaceFolder}/compile_commands.json"
         }
     ],
     "version": 4
