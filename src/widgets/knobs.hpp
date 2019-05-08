@@ -142,8 +142,8 @@ struct ZZC_Knob27Snappy : ZZC_Knob27 {
 struct ZZC_CrossKnob : ZZC_BaseKnob {
   ZZC_CrossKnob() {
     setSVG( SVG::load(assetPlugin(plugin, "res/knobs/ZZC-Cross-Knob.svg")) );
-    shadow->box.size = Vec(37, 37);
-    shadow->box.pos = Vec(6, 2);
+    shadow->box.size = Vec(43, 43);
+    shadow->box.pos = Vec(3, 8);
     shadow->blurRadius = 15.0f;
     shadow->opacity = 1.0f;
   }
