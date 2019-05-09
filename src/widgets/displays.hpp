@@ -66,7 +66,7 @@ struct Display32Widget : BaseDisplayWidget {
     char fractionalPartString[10];
     float remainder = fmod(valueToDraw, 1.0f) * 100.0f;
     float intpart;
-    modf(remainder, &intpart);
+    std::modf(remainder, &intpart);
     if (disabled && *disabled) {
       sprintf(fractionalPartString, "--");
     } else if (valueToDraw >= 1000.0f) {
