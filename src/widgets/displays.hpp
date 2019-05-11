@@ -47,9 +47,9 @@ struct Display32Widget : BaseDisplayWidget {
 
     char integerPartString[10];
     if (valueToDraw >= 1000.0f || (disabled && *disabled)) {
-      sprintf(integerPartString, "---.");
+      snprintf(integerPartString, sizeof(integerPartString), "---.");
     } else {
-      sprintf(integerPartString, "%3.0f.", floor(valueToDraw));
+      snprintf(integerPartString, sizeof(integerPartString), "%3.0f.", floor(valueToDraw));
     }
 
     Vec textPos = Vec(36.0f, 16.0f);
@@ -68,13 +68,13 @@ struct Display32Widget : BaseDisplayWidget {
     float intpart;
     std::modf(remainder, &intpart);
     if (disabled && *disabled) {
-      sprintf(fractionalPartString, "--");
+      snprintf(fractionalPartString, sizeof(fractionalPartString), "--");
     } else if (valueToDraw >= 1000.0f) {
-      sprintf(fractionalPartString, "--");
+      snprintf(fractionalPartString, sizeof(fractionalPartString), "--");
     } else if (intpart == 0.0f) {
-      sprintf(fractionalPartString, "00");
+      snprintf(fractionalPartString, sizeof(fractionalPartString), "00");
     } else {
-      sprintf(fractionalPartString, "%2.0f", intpart);
+      snprintf(fractionalPartString, sizeof(fractionalPartString), "%2.0f", intpart);
       if (fractionalPartString[0] == ' ') {
         fractionalPartString[0] = '0';
       }
@@ -109,7 +109,7 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
     nvgTextAlign(vg, NVG_ALIGN_RIGHT);
 
     char integerPartString[10];
-    sprintf(integerPartString, "%8.0f", *value);
+    snprintf(integerPartString, sizeof(integerPartString), "%8.0f", *value);
 
     Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 
@@ -139,7 +139,7 @@ struct IntDisplayWidget : BaseDisplayWidget {
     nvgTextAlign(vg, NVG_ALIGN_RIGHT);
 
     char integerString[10];
-    sprintf(integerString, "%d", *value);
+    snprintf(integerString, sizeof(integerString), "%d", *value);
 
     Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 
@@ -172,7 +172,7 @@ struct RatioDisplayWidget : BaseDisplayWidget {
     nvgTextAlign(vg, NVG_ALIGN_RIGHT);
 
     char fromString[10];
-    sprintf(fromString, "%2.0f", *from);
+    snprintf(fromString, sizeof(fromString), "%2.0f", *from);
 
     Vec textPos = Vec(box.size.x / 2.0f - 3.0f, 16.0f);
 
@@ -185,7 +185,7 @@ struct RatioDisplayWidget : BaseDisplayWidget {
     nvgTextAlign(vg, NVG_ALIGN_LEFT);
 
     char toString[10];
-    sprintf(toString, "%2.0f", *to);
+    snprintf(toString, sizeof(toString), "%2.0f", *to);
     if (toString[0] == ' ') {
       toString[0] = toString[1];
       toString[1] = ' ';
