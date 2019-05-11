@@ -60,7 +60,7 @@ struct FN3TextDisplayWidget : TransparentWidget {
     nvgFill(vg);
 
     char textString[10];
-    sprintf(textString, "%3.1f", *text > 0.04 ? *text - 0.04 : *text + 0.04);
+    snprintf(textString, sizeof(textString), "%3.1f", *text > 0.04 ? *text - 0.04 : *text + 0.04);
 
     // Text
     nvgFontSize(vg, 8.5);
