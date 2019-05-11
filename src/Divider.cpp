@@ -1,5 +1,5 @@
 #include "ZZC.hpp"
-
+#include <cmath>
 
 struct Divider : Module {
   enum ParamIds {
@@ -51,21 +51,14 @@ struct Divider : Module {
   SchmittTrigger clockTrigger;
   SchmittTrigger resetTrigger;
 
-  inline float logMap(float input, float range) {
-    if (input == 0.0f) {
-      return 1.0f;
-    }
-    return max(1.0f, powf(2, log2f(input * range)));
-  }
-
   inline void processRatioInputs() {
     if (inputs[IN_RATIO_INPUT].active) {
-      from = floorf(logMap(clamp(inputs[IN_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f, params[IN_RATIO_PARAM].value) + 0.01);
+      from = std::roundf(clamp(inputs[IN_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f * (params[IN_RATIO_PARAM].value - 1) + 1);
     } else {
       from = params[IN_RATIO_PARAM].value;
     }
     if (inputs[OUT_RATIO_INPUT].active) {
-      to = floorf(logMap(clamp(inputs[OUT_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f, params[OUT_RATIO_PARAM].value) + 0.01);
+      to = std::roundf(clamp(inputs[OUT_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f * (params[OUT_RATIO_PARAM].value - 1) + 1);
     } else {
       to = params[OUT_RATIO_PARAM].value;
     }
