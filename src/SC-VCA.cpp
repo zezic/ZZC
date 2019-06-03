@@ -84,7 +84,7 @@ void SCVCA::step() {
 
 struct SCVCAWidget : ModuleWidget {
   SCVCAWidget(SCVCA *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(plugin, "res/panels/SC-VCA.svg")));
+    setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SC-VCA.svg")));
 
     addParam(ParamWidget::create<ZZC_BigKnob>(Vec(4, 74.7), module, SCVCA::GAIN_PARAM, 0.0f, 2.0f, 1.0f));
     addParam(ParamWidget::create<ZZC_BigKnobInner>(Vec(24, 94.7), module, SCVCA::CLIP_PARAM, 0.0f, 10.0f, 5.0f));

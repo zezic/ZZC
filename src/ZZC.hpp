@@ -7,7 +7,7 @@
 using namespace rack;
 
 // Forward-declare the Plugin, defined in ZZC.cpp
-extern Plugin *plugin;
+extern Plugin *pluginInstance;
 
 // Forward-declare each Model, defined in each module source file
 extern Model *modelClock;

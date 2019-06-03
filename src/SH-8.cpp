@@ -49,7 +49,7 @@ void SH8::step() {
 
 struct SH8Widget : ModuleWidget {
   SH8Widget(SH8 *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(plugin, "res/panels/SH-8.svg")));
+    setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SH-8.svg")));
 
     addInput(Port::create<ZZC_PJ_Port>(Vec(25, 53), Port::INPUT, module, SH8::NOISE_INPUT));
 

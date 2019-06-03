@@ -2,11 +2,11 @@
 
 using namespace rack;
 
-extern Plugin *plugin;
+extern Plugin *pluginInstance;
 
 struct ZZC_Screw : SVGScrew {
   ZZC_Screw() {
-    sw->setSVG(SVG::load(assetPlugin(plugin, "res/screws/ZZC-Screw.svg")));
+    sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/screws/ZZC-Screw.svg")));
     box.size = sw->box.size;
   }
 };

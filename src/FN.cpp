@@ -36,7 +36,7 @@ struct FN3TextDisplayWidget : TransparentWidget {
   std::shared_ptr<Font> font;
 
   FN3TextDisplayWidget() {
-    font = Font::load(assetPlugin(plugin, "res/fonts/Nunito/Nunito-Black.ttf"));
+    font = Font::load(assetPlugin(pluginInstance, "res/fonts/Nunito/Nunito-Black.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -202,7 +202,7 @@ void FN3::step() {
 
 struct FN3Widget : ModuleWidget {
   FN3Widget(FN3 *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(plugin, "res/panels/FN-3.svg")));
+    setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/FN-3.svg")));
 
     addParam(ParamWidget::create<ZZC_Knob27>(Vec(9, 58), module, FN3::PW_PARAM, 0.0f, 1.0f, 0.5f));
     addInput(Port::create<ZZC_PJ_Port>(Vec(10.5, 93), Port::INPUT, module, FN3::PW_INPUT));

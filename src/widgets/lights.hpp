@@ -5,7 +5,7 @@ static const NVGcolor COLOR_NEG = nvgRGB(0xe7, 0x34, 0x2d);
 
 using namespace rack;
 
-extern Plugin *plugin;
+extern Plugin *pluginInstance;
 
 template <typename BASE>
 struct LedLight : BASE {

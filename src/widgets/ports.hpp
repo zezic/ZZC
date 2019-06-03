@@ -2,23 +2,23 @@
 
 using namespace rack;
 
-extern Plugin *plugin;
+extern Plugin *pluginInstance;
 
 struct ZZC_PJ_In_Port : SVGPort {
   ZZC_PJ_In_Port() {
-    setSVG(SVG::load(assetPlugin(plugin, "res/sockets/ZZC-PJ-In.svg")));
+    setSVG(SVG::load(assetPlugin(pluginInstance, "res/sockets/ZZC-PJ-In.svg")));
   }
 };
 
 struct ZZC_PJ_Out_Port : SVGPort {
   ZZC_PJ_Out_Port() {
-    setSVG(SVG::load(assetPlugin(plugin, "res/sockets/ZZC-PJ-Out.svg")));
+    setSVG(SVG::load(assetPlugin(pluginInstance, "res/sockets/ZZC-PJ-Out.svg")));
   }
 };
 
 struct ZZC_PJ_Port : SVGPort {
   ZZC_PJ_Port() {
-    setSVG(SVG::load(assetPlugin(plugin, "res/sockets/ZZC-PJ.svg")));
+    setSVG(SVG::load(assetPlugin(pluginInstance, "res/sockets/ZZC-PJ.svg")));
     shadow->box.size = Vec(29, 29);
     shadow->box.pos = Vec(-2, 0);
     shadow->blurRadius = 15.0f;

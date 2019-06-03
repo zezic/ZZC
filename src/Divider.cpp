@@ -167,7 +167,7 @@ struct DividerWidget : ModuleWidget {
 };
 
 DividerWidget::DividerWidget(Divider *module) : ModuleWidget(module) {
-  setPanel(SVG::load(assetPlugin(plugin, "res/panels/Divider.svg")));
+  setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/Divider.svg")));
 
   RatioDisplayWidget *ratioDisplay = new RatioDisplayWidget();
   ratioDisplay->box.pos = Vec(9.0f, 94.0f);

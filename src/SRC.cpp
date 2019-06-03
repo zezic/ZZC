@@ -28,7 +28,7 @@ struct VoltageDisplayWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   VoltageDisplayWidget() {
-    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -156,7 +156,7 @@ struct SRCWidget : ModuleWidget {
 };
 
 SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
-  setPanel(SVG::load(assetPlugin(plugin, "res/panels/SRC.svg")));
+  setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SRC.svg")));
 
   addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(25.0f, 42.5f), module, SRC::VOLTAGE_POS_LIGHT));
 

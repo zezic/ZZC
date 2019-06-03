@@ -1,11 +1,11 @@
 #include "ZZC.hpp"
 
-Plugin *plugin;
+Plugin *pluginInstance;
 
 void init(Plugin *p) {
-  plugin = p;
+  pluginInstance = p;
 
-  // Add all Models defined throughout the plugin
+  // Add all Models defined throughout the pluginInstance
   p->addModel(modelClock);
   p->addModel(modelDivider);
   p->addModel(modelFN3);
@@ -13,6 +13,6 @@ void init(Plugin *p) {
   p->addModel(modelSH8);
   p->addModel(modelSRC);
 
-  // Any other plugin initialization may go here.
+  // Any other pluginInstance initialization may go here.
   // As an alternative, consider lazy-loading assets and lookup tables when your module is created to reduce startup times of Rack.
 }

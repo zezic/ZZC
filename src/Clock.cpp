@@ -323,7 +323,7 @@ void Clock::step() {
 
 struct ClockWidget : ModuleWidget {
   ClockWidget(Clock *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(plugin, "res/panels/Clock.svg")));
+    setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/Clock.svg")));
 
     addInput(Port::create<ZZC_PJ_Port>(Vec(10.8f, 52), Port::INPUT, module, Clock::VBPS_INPUT));
     addChild(ModuleLightWidget::create<TinyLight<GreenLight>>(Vec(33, 52), module, Clock::EXT_VBPS_MODE_LED));

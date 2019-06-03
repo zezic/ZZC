@@ -3,7 +3,7 @@
 
 using namespace rack;
 
-extern Plugin *plugin;
+extern Plugin *pluginInstance;
 
 struct BaseDisplayWidget : TransparentWidget {
   NVGcolor backgroundColor = nvgRGB(0x01, 0x01, 0x01);
@@ -30,7 +30,7 @@ struct Display32Widget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   Display32Widget() {
-    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -94,7 +94,7 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   DisplayIntpartWidget() {
-    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -127,7 +127,7 @@ struct IntDisplayWidget : BaseDisplayWidget {
   NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
 
   IntDisplayWidget() {
-    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
@@ -156,7 +156,7 @@ struct RatioDisplayWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   RatioDisplayWidget() {
-    font = Font::load(assetPlugin(plugin, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(NVGcontext *vg) override {
