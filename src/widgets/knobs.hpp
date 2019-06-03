@@ -195,7 +195,7 @@ struct ZZC_EncoderKnob : SVGKnob {
 
   void randomize() override {}
 
-  void onDragMove(EventDragMove &e) override {
+  void onDragMove(DragMove &e) override {
     float range = maxValue - minValue;
     float delta = KNOB_SENSITIVITY * -e.mouseRel.y * speed * range;
 

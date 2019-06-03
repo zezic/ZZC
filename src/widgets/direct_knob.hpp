@@ -154,7 +154,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     }
   }
 
-  void onDragStart(EventDragStart &e) override {
+  void onDragStart(DragStart &e) override {
     windowCursorLock();
     randomizable = false;
   }
@@ -162,7 +162,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
   virtual void onInput(float factor) = 0;
   virtual void onReset() = 0;
 
-  void onDragMove(EventDragMove &e) override {
+  void onDragMove(DragMove &e) override {
     float delta = KNOB_SENSITIVITY * -e.mouseRel.y * speed;
     if (windowIsModPressed()) { delta /= 16.f; }
     rotation += delta * rotationMult;
@@ -170,7 +170,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     dirty = true;
   }
 
-  void onDragEnd(EventDragEnd &e) override {
+  void onDragEnd(DragEnd &e) override {
     windowCursorUnlock();
     randomizable = true;
   }

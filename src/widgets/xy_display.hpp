@@ -95,7 +95,7 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
     this->disp->y = this->y;
   }
 
-  void onDragStart(EventDragStart &e) override {
+  void onDragStart(DragStart &e) override {
     windowCursorLock();
     dragDelta = 0.0;
   }
@@ -103,7 +103,7 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
   virtual void onInput(float x, float y) = 0;
   virtual void onReset() = 0;
 
-  void onDragMove(EventDragMove &e) override {
+  void onDragMove(DragMove &e) override {
     float deltaX = KNOB_SENSITIVITY * e.mouseRel.x * speed;
     float deltaY = KNOB_SENSITIVITY * -e.mouseRel.y * speed;
 
@@ -117,7 +117,7 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
     dirty = true;
   }
 
-  void onDragEnd(EventDragEnd &e) override {
+  void onDragEnd(DragEnd &e) override {
     windowCursorUnlock();
   }
   void reset() override {
