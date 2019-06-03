@@ -111,7 +111,7 @@ struct SRC : Module {
   SRC() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
   void step() override;
 
-  json_t *toJson() override {
+  json_t *dataToJson() override {
     json_t *rootJ = json_object();
     json_object_set_new(rootJ, "on", json_boolean(on));
     json_object_set_new(rootJ, "mode", json_integer(mode));
@@ -120,7 +120,7 @@ struct SRC : Module {
     return rootJ;
   }
 
-  void fromJson(json_t *rootJ) override {
+  void dataFromJson(json_t *rootJ) override {
     json_t *onJ = json_object_get(rootJ, "on");
     json_t *modeJ = json_object_get(rootJ, "mode");
     json_t *quantizeInputJ = json_object_get(rootJ, "quantizeInput");

@@ -165,14 +165,14 @@ struct Clock : Module {
   }
   void step() override;
 
-  json_t *toJson() override {
+  json_t *dataToJson() override {
     json_t *rootJ = json_object();
     json_object_set_new(rootJ, "running", json_integer((int) running));
     json_object_set_new(rootJ, "reverse", json_integer((int) reverse));
     return rootJ;
   }
 
-  void fromJson(json_t *rootJ) override {
+  void dataFromJson(json_t *rootJ) override {
     json_t *runningJ = json_object_get(rootJ, "running");
     json_t *reverseJ = json_object_get(rootJ, "reverse");
     if (runningJ) {

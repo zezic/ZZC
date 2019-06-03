@@ -1,4 +1,3 @@
-#include "dsp/digital.hpp"
 #include "util/math.hpp"
 
 using namespace rack;
