@@ -7,3 +7,5 @@
 tags
 .clang_complete
 compile_commands.json
+*.d
+.vscode/ipch
