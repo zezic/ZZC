@@ -109,4 +109,4 @@ struct SCVCAWidget : ModuleWidget {
 };
 
 
-Model *modelSCVCA = Model::create<SCVCA, SCVCAWidget>("ZZC", "SC-VCA", "Soft Clipping VCA", AMPLIFIER_TAG, LIMITER_TAG, WAVESHAPER_TAG);
+Model *modelSCVCA = Model::create<SCVCA, SCVCAWidget>("SC-VCA");

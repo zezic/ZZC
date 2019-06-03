@@ -378,4 +378,4 @@ struct ClockWidget : ModuleWidget {
 };
 
 
-Model *modelClock = Model::create<Clock, ClockWidget>("ZZC", "Clock", "Clock", CLOCK_TAG);
+Model *modelClock = Model::create<Clock, ClockWidget>("Clock");

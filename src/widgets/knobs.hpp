@@ -1,4 +1,4 @@
-#include "rack.hpp"
+#include "rack0.hpp"
 #include "window.hpp"
 
 #ifndef KNOB_SENSITIVITY_CONST

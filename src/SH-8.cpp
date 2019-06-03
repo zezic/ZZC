@@ -69,4 +69,4 @@ struct SH8Widget : ModuleWidget {
 };
 
 
-Model *modelSH8 = Model::create<SH8, SH8Widget>("ZZC", "SH-8", "SH-8 Sample & Hold", NOISE_TAG, SAMPLE_AND_HOLD_TAG);
+Model *modelSH8 = Model::create<SH8, SH8Widget>("SH-8");

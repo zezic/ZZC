@@ -220,4 +220,4 @@ void DividerWidget::appendContextMenu(Menu *menu) {
 }
 
 
-Model *modelDivider = Model::create<Divider, DividerWidget>("ZZC", "Divider", "Divider", CLOCK_MODULATOR_TAG);
+Model *modelDivider = Model::create<Divider, DividerWidget>("Divider");

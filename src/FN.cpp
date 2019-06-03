@@ -243,4 +243,4 @@ struct FN3Widget : ModuleWidget {
 };
 
 
-Model *modelFN3 = Model::create<FN3, FN3Widget>("ZZC", "FN-3", "FN-3 Function Generator", FUNCTION_GENERATOR_TAG);
+Model *modelFN3 = Model::create<FN3, FN3Widget>("FN-3");
