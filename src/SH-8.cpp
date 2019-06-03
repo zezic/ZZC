@@ -51,22 +51,22 @@ struct SH8Widget : ModuleWidget {
   SH8Widget(SH8 *module) : ModuleWidget(module) {
     setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SH-8.svg")));
 
-    addInput(Port::create<ZZC_PJ_Port>(Vec(25, 53), Port::INPUT, module, SH8::NOISE_INPUT));
+    addInput(createPort<ZZC_PJ_Port>(Vec(25, 53), PortWidget::INPUT, module, SH8::NOISE_INPUT));
 
     for (int i = 0; i < NUM_CHANNELS; i++) {
-      addInput(Port::create<ZZC_PJ_Port>(Vec(7.25f, 109 + 30 * i), Port::INPUT, module, SH8::TRIG_INPUT + i));
+      addInput(createPort<ZZC_PJ_Port>(Vec(7.25f, 109 + 30 * i), PortWidget::INPUT, module, SH8::TRIG_INPUT + i));
     }
 
     for (int i = 0; i < NUM_CHANNELS; i++) {
-      addOutput(Port::create<ZZC_PJ_Port>(Vec(42.25f, 109 + 30 * i), Port::OUTPUT, module, SH8::HOLD_OUTPUT + i));
+      addOutput(createPort<ZZC_PJ_Port>(Vec(42.25f, 109 + 30 * i), PortWidget::OUTPUT, module, SH8::HOLD_OUTPUT + i));
     }
 
-    addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
-    addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-    addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-    addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
+    addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+    addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   }
 };
 
 
-Model *modelSH8 = Model::create<SH8, SH8Widget>("SH-8");
+Model *modelSH8 = createModel<SH8, SH8Widget>("SH-8");

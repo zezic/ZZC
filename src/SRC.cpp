@@ -158,7 +158,7 @@ struct SRCWidget : ModuleWidget {
 SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
   setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SRC.svg")));
 
-  addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(25.0f, 42.5f), module, SRC::VOLTAGE_POS_LIGHT));
+  addChild(createLight<SmallLight<GreenRedLight>>(Vec(25.0f, 42.5f), module, SRC::VOLTAGE_POS_LIGHT));
 
   VoltageDisplayWidget *display = new VoltageDisplayWidget();
   display->box.pos = Vec(6.0f, 60.0f);
@@ -167,21 +167,21 @@ SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
   display->mode = &module->mode;
   addChild(display);
 
-  addParam(ParamWidget::create<ZZC_SelectKnob>(Vec(9, 105), module, SRC::COARSE_PARAM, -10.0f, 10.0f, 0.0f));
-  addParam(ParamWidget::create<ZZC_Knob25>(Vec(10, 156), module, SRC::FINE_PARAM, -1.0f, 1.0f, 0.0f));
+  addParam(createParam<ZZC_SelectKnob>(Vec(9, 105), module, SRC::COARSE_PARAM, -10.0f, 10.0f, 0.0f));
+  addParam(createParam<ZZC_Knob25>(Vec(10, 156), module, SRC::FINE_PARAM, -1.0f, 1.0f, 0.0f));
 
-  addInput(Port::create<ZZC_PJ_Port>(Vec(10.5, 200), Port::INPUT, module, SRC::CV_INPUT));
-  addInput(Port::create<ZZC_PJ_Port>(Vec(10.5, 242), Port::INPUT, module, SRC::ON_INPUT));
+  addInput(createPort<ZZC_PJ_Port>(Vec(10.5, 200), PortWidget::INPUT, module, SRC::CV_INPUT));
+  addInput(createPort<ZZC_PJ_Port>(Vec(10.5, 242), PortWidget::INPUT, module, SRC::ON_INPUT));
 
-  addParam(ParamWidget::create<ZZC_LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
-  addChild(ModuleLightWidget::create<LedLight<ZZC_YellowLight>>(Vec(13.1f, 277.7f), module, SRC::ON_LED));
+  addParam(createParam<ZZC_LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
+  addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(13.1f, 277.7f), module, SRC::ON_LED));
 
-  addOutput(Port::create<ZZC_PJ_Port>(Vec(10.5, 320), Port::OUTPUT, module, SRC::VOLTAGE_OUTPUT));
+  addOutput(createPort<ZZC_PJ_Port>(Vec(10.5, 320), PortWidget::OUTPUT, module, SRC::VOLTAGE_OUTPUT));
 
-  addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
-  addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-  addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-  addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+  addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
+  addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+  addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+  addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 }
 
 
@@ -246,12 +246,12 @@ void SRCWidget::appendContextMenu(Menu *menu) {
   SRC *src = dynamic_cast<SRC*>(module);
   assert(src);
 
-  SRCMusicalItem *musicalItem = MenuItem::create<SRCMusicalItem>("Fine: Snap to 1/12V");
-  SRCDecimalItem *decimalItem = MenuItem::create<SRCDecimalItem>("Fine: Snap to 1/10V");
-  SRCFreeItem *freeItem = MenuItem::create<SRCFreeItem>("Fine: Don't snap");
-  SRCOnToggleItem *onToggleItem = MenuItem::create<SRCOnToggleItem>("ON: Toggle");
-  SRCOnHoldItem *onHoldItem = MenuItem::create<SRCOnHoldItem>("ON: Hold");
-  SRCQuantizeItem *quantizeItem = MenuItem::create<SRCQuantizeItem>("Quantize CV like Fine knob");
+  SRCMusicalItem *musicalItem = createMenuItem<SRCMusicalItem>("Fine: Snap to 1/12V");
+  SRCDecimalItem *decimalItem = createMenuItem<SRCDecimalItem>("Fine: Snap to 1/10V");
+  SRCFreeItem *freeItem = createMenuItem<SRCFreeItem>("Fine: Don't snap");
+  SRCOnToggleItem *onToggleItem = createMenuItem<SRCOnToggleItem>("ON: Toggle");
+  SRCOnHoldItem *onHoldItem = createMenuItem<SRCOnHoldItem>("ON: Hold");
+  SRCQuantizeItem *quantizeItem = createMenuItem<SRCQuantizeItem>("Quantize CV like Fine knob");
   musicalItem->src = src;
   decimalItem->src = src;
   freeItem->src = src;
@@ -269,4 +269,4 @@ void SRCWidget::appendContextMenu(Menu *menu) {
 }
 
 
-Model *modelSRC = Model::create<SRC, SRCWidget>("SRC");
+Model *modelSRC = createModel<SRC, SRCWidget>("SRC");

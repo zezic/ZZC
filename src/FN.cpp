@@ -204,8 +204,8 @@ struct FN3Widget : ModuleWidget {
   FN3Widget(FN3 *module) : ModuleWidget(module) {
     setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/FN-3.svg")));
 
-    addParam(ParamWidget::create<ZZC_Knob27>(Vec(9, 58), module, FN3::PW_PARAM, 0.0f, 1.0f, 0.5f));
-    addInput(Port::create<ZZC_PJ_Port>(Vec(10.5, 93), Port::INPUT, module, FN3::PW_INPUT));
+    addParam(createParam<ZZC_Knob27>(Vec(9, 58), module, FN3::PW_PARAM, 0.0f, 1.0f, 0.5f));
+    addInput(createPort<ZZC_PJ_Port>(Vec(10.5, 93), PortWidget::INPUT, module, FN3::PW_INPUT));
 
     FN3DisplayWidget *display = new FN3DisplayWidget();
     display->box.pos = Vec(8.0f, 126.0f);
@@ -214,8 +214,8 @@ struct FN3Widget : ModuleWidget {
     display->pw = &module->pw;
     display->shift = &module->shift;
     addChild(display);
-    addParam(ParamWidget::create<ZZC_FN3WaveSwitch>(Vec(8, 126), module, FN3::WAVE_PARAM, 0.0f, 2.0f, 0.0f));
-    addParam(ParamWidget::create<ZZC_FN3UniBiSwitch>(Vec(8, 152), module, FN3::OFFSET_PARAM, 0.0f, 1.0f, 0.0f));
+    addParam(createParam<ZZC_FN3WaveSwitch>(Vec(8, 126), module, FN3::WAVE_PARAM, 0.0f, 2.0f, 0.0f));
+    addParam(createParam<ZZC_FN3UniBiSwitch>(Vec(8, 152), module, FN3::OFFSET_PARAM, 0.0f, 1.0f, 0.0f));
 
     FN3TextDisplayWidget *pwDisplay = new FN3TextDisplayWidget();
     pwDisplay->box.pos = Vec(11.0f, 129.0f);
@@ -231,16 +231,16 @@ struct FN3Widget : ModuleWidget {
     shiftDisplay->text = &module->shiftDisplay;
     addChild(shiftDisplay);
 
-    addInput(Port::create<ZZC_PJ_Port>(Vec(10.5, 194), Port::INPUT, module, FN3::SHIFT_INPUT));
-    addParam(ParamWidget::create<ZZC_Knob25>(Vec(10, 229), module, FN3::SHIFT_PARAM, 1.0f, -1.0f, 0.0f));
+    addInput(createPort<ZZC_PJ_Port>(Vec(10.5, 194), PortWidget::INPUT, module, FN3::SHIFT_INPUT));
+    addParam(createParam<ZZC_Knob25>(Vec(10, 229), module, FN3::SHIFT_PARAM, 1.0f, -1.0f, 0.0f));
 
-    addInput(Port::create<ZZC_PJ_Port>(Vec(10.5, 275), Port::INPUT, module, FN3::PHASE_INPUT));
-    addOutput(Port::create<ZZC_PJ_Port>(Vec(10.5, 320), Port::OUTPUT, module, FN3::WAVE_OUTPUT));
+    addInput(createPort<ZZC_PJ_Port>(Vec(10.5, 275), PortWidget::INPUT, module, FN3::PHASE_INPUT));
+    addOutput(createPort<ZZC_PJ_Port>(Vec(10.5, 320), PortWidget::OUTPUT, module, FN3::WAVE_OUTPUT));
 
-    addChild(Widget::create<ZZC_Screw>(Vec(box.size.x / 2 - RACK_GRID_WIDTH / 2, 0)));
-    addChild(Widget::create<ZZC_Screw>(Vec(box.size.x / 2 - RACK_GRID_WIDTH / 2, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    addChild(createWidget<ZZC_Screw>(Vec(box.size.x / 2 - RACK_GRID_WIDTH / 2, 0)));
+    addChild(createWidget<ZZC_Screw>(Vec(box.size.x / 2 - RACK_GRID_WIDTH / 2, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   }
 };
 
 
-Model *modelFN3 = Model::create<FN3, FN3Widget>("FN-3");
+Model *modelFN3 = createModel<FN3, FN3Widget>("FN-3");

@@ -86,27 +86,27 @@ struct SCVCAWidget : ModuleWidget {
   SCVCAWidget(SCVCA *module) : ModuleWidget(module) {
     setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SC-VCA.svg")));
 
-    addParam(ParamWidget::create<ZZC_BigKnob>(Vec(4, 74.7), module, SCVCA::GAIN_PARAM, 0.0f, 2.0f, 1.0f));
-    addParam(ParamWidget::create<ZZC_BigKnobInner>(Vec(24, 94.7), module, SCVCA::CLIP_PARAM, 0.0f, 10.0f, 5.0f));
-    addParam(ParamWidget::create<ZZC_Knob25>(Vec(42.5, 175.7), module, SCVCA::CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f));
+    addParam(createParam<ZZC_BigKnob>(Vec(4, 74.7), module, SCVCA::GAIN_PARAM, 0.0f, 2.0f, 1.0f));
+    addParam(createParam<ZZC_BigKnobInner>(Vec(24, 94.7), module, SCVCA::CLIP_PARAM, 0.0f, 10.0f, 5.0f));
+    addParam(createParam<ZZC_Knob25>(Vec(42.5, 175.7), module, SCVCA::CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f));
 
-    addInput(Port::create<ZZC_PJ_Port>(Vec(8, 221), Port::INPUT, module, SCVCA::GAIN_INPUT));
-    addInput(Port::create<ZZC_PJ_Port>(Vec(42.5, 221), Port::INPUT, module, SCVCA::CLIP_INPUT));
-    addInput(Port::create<ZZC_PJ_Port>(Vec(8, 176), Port::INPUT, module, SCVCA::CLIP_SOFTNESS_INPUT));
+    addInput(createPort<ZZC_PJ_Port>(Vec(8, 221), PortWidget::INPUT, module, SCVCA::GAIN_INPUT));
+    addInput(createPort<ZZC_PJ_Port>(Vec(42.5, 221), PortWidget::INPUT, module, SCVCA::CLIP_INPUT));
+    addInput(createPort<ZZC_PJ_Port>(Vec(8, 176), PortWidget::INPUT, module, SCVCA::CLIP_SOFTNESS_INPUT));
 
-    addInput(Port::create<ZZC_PJ_Port>(Vec(8, 275), Port::INPUT, module, SCVCA::SIG1_INPUT));
-    addInput(Port::create<ZZC_PJ_Port>(Vec(42.5, 275), Port::INPUT, module, SCVCA::SIG2_INPUT));
-    addOutput(Port::create<ZZC_PJ_Port>(Vec(8, 319.75), Port::OUTPUT, module, SCVCA::SIG1_OUTPUT));
-    addOutput(Port::create<ZZC_PJ_Port>(Vec(42.5, 319.75), Port::OUTPUT, module, SCVCA::SIG2_OUTPUT));
+    addInput(createPort<ZZC_PJ_Port>(Vec(8, 275), PortWidget::INPUT, module, SCVCA::SIG1_INPUT));
+    addInput(createPort<ZZC_PJ_Port>(Vec(42.5, 275), PortWidget::INPUT, module, SCVCA::SIG2_INPUT));
+    addOutput(createPort<ZZC_PJ_Port>(Vec(8, 319.75), PortWidget::OUTPUT, module, SCVCA::SIG1_OUTPUT));
+    addOutput(createPort<ZZC_PJ_Port>(Vec(42.5, 319.75), PortWidget::OUTPUT, module, SCVCA::SIG2_OUTPUT));
 
-    addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(34.2f, 43.9f), module, SCVCA::CLIPPING_POS_LIGHT));
+    addChild(createLight<SmallLight<GreenRedLight>>(Vec(34.2f, 43.9f), module, SCVCA::CLIPPING_POS_LIGHT));
 
-    addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
-    addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-    addChild(Widget::create<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-    addChild(Widget::create<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
+    addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+    addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   }
 };
 
 
-Model *modelSCVCA = Model::create<SCVCA, SCVCAWidget>("SC-VCA");
+Model *modelSCVCA = createModel<SCVCA, SCVCAWidget>("SC-VCA");
