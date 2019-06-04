@@ -9,16 +9,16 @@ enum ModeIds {
 };
 
 
-void writeMusicalNotation(char *output, float voltage) {
+void writeMusicalNotation(char *output, size_t size, float voltage) {
   char notes[20][20] = {"c", "ic", "d", "id", "e", "f", "if", "g", "ig", "a", "ia", "b"};
-  int noteIdx = (int)(eucmod(voltage, 1.0f) / (1.0f / 12.05f));
+  int noteIdx = (int)(eucMod(voltage, 1.0f) / (1.0f / 12.05f));
   char *note = notes[noteIdx];
   if (voltage > 5.0f) {
-    snprintf(output, sizeof(output), "%sh", note);
+    snprintf(output, size, "%sh", note);
   } else if (voltage < -4.0f) {
-    snprintf(output, sizeof(output), "%sl", note);
+    snprintf(output, size, "%sl", note);
   } else {
-    snprintf(output, sizeof(output), "%s%d", note, ((int)(voltage)) + 4);
+    snprintf(output, size, "%s%d", note, ((int)(voltage)) + 4);
   }
 }
 
@@ -43,14 +43,15 @@ struct VoltageDisplayWidget : BaseDisplayWidget {
     nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
 
     char text[10];
+    size_t size = sizeof(text);
     if (mode) {
       if (*mode == MUSICAL_MODE) {
-        writeMusicalNotation(text, *value);
+        writeMusicalNotation(text, size, *value);
       } else {
-        snprintf(text, sizeof(text), "%2.1f", fabsf(*value));
+        snprintf(text, size, "%2.1f", fabsf(*value));
       }
     } else {
-      snprintf(text, sizeof(text), "c4");
+      snprintf(text, size, "c4");
     }
 
     Vec textPos = Vec(box.size.x - 5.0f, 16.0f);

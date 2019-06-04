@@ -25,7 +25,7 @@ struct LowFrequencyOscillator {
   }
 
   NormalizationResult normalize(float value) {
-    float output = eucmod(value, 1.0f);
+    float output = eucMod(value, 1.0f);
     return NormalizationResult { output, output != value };
   }
 

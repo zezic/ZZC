@@ -97,7 +97,7 @@ struct FN3DisplayWidget : BaseDisplayWidget {
       float x, y, value, phase;
       value = 0.0f;
       x = 2.0f + (box.size.x - 4.0f) * i;
-      phase = applyPW(eucmod(i + shiftVal, 1.0f), pwVal);
+      phase = applyPW(eucMod(i + shiftVal, 1.0f), pwVal);
       if (waveVal == 0.0f) {
         value = fn3Sin(phase);
       } else if (waveVal == 1.0f) {
@@ -199,7 +199,7 @@ void FN3::process(const ProcessArgs &args) {
   shift = shiftParam + (inputs[SHIFT_INPUT].isConnected() ? inputs[SHIFT_INPUT].getVoltage() / -5.0f : 0.0f);
   shiftDisplay = shift * -100.0f;
 
-  phase = applyPW(eucmod((inputs[PHASE_INPUT].isConnected() ? inputs[PHASE_INPUT].getVoltage() / 10.0f : 0.0f) + shift, 1.0f), pw);
+  phase = applyPW(eucMod((inputs[PHASE_INPUT].isConnected() ? inputs[PHASE_INPUT].getVoltage() / 10.0f : 0.0f) + shift, 1.0f), pw);
   wave = params[WAVE_PARAM].getValue();
 
   if (wave == 0.0f) {

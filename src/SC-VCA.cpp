@@ -76,14 +76,14 @@ void SCVCA::process(const ProcessArgs &args) {
   SoftClipTo(gained_1, clip, softness, outputs[SIG1_OUTPUT]);
   SoftClipTo(gained_2, clip, softness, outputs[SIG2_OUTPUT]);
 
-  lights[CLIPPING_POS_LIGHT].setBrightnessSmooth(fmaxf(
+  lights[CLIPPING_POS_LIGHT].setSmoothBrightness(fmaxf(
     fminf(1.0f, gained_1 - outputs[SIG1_OUTPUT].value),
     fminf(1.0f, gained_2 - outputs[SIG2_OUTPUT].value)
-  ));
-  lights[CLIPPING_NEG_LIGHT].setBrightnessSmooth(fmaxf(
+  ), args.sampleTime);
+  lights[CLIPPING_NEG_LIGHT].setSmoothBrightness(fmaxf(
     fmaxf(-1.0f, -(gained_1 - outputs[SIG1_OUTPUT].value)),
     fmaxf(-1.0f, -(gained_2 - outputs[SIG2_OUTPUT].value))
-  ));
+  ), args.sampleTime);
 }
 
 

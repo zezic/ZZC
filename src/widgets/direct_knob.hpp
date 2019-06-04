@@ -120,7 +120,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     }
   }
 
-  void setSVG(std::shared_ptr<SVG> svg, bool showDisplay) {
+  void setSvg(std::shared_ptr<SVG> svg, bool showDisplay) {
     if (showDisplay) {
       disp = new ZZC_DirectKnobDisplay();
       addChild(disp);
@@ -143,7 +143,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
       disp->strokeWidth = strokeWidth;
     }
 
-    sw->setSVG(svg);
+    setSvg(svg);
     sw->box.pos = showDisplay ? Vec(padding, padding) : Vec(0, 0);
     tw->box.size = sw->box.size;
     box.size = showDisplay ? Vec(padding * 2, padding * 2).plus(sw->box.size) : sw->box.size;

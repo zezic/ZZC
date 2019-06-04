@@ -9,7 +9,8 @@ struct ZZC_SmallSlider : SVGSlider {
     Vec margin = Vec(3.5, 3.5);
     maxHandlePos = Vec(2, 2).plus(margin);
     minHandlePos = Vec(2, 24).plus(margin);
-    setSVGs(APP->window->loadSvg(asset::plugin(pluginInstance, "res/sliders/ZZC-Small-Slider_BG.svg")), APP->window->loadSvg(asset::plugin(pluginInstance, "res/sliders/ZZC-Small-Slider_Handle.svg")));
+    setBackgroundSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/sliders/ZZC-Small-Slider_BG.svg")));
+    setHandleSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/sliders/ZZC-Small-Slider_Handle.svg")));
     background->box.pos = margin;
     box.size = background->box.size.plus(margin.mult(2));
   }

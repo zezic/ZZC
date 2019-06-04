@@ -19,7 +19,7 @@ struct ZZC_BaseKnob : SVGKnob {
 
 struct ZZC_BigKnob : ZZC_BaseKnob {
   ZZC_BigKnob() {
-    setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Big-Knob.svg")));
+    setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Big-Knob.svg")));
     shadow->box.size = Vec(67, 67);
     shadow->box.pos = Vec(0, 6);
     shadow->blurRadius = 15.0f;
@@ -36,7 +36,7 @@ struct ZZC_BigKnobSnappy : ZZC_BigKnob {
 
 struct ZZC_BigKnobInner : ZZC_BaseKnob {
   ZZC_BigKnobInner() {
-    setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Big-Knob-Inner.svg")));
+    setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Big-Knob-Inner.svg")));
     shadow->box.size = Vec(33, 33);
     shadow->box.pos = Vec(-3, 1);
     shadow->blurRadius = 15.0f;
@@ -47,7 +47,7 @@ struct ZZC_BigKnobInner : ZZC_BaseKnob {
 
 struct ZZC_PreciseKnob : ZZC_BaseKnob {
   ZZC_PreciseKnob() {
-    setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Precise-Knob.svg")));
+    setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Precise-Knob.svg")));
     shadow->box.size = Vec(44, 44);
     shadow->box.pos = Vec(3.5f, 10);
   }
@@ -62,7 +62,7 @@ struct ZZC_PreciseKnobSnappy : ZZC_PreciseKnob {
 
 struct ZZC_Knob19 : ZZC_BaseKnob {
   ZZC_Knob19() {
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-19.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-19.svg")) );
   }
 };
 
@@ -81,7 +81,7 @@ struct ZZC_Knob19SnappyNoRand : ZZC_Knob19NoRand {
 
 struct ZZC_Knob21 : ZZC_BaseKnob {
   ZZC_Knob21() {
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-21.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-21.svg")) );
   }
 };
 
@@ -94,13 +94,13 @@ struct ZZC_Knob21Snappy : ZZC_Knob21 {
 
 struct ZZC_Knob23 : ZZC_BaseKnob {
   ZZC_Knob23() {
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-23.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-23.svg")) );
   }
 };
 
 struct ZZC_Knob25 : ZZC_BaseKnob {
   ZZC_Knob25() {
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-25.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-25.svg")) );
     shadow->box.size = Vec(29, 29);
     shadow->box.pos = Vec(-2, 2);
     shadow->blurRadius = 15.0f;
@@ -124,7 +124,7 @@ struct ZZC_Knob25SnappyNoRand : ZZC_Knob25 {
 
 struct ZZC_Knob27 : ZZC_BaseKnob {
   ZZC_Knob27() {
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-27.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-27.svg")) );
     shadow->box.size = Vec(33, 33);
     shadow->box.pos = Vec(-3, 2);
     shadow->blurRadius = 15.0f;
@@ -141,7 +141,7 @@ struct ZZC_Knob27Snappy : ZZC_Knob27 {
 
 struct ZZC_CrossKnob : ZZC_BaseKnob {
   ZZC_CrossKnob() {
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Cross-Knob.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Cross-Knob.svg")) );
     shadow->box.size = Vec(43, 43);
     shadow->box.pos = Vec(3, 8);
     shadow->blurRadius = 15.0f;
@@ -158,7 +158,7 @@ struct ZZC_CrossKnobSnappy : ZZC_CrossKnob {
 
 struct ZZC_SelectKnob : ZZC_BaseKnob {
   ZZC_SelectKnob() {
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Select-Knob.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Select-Knob.svg")) );
     shadow->box.size = Vec(33, 33);
     shadow->box.pos = Vec(-3, 2);
     shadow->blurRadius = 15.0f;
@@ -172,7 +172,7 @@ struct ZZC_SteppedKnob : ZZC_BaseKnob {
   ZZC_SteppedKnob() {
     snap = true;
     smooth = false;
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Stepped-Knob.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Stepped-Knob.svg")) );
     shadow->box.size = Vec(25, 25);
     shadow->box.pos = Vec(3, 5);
   }
@@ -186,7 +186,7 @@ struct ZZC_EncoderKnob : SVGKnob {
     minAngle = -1.0 * M_PI;
     maxAngle = 1.0 * M_PI;
     smooth = false;
-    setSVG( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Encoder-Knob.svg")) );
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Encoder-Knob.svg")) );
     shadow->box.size = Vec(49, 49);
     shadow->box.pos = Vec(6, 12);
     shadow->blurRadius = 15.0f;
@@ -206,7 +206,7 @@ struct ZZC_EncoderKnob : SVGKnob {
 
       float newValue = paramQuantity->getSmoothValue();
       newValue += delta;
-      paramQuantity->setValue(eucmod(newValue, paramQuantity->getMaxValue()));
+      paramQuantity->setValue(eucMod(newValue, paramQuantity->getMaxValue()));
     }
   }
 };
