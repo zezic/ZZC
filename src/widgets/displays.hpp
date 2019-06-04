@@ -30,7 +30,7 @@ struct Display32Widget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   Display32Widget() {
-    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
@@ -94,7 +94,7 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   DisplayIntpartWidget() {
-    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
@@ -127,7 +127,7 @@ struct IntDisplayWidget : BaseDisplayWidget {
   NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
 
   IntDisplayWidget() {
-    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
@@ -156,7 +156,7 @@ struct RatioDisplayWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   RatioDisplayWidget() {
-    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(const DrawArgs &args) override {

@@ -36,7 +36,7 @@ struct FN3TextDisplayWidget : TransparentWidget {
   std::shared_ptr<Font> font;
 
   FN3TextDisplayWidget() {
-    font = Font::load(assetPlugin(pluginInstance, "res/fonts/Nunito/Nunito-Black.ttf"));
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito/Nunito-Black.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
@@ -173,45 +173,51 @@ struct FN3 : Module {
     }
   }
 
-  FN3() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+  FN3() {
+    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+    configParam(PW_PARAM, 0.0f, 1.0f, 0.5f);
+    configParam(WAVE_PARAM, 0.0f, 2.0f, 0.0f);
+    configParam(OFFSET_PARAM, 0.0f, 1.0f, 0.0f);
+    configParam(SHIFT_PARAM, 1.0f, -1.0f, 0.0f);
   }
   void process(const ProcessArgs &args) override;
 };
 
 
 void FN3::process(const ProcessArgs &args) {
-  if (params[PW_PARAM].value != lastPwParam) {
-    pwParam = snap(params[PW_PARAM].value);
-    lastPwParam = params[PW_PARAM].value;
+  if (params[PW_PARAM].getValue() != lastPwParam) {
+    pwParam = snap(params[PW_PARAM].getValue());
+    lastPwParam = params[PW_PARAM].getValue();
   }
-  pw = clamp(pwParam + (inputs[PW_INPUT].isConnected() ? inputs[PW_INPUT].value / 10.0f : 0.0f), 0.0f, 1.0f);
+  pw = clamp(pwParam + (inputs[PW_INPUT].isConnected() ? inputs[PW_INPUT].getVoltage() / 10.0f : 0.0f), 0.0f, 1.0f);
   pwDisplay = pw * 100.0f;
 
-  if (params[SHIFT_PARAM].value != lastShiftParam) {
-    shiftParam = snap(params[SHIFT_PARAM].value);
-    lastShiftParam = params[SHIFT_PARAM].value;
+  if (params[SHIFT_PARAM].getValue() != lastShiftParam) {
+    shiftParam = snap(params[SHIFT_PARAM].getValue());
+    lastShiftParam = params[SHIFT_PARAM].getValue();
   }
-  shift = shiftParam + (inputs[SHIFT_INPUT].isConnected() ? inputs[SHIFT_INPUT].value / -5.0f : 0.0f);
+  shift = shiftParam + (inputs[SHIFT_INPUT].isConnected() ? inputs[SHIFT_INPUT].getVoltage() / -5.0f : 0.0f);
   shiftDisplay = shift * -100.0f;
 
-  phase = applyPW(eucmod((inputs[PHASE_INPUT].isConnected() ? inputs[PHASE_INPUT].value / 10.0f : 0.0f) + shift, 1.0f), pw);
-  wave = params[WAVE_PARAM].value;
+  phase = applyPW(eucmod((inputs[PHASE_INPUT].isConnected() ? inputs[PHASE_INPUT].getVoltage() / 10.0f : 0.0f) + shift, 1.0f), pw);
+  wave = params[WAVE_PARAM].getValue();
 
   if (wave == 0.0f) {
-    outputs[WAVE_OUTPUT].value = fn3Sin(phase) * 10.0f - (params[OFFSET_PARAM].value == 1.0f ? 5.0f : 0.0f);
+    outputs[WAVE_OUTPUT].setVoltage(fn3Sin(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
   } else if (wave == 1.0f) {
-    outputs[WAVE_OUTPUT].value = fn3Tri(phase) * 10.0f - (params[OFFSET_PARAM].value == 1.0f ? 5.0f : 0.0f);
+    outputs[WAVE_OUTPUT].setVoltage(fn3Tri(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
   } else {
-    outputs[WAVE_OUTPUT].value = fn3Sqr(phase) * 10.0f - (params[OFFSET_PARAM].value == 1.0f ? 5.0f : 0.0f);
+    outputs[WAVE_OUTPUT].setVoltage(fn3Sqr(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
   }
 }
 
 
 struct FN3Widget : ModuleWidget {
-  FN3Widget(FN3 *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/FN-3.svg")));
+  FN3Widget(FN3 *module) {
+    setModule(module);
+    setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/FN-3.svg")));
 
-    addParam(createParam<ZZC_Knob27>(Vec(9, 58), module, FN3::PW_PARAM, 0.0f, 1.0f, 0.5f));
+    addParam(createParam<ZZC_Knob27>(Vec(9, 58), module, FN3::PW_PARAM));
     addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 93), module, FN3::PW_INPUT));
 
     FN3DisplayWidget *display = new FN3DisplayWidget();
@@ -223,8 +229,8 @@ struct FN3Widget : ModuleWidget {
       display->shift = &module->shift;
     }
     addChild(display);
-    addParam(createParam<ZZC_FN3WaveSwitch>(Vec(8, 126), module, FN3::WAVE_PARAM, 0.0f, 2.0f, 0.0f));
-    addParam(createParam<ZZC_FN3UniBiSwitch>(Vec(8, 152), module, FN3::OFFSET_PARAM, 0.0f, 1.0f, 0.0f));
+    addParam(createParam<ZZC_FN3WaveSwitch>(Vec(8, 126), module, FN3::WAVE_PARAM));
+    addParam(createParam<ZZC_FN3UniBiSwitch>(Vec(8, 152), module, FN3::OFFSET_PARAM));
 
     FN3TextDisplayWidget *pwDisplay = new FN3TextDisplayWidget();
     pwDisplay->box.pos = Vec(11.0f, 129.0f);
@@ -245,7 +251,7 @@ struct FN3Widget : ModuleWidget {
     addChild(shiftDisplay);
 
     addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 194), module, FN3::SHIFT_INPUT));
-    addParam(createParam<ZZC_Knob25>(Vec(10, 229), module, FN3::SHIFT_PARAM, 1.0f, -1.0f, 0.0f));
+    addParam(createParam<ZZC_Knob25>(Vec(10, 229), module, FN3::SHIFT_PARAM));
 
     addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 275), module, FN3::PHASE_INPUT));
     addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 320), module, FN3::WAVE_OUTPUT));

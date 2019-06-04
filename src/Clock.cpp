@@ -70,11 +70,11 @@ struct Clock : Module {
   float swinged16thsFirstPhase = 0.25f;
   float swinged16thsSecondPhase = 0.75f;
 
-  PulseGenerator clockPulseGenerator;
-  PulseGenerator clock8thsPulseGenerator;
-  PulseGenerator clock16thsPulseGenerator;
-  PulseGenerator runPulseGenerator;
-  PulseGenerator resetPulseGenerator;
+  dsp::PulseGenerator clockPulseGenerator;
+  dsp::PulseGenerator clock8thsPulseGenerator;
+  dsp::PulseGenerator clock16thsPulseGenerator;
+  dsp::PulseGenerator runPulseGenerator;
+  dsp::PulseGenerator resetPulseGenerator;
   bool clockPulse = false;
   bool clock8thsPulse = false;
   bool clock16thsPulse = false;
@@ -86,42 +86,42 @@ struct Clock : Module {
   float resetLight = 0.0f;
   float reverseLight = 0.0f;
 
-  SchmittTrigger runButtonTrigger;
-  SchmittTrigger externalRunTrigger;
-  SchmittTrigger resetButtonTrigger;
-  SchmittTrigger externalResetTrigger;
-  SchmittTrigger reverseButtonTrigger;
-  SchmittTrigger externalClockTrigger;
+  dsp::SchmittTrigger runButtonTrigger;
+  dsp::SchmittTrigger externalRunTrigger;
+  dsp::SchmittTrigger resetButtonTrigger;
+  dsp::SchmittTrigger externalResetTrigger;
+  dsp::SchmittTrigger reverseButtonTrigger;
+  dsp::SchmittTrigger externalClockTrigger;
 
   inline void processButtons() {
-    if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].value) || (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].value))) {
+    if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].getValue()) || (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].getVoltage()))) {
       running = !running;
       runPulseGenerator.trigger(1e-3f);
     }
 
-    if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].value) || (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].value))) {
+    if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].getValue()) || (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].getVoltage()))) {
       resetWasHit = true;
       resetPulseGenerator.trigger(1e-3f);
     }
 
-    if (reverseButtonTrigger.process(params[REVERSE_SWITCH_PARAM].value)) {
+    if (reverseButtonTrigger.process(params[REVERSE_SWITCH_PARAM].getValue())) {
       reverse ^= true;
     }
   }
 
   inline void processSwingInputs() {
-    swing8thsFinal = params[SWING_8THS_PARAM].value;
+    swing8thsFinal = params[SWING_8THS_PARAM].getValue();
     if (inputs[SWING_8THS_INPUT].isConnected()) {
-      float swing8thsInput = clamp(inputs[SWING_8THS_INPUT].value / 5.0f, -1.0f, 1.0f);
+      float swing8thsInput = clamp(inputs[SWING_8THS_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
       if (swing8thsInput < 0.0f) {
         swing8thsFinal += (swing8thsFinal - 1.0f) * swing8thsInput;
       } else if (swing8thsInput > 0.0f) {
         swing8thsFinal += (99.0f - swing8thsFinal) * swing8thsInput;
       }
     }
-    swing16thsFinal = params[SWING_16THS_PARAM].value;
+    swing16thsFinal = params[SWING_16THS_PARAM].getValue();
     if (inputs[SWING_16THS_INPUT].isConnected()) {
-      float swing16thsInput = clamp(inputs[SWING_16THS_INPUT].value / 5.0f, -1.0f, 1.0f);
+      float swing16thsInput = clamp(inputs[SWING_16THS_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
       if (swing16thsInput < 0.0f) {
         swing16thsFinal += (swing16thsFinal - 1.0f) * swing16thsInput;
       } else if (swing16thsInput > 0.0f) {
@@ -160,7 +160,14 @@ struct Clock : Module {
     return INTERNAL_MODE;
   }
 
-  Clock() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+  Clock() {
+    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+    configParam(REVERSE_SWITCH_PARAM, 0.0f, 1.0f, 0.0f);
+    configParam(BPM_PARAM, 0.0f, 240.0f, 120.0f);
+    configParam(SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f);
+    configParam(SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f);
+    configParam(RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f);
+    configParam(RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f);
     clockTracker.init();
   }
   void process(const ProcessArgs &args) override;
@@ -199,14 +206,14 @@ void Clock::process(const ProcessArgs &args) {
         clockTracker.init();
         clockTracker.freq = fabsf(bpm / 60.0f);
       }
-      clockTracker.process(engineGetSampleTime(), inputs[CLOCK_INPUT].value);
+      clockTracker.process(args.sampleTime, inputs[CLOCK_INPUT].getVoltage());
       if (clockTracker.freqDetected) {
         bpm = clockTracker.freq * 60.0f;
       }
     } else if (mode == EXT_VBPS_MODE) {
-      bpm = params[BPM_PARAM].value + inputs[VBPS_INPUT].value * 60.0f;
+      bpm = params[BPM_PARAM].getValue() + inputs[VBPS_INPUT].getVoltage() * 60.0f;
     } else {
-      bpm = params[BPM_PARAM].value;
+      bpm = params[BPM_PARAM].getValue();
     }
 
     if (reverse) {
@@ -220,7 +227,7 @@ void Clock::process(const ProcessArgs &args) {
         oscillator.reset((reverse ? 1.0f : 0.0f));
       }
 
-      bool phaseFlipped = oscillator.step(engineGetSampleTime());
+      bool phaseFlipped = oscillator.step(args.sampleTime);
       if (phaseFlipped || resetWasHit) {
         clockPulseGenerator.trigger(1e-3f);
         clock8thsPulseGenerator.trigger(1e-3f);
@@ -243,7 +250,7 @@ void Clock::process(const ProcessArgs &args) {
 
     // Trust lastExtPhase if previous step was done with PHASE_INPUT plugged in
     if (lastMode == EXT_PHASE_MODE || lastMode == EXT_CLOCK_AND_PHASE_MODE) {
-      float delta = inputs[PHASE_INPUT].value - lastExtPhase;
+      float delta = inputs[PHASE_INPUT].getVoltage() - lastExtPhase;
       float absDelta = fabsf(delta);
       if (absDelta > 9.5f && absDelta <= 10.0f) {
 
@@ -259,11 +266,11 @@ void Clock::process(const ProcessArgs &args) {
           delta = delta - 10.0f;
         }
       }
-      bpm = delta / engineGetSampleTime() * 6.0f;
+      bpm = delta / args.sampleTime * 6.0f;
     }
 
     if (mode == EXT_CLOCK_AND_PHASE_MODE) {
-      triggered = externalClockTrigger.process(inputs[CLOCK_INPUT].value);
+      triggered = externalClockTrigger.process(inputs[CLOCK_INPUT].getVoltage());
     }
 
     if (running) {
@@ -273,34 +280,34 @@ void Clock::process(const ProcessArgs &args) {
         clock16thsPulseGenerator.trigger(1e-3f);
       } else {
         if (lastMode == EXT_PHASE_MODE || lastMode == EXT_CLOCK_AND_PHASE_MODE) {
-          triggerThsByPhase(inputs[PHASE_INPUT].value / 10.0f, lastExtPhase  / 10.0f);
+          triggerThsByPhase(inputs[PHASE_INPUT].getVoltage() / 10.0f, lastExtPhase  / 10.0f);
         }
       }
     }
-    lastExtPhase = inputs[PHASE_INPUT].value;
+    lastExtPhase = inputs[PHASE_INPUT].getVoltage();
   }
 
   // Generate Pulse
-  clockPulse = clockPulseGenerator.process(engineGetSampleTime());
-  clock8thsPulse = clock8thsPulseGenerator.process(engineGetSampleTime());
-  clock16thsPulse = clock16thsPulseGenerator.process(engineGetSampleTime());
-  runPulse = runPulseGenerator.process(engineGetSampleTime());
-  resetPulse = resetPulseGenerator.process(engineGetSampleTime());
+  clockPulse = clockPulseGenerator.process(args.sampleTime);
+  clock8thsPulse = clock8thsPulseGenerator.process(args.sampleTime);
+  clock16thsPulse = clock16thsPulseGenerator.process(args.sampleTime);
+  runPulse = runPulseGenerator.process(args.sampleTime);
+  resetPulse = resetPulseGenerator.process(args.sampleTime);
 
-  outputs[CLOCK_OUTPUT].value = clockPulse ? 10.0f : 0.0f;
-  outputs[CLOCK_8THS_OUTPUT].value = clock8thsPulse ? 10.0f : 0.0f;
-  outputs[CLOCK_16THS_OUTPUT].value = clock16thsPulse ? 10.0f : 0.0f;
-  outputs[RUN_OUTPUT].value = runPulse ? 10.0f : 0.0f;
-  outputs[RESET_OUTPUT].value = resetPulse ? 10.0f : 0.0f;
+  outputs[CLOCK_OUTPUT].setVoltage(clockPulse ? 10.0f : 0.0f);
+  outputs[CLOCK_8THS_OUTPUT].setVoltage(clock8thsPulse ? 10.0f : 0.0f);
+  outputs[CLOCK_16THS_OUTPUT].setVoltage(clock16thsPulse ? 10.0f : 0.0f);
+  outputs[RUN_OUTPUT].setVoltage(runPulse ? 10.0f : 0.0f);
+  outputs[RESET_OUTPUT].setVoltage(resetPulse ? 10.0f : 0.0f);
 
   // Output Voltages
   if (mode == EXT_PHASE_MODE || mode == EXT_CLOCK_AND_PHASE_MODE) {
-    outputs[PHASE_OUTPUT].value = inputs[PHASE_INPUT].value;
+    outputs[PHASE_OUTPUT].setVoltage(inputs[PHASE_INPUT].getVoltage());
   } else {
-    outputs[PHASE_OUTPUT].value = oscillator.phase * 10.0f;
+    outputs[PHASE_OUTPUT].setVoltage(oscillator.phase * 10.0f);
   }
-  outputs[VBPS_OUTPUT].value = bpm / 60.0f;
-  outputs[VSPB_OUTPUT].value = bpm == 0.0f ? 10.0f : fminf(60.0f / fabsf(bpm), 10.0f);
+  outputs[VBPS_OUTPUT].setVoltage(bpm / 60.0f);
+  outputs[VSPB_OUTPUT].setVoltage(bpm == 0.0f ? 10.0f : fminf(60.0f / fabsf(bpm), 10.0f));
 
   // Status Lights
   if (running) {
@@ -322,13 +329,14 @@ void Clock::process(const ProcessArgs &args) {
 
 
 struct ClockWidget : ModuleWidget {
-  ClockWidget(Clock *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/Clock.svg")));
+  ClockWidget(Clock *module) {
+    setModule(module);
+    setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/Clock.svg")));
 
     addInput(createInput<ZZC_PJ_Port>(Vec(10.8f, 52), module, Clock::VBPS_INPUT));
     addChild(createLight<TinyLight<GreenLight>>(Vec(33, 52), module, Clock::EXT_VBPS_MODE_LED));
 
-    addParam(createParam<ZZC_LEDBezelDark>(Vec(116.3f, 53.0f), module, Clock::REVERSE_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
+    addParam(createParam<ZZC_LEDBezelDark>(Vec(116.3f, 53.0f), module, Clock::REVERSE_SWITCH_PARAM));
     addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(118.1f, 54.7f), module, Clock::REVERSE_LED));
 
     Display32Widget *bpmDisplay = new Display32Widget();
@@ -341,10 +349,10 @@ struct ClockWidget : ModuleWidget {
 
     addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(71.75, 66.5), module, Clock::CLOCK_LED));
 
-    addParam(createParam<ZZC_BigKnobSnappy>(Vec(41.5, 82.5), module, Clock::BPM_PARAM, 0.0f, 240.0f, 120.0f));
+    addParam(createParam<ZZC_BigKnobSnappy>(Vec(41.5, 82.5), module, Clock::BPM_PARAM));
     addChild(createLight<TinyLight<GreenLight>>(Vec(111.5f, 83), module, Clock::INTERNAL_MODE_LED));
-    addParam(createParam<ZZC_Knob27Snappy>(Vec(13.5, 186), module, Clock::SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f));
-    addParam(createParam<ZZC_Knob27Snappy>(Vec(109.5, 186), module, Clock::SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f));
+    addParam(createParam<ZZC_Knob27Snappy>(Vec(13.5, 186), module, Clock::SWING_8THS_PARAM));
+    addParam(createParam<ZZC_Knob27Snappy>(Vec(109.5, 186), module, Clock::SWING_16THS_PARAM));
 
     addInput(createInput<ZZC_PJ_Port>(Vec(45.5, 224), module, Clock::CLOCK_INPUT));
     addChild(createLight<TinyLight<GreenLight>>(Vec(67.5, 224), module, Clock::EXT_CLOCK_MODE_LED));
@@ -358,12 +366,12 @@ struct ClockWidget : ModuleWidget {
     addOutput(createOutput<ZZC_PJ_Port>(Vec(114.8f, 320), module, Clock::VSPB_OUTPUT));
 
     addInput(createInput<ZZC_PJ_Port>(Vec(10.8f, 145), module, Clock::EXT_RUN_INPUT));
-    addParam(createParam<ZZC_LEDBezelDark>(Vec(47.3f, 168.0f), module, Clock::RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
+    addParam(createParam<ZZC_LEDBezelDark>(Vec(47.3f, 168.0f), module, Clock::RUN_SWITCH_PARAM));
     addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(49.1f, 169.7f), module, Clock::RUN_LED));
     addOutput(createOutput<ZZC_PJ_Port>(Vec(45.5, 320), module, Clock::RUN_OUTPUT));
 
     addInput(createInput<ZZC_PJ_Port>(Vec(114.8f, 145), module, Clock::EXT_RESET_INPUT));
-    addParam(createParam<ZZC_LEDBezelDark>(Vec(81.3f, 168.0f), module, Clock::RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
+    addParam(createParam<ZZC_LEDBezelDark>(Vec(81.3f, 168.0f), module, Clock::RESET_SWITCH_PARAM));
     addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(83.1f, 169.7f), module, Clock::RESET_LED));
     addOutput(createOutput<ZZC_PJ_Port>(Vec(80, 320), module, Clock::RESET_OUTPUT));
 

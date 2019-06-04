@@ -52,22 +52,27 @@ struct SCVCA : Module {
     out.value = clamp(x, -ceiling, ceiling);
   }
 
-  SCVCA() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+  SCVCA() {
+    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+    configParam(GAIN_PARAM, 0.0f, 2.0f, 1.0f);
+    configParam(CLIP_PARAM, 0.0f, 10.0f, 5.0f);
+    configParam(CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f);
+  }
   void process(const ProcessArgs &args) override;
 };
 
 
 void SCVCA::process(const ProcessArgs &args) {
-  float gain = params[GAIN_PARAM].value;
-  float clip = params[CLIP_PARAM].value;
-  float softness = params[CLIP_SOFTNESS_PARAM].value;
+  float gain = params[GAIN_PARAM].getValue();
+  float clip = params[CLIP_PARAM].getValue();
+  float softness = params[CLIP_SOFTNESS_PARAM].getValue();
 
-  if (inputs[GAIN_INPUT].isConnected()) { gain = gain * inputs[GAIN_INPUT].value / 10.0f; }
-  if (inputs[CLIP_INPUT].isConnected()) { clip = clip * clamp(inputs[CLIP_INPUT].value, 0.0f, 10.0f) / 10.0f; }
-  if (inputs[CLIP_SOFTNESS_INPUT].isConnected()) { softness = softness * clamp(inputs[CLIP_SOFTNESS_INPUT].value, 0.0f, 10.0f) / 10.0f; }
+  if (inputs[GAIN_INPUT].isConnected()) { gain = gain * inputs[GAIN_INPUT].getVoltage() / 10.0f; }
+  if (inputs[CLIP_INPUT].isConnected()) { clip = clip * clamp(inputs[CLIP_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f; }
+  if (inputs[CLIP_SOFTNESS_INPUT].isConnected()) { softness = softness * clamp(inputs[CLIP_SOFTNESS_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f; }
 
-  float gained_1 = inputs[SIG1_INPUT].value * gain;
-  float gained_2 = inputs[SIG2_INPUT].value * gain;
+  float gained_1 = inputs[SIG1_INPUT].getVoltage() * gain;
+  float gained_2 = inputs[SIG2_INPUT].getVoltage() * gain;
   SoftClipTo(gained_1, clip, softness, outputs[SIG1_OUTPUT]);
   SoftClipTo(gained_2, clip, softness, outputs[SIG2_OUTPUT]);
 
@@ -83,12 +88,13 @@ void SCVCA::process(const ProcessArgs &args) {
 
 
 struct SCVCAWidget : ModuleWidget {
-  SCVCAWidget(SCVCA *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SC-VCA.svg")));
+  SCVCAWidget(SCVCA *module) {
+    setModule(module);
+    setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/SC-VCA.svg")));
 
-    addParam(createParam<ZZC_BigKnob>(Vec(4, 74.7), module, SCVCA::GAIN_PARAM, 0.0f, 2.0f, 1.0f));
-    addParam(createParam<ZZC_BigKnobInner>(Vec(24, 94.7), module, SCVCA::CLIP_PARAM, 0.0f, 10.0f, 5.0f));
-    addParam(createParam<ZZC_Knob25>(Vec(42.5, 175.7), module, SCVCA::CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f));
+    addParam(createParam<ZZC_BigKnob>(Vec(4, 74.7), module, SCVCA::GAIN_PARAM));
+    addParam(createParam<ZZC_BigKnobInner>(Vec(24, 94.7), module, SCVCA::CLIP_PARAM));
+    addParam(createParam<ZZC_Knob25>(Vec(42.5, 175.7), module, SCVCA::CLIP_SOFTNESS_PARAM));
 
     addInput(createInput<ZZC_PJ_Port>(Vec(8, 221), module, SCVCA::GAIN_INPUT));
     addInput(createInput<ZZC_PJ_Port>(Vec(42.5, 221), module, SCVCA::CLIP_INPUT));

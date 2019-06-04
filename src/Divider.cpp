@@ -42,44 +42,49 @@ struct Divider : Module {
   double lastHalfPhaseOut = 0.0;
   float phaseOut = 0.0f;
 
-  PulseGenerator clockPulseGenerator;
-  PulseGenerator resetPulseGenerator;
+  dsp::PulseGenerator clockPulseGenerator;
+  dsp::PulseGenerator resetPulseGenerator;
   bool clockPulse = false;
   bool resetPulse = false;
   bool gateMode = false;
 
-  SchmittTrigger clockTrigger;
-  SchmittTrigger resetTrigger;
+  dsp::SchmittTrigger clockTrigger;
+  dsp::SchmittTrigger resetTrigger;
 
   inline void processRatioInputs() {
     if (inputs[IN_RATIO_INPUT].isConnected()) {
-      from = std::roundf(clamp(inputs[IN_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f * (params[IN_RATIO_PARAM].value - 1) + 1);
+      from = std::roundf(clamp(inputs[IN_RATIO_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f * (params[IN_RATIO_PARAM].getValue() - 1) + 1);
     } else {
-      from = params[IN_RATIO_PARAM].value;
+      from = params[IN_RATIO_PARAM].getValue();
     }
     if (inputs[OUT_RATIO_INPUT].isConnected()) {
-      to = std::roundf(clamp(inputs[OUT_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f * (params[OUT_RATIO_PARAM].value - 1) + 1);
+      to = std::roundf(clamp(inputs[OUT_RATIO_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f * (params[OUT_RATIO_PARAM].getValue() - 1) + 1);
     } else {
-      to = params[OUT_RATIO_PARAM].value;
+      to = params[OUT_RATIO_PARAM].getValue();
     }
     ratio = to / from;
   }
 
   inline void processSwingInput() {
     if (inputs[SWING_INPUT].isConnected()) {
-      float swingParam = params[SWING_PARAM].value;
-      float swingInput = clamp(inputs[SWING_INPUT].value / 5.0f, -1.0f, 1.0f);
+      float swingParam = params[SWING_PARAM].getValue();
+      float swingInput = clamp(inputs[SWING_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
       if (swingInput < 0.0f) {
         swing = swingParam + (swingParam - 1.0f) * swingInput;
       } else if (swingInput > 0.0f) {
         swing = swingParam + (99.0f - swingParam) * swingInput;
       }
     } else {
-      swing = params[SWING_PARAM].value;
+      swing = params[SWING_PARAM].getValue();
     }
   }
 
-  Divider() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+  Divider() {
+    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+    configParam(IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f);
+    configParam(OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f);
+    configParam(SWING_PARAM, 1.0f, 99.0f, 50.0f);
+  }
   void process(const ProcessArgs &args) override;
 
   json_t *dataToJson() override {
@@ -99,14 +104,14 @@ void Divider::process(const ProcessArgs &args) {
   processRatioInputs();
   processSwingInput();
 
-  if (resetTrigger.process(inputs[RESET_INPUT].value)) {
+  if (resetTrigger.process(inputs[RESET_INPUT].getVoltage())) {
     phaseOut = 0.0f;
     halfPhaseOut = 0.0;
     lastHalfPhaseOut = 0.0f;
     clockPulseGenerator.trigger(gateMode ? 1e-4f : 1e-3f);
   } else if (inputs[PHASE_INPUT].isConnected()) {
     if (lastPhaseInState) {
-      phaseIn = inputs[PHASE_INPUT].value;
+      phaseIn = inputs[PHASE_INPUT].getVoltage();
       float phaseInDelta = phaseIn - lastPhaseIn;
       if (fabsf(phaseInDelta) > 0.1f && (sgn(phaseInDelta) != sgn(lastPhaseInDelta))) {
         phaseInDelta = lastPhaseInDelta;
@@ -144,17 +149,17 @@ void Divider::process(const ProcessArgs &args) {
 
   lastHalfPhaseOut = halfPhaseOut;
 
-  lastPhaseIn = inputs[PHASE_INPUT].value;
+  lastPhaseIn = inputs[PHASE_INPUT].getVoltage();
   lastPhaseInState = inputs[PHASE_INPUT].isConnected();
 
 
-  outputs[PHASE_OUTPUT].value = phaseOut;
+  outputs[PHASE_OUTPUT].setVoltage(phaseOut);
 
-  clockPulse = clockPulseGenerator.process(engineGetSampleTime());
+  clockPulse = clockPulseGenerator.process(args.sampleTime);
   if (gateMode) {
-    outputs[CLOCK_OUTPUT].value = phaseOut < 5.0f && !clockPulse ? 10.0f : 0.0f;
+    outputs[CLOCK_OUTPUT].setVoltage(phaseOut < 5.0f && !clockPulse ? 10.0f : 0.0f);
   } else {
-    outputs[CLOCK_OUTPUT].value = clockPulse ? 10.0f : 0.0f;
+    outputs[CLOCK_OUTPUT].setVoltage(clockPulse ? 10.0f : 0.0f);
   }
 
   lights[EXT_PHASE_MODE_LED].value = inputs[PHASE_INPUT].isConnected() ? 0.5f : 0.0f;
@@ -166,8 +171,9 @@ struct DividerWidget : ModuleWidget {
   void appendContextMenu(Menu *menu) override;
 };
 
-DividerWidget::DividerWidget(Divider *module) : ModuleWidget(module) {
-  setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/Divider.svg")));
+DividerWidget::DividerWidget(Divider *module) {
+  setModule(module);
+  setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/Divider.svg")));
 
   RatioDisplayWidget *ratioDisplay = new RatioDisplayWidget();
   ratioDisplay->box.pos = Vec(9.0f, 94.0f);
@@ -178,11 +184,11 @@ DividerWidget::DividerWidget(Divider *module) : ModuleWidget(module) {
   }
   addChild(ratioDisplay);
 
-  addParam(createParam<ZZC_CrossKnobSnappy>(Vec(12.5, 39.5), module, Divider::IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
-  addParam(createParam<ZZC_CrossKnobSnappy>(Vec(12.5, 123.5), module, Divider::OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
+  addParam(createParam<ZZC_CrossKnobSnappy>(Vec(12.5, 39.5), module, Divider::IN_RATIO_PARAM));
+  addParam(createParam<ZZC_CrossKnobSnappy>(Vec(12.5, 123.5), module, Divider::OUT_RATIO_PARAM));
 
   addInput(createInput<ZZC_PJ_Port>(Vec(8, 191), module, Divider::SWING_INPUT));
-  addParam(createParam<ZZC_Knob25>(Vec(42.5, 191.0), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
+  addParam(createParam<ZZC_Knob25>(Vec(42.5, 191.0), module, Divider::SWING_PARAM));
 
   addInput(createInput<ZZC_PJ_Port>(Vec(8, 233), module, Divider::IN_RATIO_INPUT));
   addInput(createInput<ZZC_PJ_Port>(Vec(42.5, 233), module, Divider::OUT_RATIO_INPUT));

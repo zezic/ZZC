@@ -44,7 +44,7 @@ struct ClockTracker {
   float freq;
   bool freqDetected;
 
-  SchmittTrigger clockTrigger;
+  dsp::SchmittTrigger clockTrigger;
 
   void init() {
     triggersPassed = 0;

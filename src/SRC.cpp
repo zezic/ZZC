@@ -28,7 +28,7 @@ struct VoltageDisplayWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
 
   VoltageDisplayWidget() {
-    font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
@@ -90,8 +90,8 @@ struct SRC : Module {
     NUM_LIGHTS
   };
 
-  SchmittTrigger onButtonTrigger;
-  SchmittTrigger externalOnTrigger;
+  dsp::SchmittTrigger onButtonTrigger;
+  dsp::SchmittTrigger externalOnTrigger;
 
   bool on = true;
   int mode = MUSICAL_MODE;
@@ -101,8 +101,8 @@ struct SRC : Module {
 
   void processButtons() {
     if (onHold) {
-      on = (bool)params[ON_SWITCH_PARAM].value ^ (bool)inputs[ON_INPUT].value;
-    } else if (onButtonTrigger.process(params[ON_SWITCH_PARAM].value || externalOnTrigger.process(inputs[ON_INPUT].value))) {
+      on = (bool)params[ON_SWITCH_PARAM].getValue() ^ (bool)inputs[ON_INPUT].getVoltage();
+    } else if (onButtonTrigger.process(params[ON_SWITCH_PARAM].getValue() || externalOnTrigger.process(inputs[ON_INPUT].getVoltage()))) {
       on = !on;
     }
   }
@@ -116,7 +116,12 @@ struct SRC : Module {
     return voltage;
   }
 
-  SRC() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+  SRC() {
+    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+    configParam(COARSE_PARAM, -10.0f, 10.0f, 0.0f);
+    configParam(FINE_PARAM, -1.0f, 1.0f, 0.0f);
+    configParam(ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f);
+  }
   void process(const ProcessArgs &args) override;
 
   json_t *dataToJson() override {
@@ -143,12 +148,12 @@ struct SRC : Module {
 
 void SRC::process(const ProcessArgs &args) {
   processButtons();
-  float coarse = params[COARSE_PARAM].value;
-  float fine = quantize(params[FINE_PARAM].value);
-  voltage = clamp(coarse + fine + (inputs[CV_INPUT].isConnected() ? (quantizeInput ? quantize(inputs[CV_INPUT].value) : inputs[CV_INPUT].value) : 0.0f), -11.0f, 11.0f);
+  float coarse = params[COARSE_PARAM].getValue();
+  float fine = quantize(params[FINE_PARAM].getValue());
+  voltage = clamp(coarse + fine + (inputs[CV_INPUT].isConnected() ? (quantizeInput ? quantize(inputs[CV_INPUT].getVoltage()) : inputs[CV_INPUT].getVoltage()) : 0.0f), -11.0f, 11.0f);
 
   if (outputs[VOLTAGE_OUTPUT].isConnected()) {
-    outputs[VOLTAGE_OUTPUT].value = on ? voltage : 0.0f;
+    outputs[VOLTAGE_OUTPUT].setVoltage(on ? voltage : 0.0f);
   }
   lights[VOLTAGE_POS_LIGHT].setBrightness(fmaxf(0.0f, voltage / 11.0f));
   lights[VOLTAGE_NEG_LIGHT].setBrightness(fmaxf(0.0f, voltage / -11.0f));
@@ -163,8 +168,9 @@ struct SRCWidget : ModuleWidget {
   void appendContextMenu(Menu *menu) override;
 };
 
-SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
-  setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SRC.svg")));
+SRCWidget::SRCWidget(SRC *module) {
+  setModule(module);
+  setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/SRC.svg")));
 
   addChild(createLight<SmallLight<GreenRedLight>>(Vec(25.0f, 42.5f), module, SRC::VOLTAGE_POS_LIGHT));
 
@@ -177,13 +183,13 @@ SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
   }
   addChild(display);
 
-  addParam(createParam<ZZC_SelectKnob>(Vec(9, 105), module, SRC::COARSE_PARAM, -10.0f, 10.0f, 0.0f));
-  addParam(createParam<ZZC_Knob25>(Vec(10, 156), module, SRC::FINE_PARAM, -1.0f, 1.0f, 0.0f));
+  addParam(createParam<ZZC_SelectKnob>(Vec(9, 105), module, SRC::COARSE_PARAM));
+  addParam(createParam<ZZC_Knob25>(Vec(10, 156), module, SRC::FINE_PARAM));
 
   addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 200), module, SRC::CV_INPUT));
   addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 242), module, SRC::ON_INPUT));
 
-  addParam(createParam<ZZC_LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
+  addParam(createParam<ZZC_LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM));
   addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(13.1f, 277.7f), module, SRC::ON_LED));
 
   addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 320), module, SRC::VOLTAGE_OUTPUT));

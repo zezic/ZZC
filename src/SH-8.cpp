@@ -20,9 +20,11 @@ struct SH8 : Module {
   };
 
   float last_trig_inputs[NUM_CHANNELS];
-  SchmittTrigger triggers[NUM_CHANNELS];
+  dsp::SchmittTrigger triggers[NUM_CHANNELS];
 
-  SH8() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+  SH8() {
+    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+  }
   void process(const ProcessArgs &args) override;
 };
 
@@ -31,15 +33,15 @@ void SH8::process(const ProcessArgs &args) {
   bool previousIsTriggered = false;
   for (int i = 0; i < NUM_CHANNELS; i++) {
     if (inputs[TRIG_INPUT + i].isConnected()) {
-      if (triggers[i].process(inputs[TRIG_INPUT + i].value)) {
-        outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].isConnected() ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
+      if (triggers[i].process(inputs[TRIG_INPUT + i].getVoltage())) {
+        outputs[HOLD_OUTPUT + i].setVoltage(inputs[NOISE_INPUT].isConnected() ? inputs[NOISE_INPUT].getVoltage() : random::normal() * 2.0);
         previousIsTriggered = true;
       } else {
         previousIsTriggered = false;
       }
     } else {
       if (i > 0 && previousIsTriggered) {
-        outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].isConnected() ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
+        outputs[HOLD_OUTPUT + i].setVoltage(inputs[NOISE_INPUT].isConnected() ? inputs[NOISE_INPUT].getVoltage() : random::normal() * 2.0);
       }
     }
   }
@@ -47,8 +49,9 @@ void SH8::process(const ProcessArgs &args) {
 
 
 struct SH8Widget : ModuleWidget {
-  SH8Widget(SH8 *module) : ModuleWidget(module) {
-    setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SH-8.svg")));
+  SH8Widget(SH8 *module) {
+    setModule(module);
+    setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/SH-8.svg")));
 
     addInput(createInput<ZZC_PJ_Port>(Vec(25, 53), module, SH8::NOISE_INPUT));
 
