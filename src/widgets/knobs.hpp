@@ -195,15 +195,18 @@ struct ZZC_EncoderKnob : SVGKnob {
 
   void randomize() override {}
 
-  void onDragMove(DragMove &e) override {
-    float range = maxValue - minValue;
-    float delta = KNOB_SENSITIVITY * -e.mouseRel.y * speed * range;
+  void onDragMove(const event::DragMove &e) override {
+    if (paramQuantity) {
+      float range = paramQuantity->getRange();
+      float delta = KNOB_SENSITIVITY * -e.mouseDelta.y * speed * range;
+      int mods = APP->window->getMods();
+      if ((mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
+        delta /= 16.f;
+      }
 
-    if (windowIsModPressed()) {
-      delta /= 16.f;
+      float newValue = paramQuantity->getSmoothValue();
+      newValue += delta;
+      paramQuantity->setValue(eucmod(newValue, paramQuantity->getMaxValue()));
     }
-
-    dragValue += delta;
-    setValue(eucmod(dragValue, maxValue));
   }
 };

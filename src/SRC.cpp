@@ -14,47 +14,55 @@ void writeMusicalNotation(char *output, float voltage) {
   int noteIdx = (int)(eucmod(voltage, 1.0f) / (1.0f / 12.05f));
   char *note = notes[noteIdx];
   if (voltage > 5.0f) {
-    sprintf(output, "%sh", note);
+    snprintf(output, sizeof(output), "%sh", note);
   } else if (voltage < -4.0f) {
-    sprintf(output, "%sl", note);
+    snprintf(output, sizeof(output), "%sl", note);
   } else {
-    sprintf(output, "%s%d", note, ((int)(voltage)) + 4);
+    snprintf(output, sizeof(output), "%s%d", note, ((int)(voltage)) + 4);
   }
 }
 
 struct VoltageDisplayWidget : BaseDisplayWidget {
-  float *value;
-  int *mode;
+  float *value = nullptr;
+  int *mode = nullptr;
   std::shared_ptr<Font> font;
 
   VoltageDisplayWidget() {
     font = Font::load(assetPlugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
-  void draw(NVGcontext *vg) override {
-    drawBackground(vg);
+  void draw(const DrawArgs &args) override {
+    drawBackground(args);
     NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
     NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
 
     // Text (integer part)
-    nvgFontSize(vg, 11);
-    nvgFontFaceId(vg, font->handle);
-    nvgTextLetterSpacing(vg, 1.0);
-    nvgTextAlign(vg, NVG_ALIGN_RIGHT);
+    nvgFontSize(args.vg, 11);
+    nvgFontFaceId(args.vg, font->handle);
+    nvgTextLetterSpacing(args.vg, 1.0);
+    nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
 
     char text[10];
-    if (*mode == MUSICAL_MODE) {
-      writeMusicalNotation(text, *value);
+    if (mode) {
+      if (*mode == MUSICAL_MODE) {
+        writeMusicalNotation(text, *value);
+      } else {
+        snprintf(text, sizeof(text), "%2.1f", fabsf(*value));
+      }
     } else {
-      sprintf(text, "%2.1f", fabsf(*value));
+      snprintf(text, sizeof(text), "c4");
     }
 
     Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 
-    nvgFillColor(vg, lcdGhostColor);
-    nvgText(vg, textPos.x, textPos.y, *mode == MUSICAL_MODE ? "188" : "18.8", NULL);
-    nvgFillColor(vg, lcdTextColor);
-    nvgText(vg, textPos.x, textPos.y, text, NULL);
+    nvgFillColor(args.vg, lcdGhostColor);
+    if (mode) {
+      nvgText(args.vg, textPos.x, textPos.y, *mode == MUSICAL_MODE ? "188" : "18.8", NULL);
+    } else {
+      nvgText(args.vg, textPos.x, textPos.y, "188", NULL);
+    }
+    nvgFillColor(args.vg, lcdTextColor);
+    nvgText(args.vg, textPos.x, textPos.y, text, NULL);
   }
 };
 
@@ -109,7 +117,7 @@ struct SRC : Module {
   }
 
   SRC() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-  void step() override;
+  void process(const ProcessArgs &args) override;
 
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
@@ -133,13 +141,13 @@ struct SRC : Module {
 };
 
 
-void SRC::step() {
+void SRC::process(const ProcessArgs &args) {
   processButtons();
   float coarse = params[COARSE_PARAM].value;
   float fine = quantize(params[FINE_PARAM].value);
-  voltage = clamp(coarse + fine + (inputs[CV_INPUT].active ? (quantizeInput ? quantize(inputs[CV_INPUT].value) : inputs[CV_INPUT].value) : 0.0f), -11.0f, 11.0f);
+  voltage = clamp(coarse + fine + (inputs[CV_INPUT].isConnected() ? (quantizeInput ? quantize(inputs[CV_INPUT].value) : inputs[CV_INPUT].value) : 0.0f), -11.0f, 11.0f);
 
-  if (outputs[VOLTAGE_OUTPUT].active) {
+  if (outputs[VOLTAGE_OUTPUT].isConnected()) {
     outputs[VOLTAGE_OUTPUT].value = on ? voltage : 0.0f;
   }
   lights[VOLTAGE_POS_LIGHT].setBrightness(fmaxf(0.0f, voltage / 11.0f));
@@ -163,20 +171,22 @@ SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
   VoltageDisplayWidget *display = new VoltageDisplayWidget();
   display->box.pos = Vec(6.0f, 60.0f);
   display->box.size = Vec(33.0f, 21.0f);
-  display->value = &module->voltage;
-  display->mode = &module->mode;
+  if (module) {
+    display->value = &module->voltage;
+    display->mode = &module->mode;
+  }
   addChild(display);
 
   addParam(createParam<ZZC_SelectKnob>(Vec(9, 105), module, SRC::COARSE_PARAM, -10.0f, 10.0f, 0.0f));
   addParam(createParam<ZZC_Knob25>(Vec(10, 156), module, SRC::FINE_PARAM, -1.0f, 1.0f, 0.0f));
 
-  addInput(createPort<ZZC_PJ_Port>(Vec(10.5, 200), PortWidget::INPUT, module, SRC::CV_INPUT));
-  addInput(createPort<ZZC_PJ_Port>(Vec(10.5, 242), PortWidget::INPUT, module, SRC::ON_INPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 200), module, SRC::CV_INPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 242), module, SRC::ON_INPUT));
 
   addParam(createParam<ZZC_LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
   addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(13.1f, 277.7f), module, SRC::ON_LED));
 
-  addOutput(createPort<ZZC_PJ_Port>(Vec(10.5, 320), PortWidget::OUTPUT, module, SRC::VOLTAGE_OUTPUT));
+  addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 320), module, SRC::VOLTAGE_OUTPUT));
 
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
   addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -187,7 +197,7 @@ SRCWidget::SRCWidget(SRC *module) : ModuleWidget(module) {
 
 struct SRCMusicalItem : MenuItem {
   SRC *src;
-  void onAction(EventAction &e) override {
+  void onAction(const event::Action &e) override {
     src->mode = MUSICAL_MODE;
   }
   void step() override {
@@ -196,7 +206,7 @@ struct SRCMusicalItem : MenuItem {
 };
 struct SRCDecimalItem : MenuItem {
   SRC *src;
-  void onAction(EventAction &e) override {
+  void onAction(const event::Action &e) override {
     src->mode = DECIMAL_MODE;
   }
   void step() override {
@@ -205,7 +215,7 @@ struct SRCDecimalItem : MenuItem {
 };
 struct SRCFreeItem : MenuItem {
   SRC *src;
-  void onAction(EventAction &e) override {
+  void onAction(const event::Action &e) override {
     src->mode = FREE_MODE;
   }
   void step() override {
@@ -214,7 +224,7 @@ struct SRCFreeItem : MenuItem {
 };
 struct SRCOnToggleItem : MenuItem {
   SRC *src;
-  void onAction(EventAction &e) override {
+  void onAction(const event::Action &e) override {
     src->onHold = false;
   }
   void step() override {
@@ -223,7 +233,7 @@ struct SRCOnToggleItem : MenuItem {
 };
 struct SRCOnHoldItem : MenuItem {
   SRC *src;
-  void onAction(EventAction &e) override {
+  void onAction(const event::Action &e) override {
     src->onHold = true;
   }
   void step() override {
@@ -232,7 +242,7 @@ struct SRCOnHoldItem : MenuItem {
 };
 struct SRCQuantizeItem : MenuItem {
   SRC *src;
-  void onAction(EventAction &e) override {
+  void onAction(const event::Action &e) override {
     src->quantizeInput ^= true;
   }
   void step() override {

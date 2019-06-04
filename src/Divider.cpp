@@ -52,12 +52,12 @@ struct Divider : Module {
   SchmittTrigger resetTrigger;
 
   inline void processRatioInputs() {
-    if (inputs[IN_RATIO_INPUT].active) {
+    if (inputs[IN_RATIO_INPUT].isConnected()) {
       from = std::roundf(clamp(inputs[IN_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f * (params[IN_RATIO_PARAM].value - 1) + 1);
     } else {
       from = params[IN_RATIO_PARAM].value;
     }
-    if (inputs[OUT_RATIO_INPUT].active) {
+    if (inputs[OUT_RATIO_INPUT].isConnected()) {
       to = std::roundf(clamp(inputs[OUT_RATIO_INPUT].value, 0.0f, 10.0f) / 10.0f * (params[OUT_RATIO_PARAM].value - 1) + 1);
     } else {
       to = params[OUT_RATIO_PARAM].value;
@@ -66,7 +66,7 @@ struct Divider : Module {
   }
 
   inline void processSwingInput() {
-    if (inputs[SWING_INPUT].active) {
+    if (inputs[SWING_INPUT].isConnected()) {
       float swingParam = params[SWING_PARAM].value;
       float swingInput = clamp(inputs[SWING_INPUT].value / 5.0f, -1.0f, 1.0f);
       if (swingInput < 0.0f) {
@@ -80,7 +80,7 @@ struct Divider : Module {
   }
 
   Divider() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-  void step() override;
+  void process(const ProcessArgs &args) override;
 
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
@@ -95,7 +95,7 @@ struct Divider : Module {
 };
 
 
-void Divider::step() {
+void Divider::process(const ProcessArgs &args) {
   processRatioInputs();
   processSwingInput();
 
@@ -104,7 +104,7 @@ void Divider::step() {
     halfPhaseOut = 0.0;
     lastHalfPhaseOut = 0.0f;
     clockPulseGenerator.trigger(gateMode ? 1e-4f : 1e-3f);
-  } else if (inputs[PHASE_INPUT].active) {
+  } else if (inputs[PHASE_INPUT].isConnected()) {
     if (lastPhaseInState) {
       phaseIn = inputs[PHASE_INPUT].value;
       float phaseInDelta = phaseIn - lastPhaseIn;
@@ -145,7 +145,7 @@ void Divider::step() {
   lastHalfPhaseOut = halfPhaseOut;
 
   lastPhaseIn = inputs[PHASE_INPUT].value;
-  lastPhaseInState = inputs[PHASE_INPUT].active;
+  lastPhaseInState = inputs[PHASE_INPUT].isConnected();
 
 
   outputs[PHASE_OUTPUT].value = phaseOut;
@@ -157,7 +157,7 @@ void Divider::step() {
     outputs[CLOCK_OUTPUT].value = clockPulse ? 10.0f : 0.0f;
   }
 
-  lights[EXT_PHASE_MODE_LED].value = inputs[PHASE_INPUT].active ? 0.5f : 0.0f;
+  lights[EXT_PHASE_MODE_LED].value = inputs[PHASE_INPUT].isConnected() ? 0.5f : 0.0f;
 }
 
 
@@ -172,24 +172,26 @@ DividerWidget::DividerWidget(Divider *module) : ModuleWidget(module) {
   RatioDisplayWidget *ratioDisplay = new RatioDisplayWidget();
   ratioDisplay->box.pos = Vec(9.0f, 94.0f);
   ratioDisplay->box.size = Vec(57.0f, 21.0f);
-  ratioDisplay->from = &module->from;
-  ratioDisplay->to = &module->to;
+  if (module) {
+    ratioDisplay->from = &module->from;
+    ratioDisplay->to = &module->to;
+  }
   addChild(ratioDisplay);
 
   addParam(createParam<ZZC_CrossKnobSnappy>(Vec(12.5, 39.5), module, Divider::IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
   addParam(createParam<ZZC_CrossKnobSnappy>(Vec(12.5, 123.5), module, Divider::OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f));
 
-  addInput(createPort<ZZC_PJ_Port>(Vec(8, 191), PortWidget::INPUT, module, Divider::SWING_INPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(8, 191), module, Divider::SWING_INPUT));
   addParam(createParam<ZZC_Knob25>(Vec(42.5, 191.0), module, Divider::SWING_PARAM, 1.0f, 99.0f, 50.0f));
 
-  addInput(createPort<ZZC_PJ_Port>(Vec(8, 233), PortWidget::INPUT, module, Divider::IN_RATIO_INPUT));
-  addInput(createPort<ZZC_PJ_Port>(Vec(42.5, 233), PortWidget::INPUT, module, Divider::OUT_RATIO_INPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(8, 233), module, Divider::IN_RATIO_INPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(42.5, 233), module, Divider::OUT_RATIO_INPUT));
 
-  addInput(createPort<ZZC_PJ_Port>(Vec(8, 275), PortWidget::INPUT, module, Divider::PHASE_INPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(8, 275), module, Divider::PHASE_INPUT));
   addChild(createLight<TinyLight<GreenLight>>(Vec(30, 275), module, Divider::EXT_PHASE_MODE_LED));
-  addInput(createPort<ZZC_PJ_Port>(Vec(42.5, 275), PortWidget::INPUT, module, Divider::RESET_INPUT));
-  addOutput(createPort<ZZC_PJ_Port>(Vec(8, 320), PortWidget::OUTPUT, module, Divider::CLOCK_OUTPUT));
-  addOutput(createPort<ZZC_PJ_Port>(Vec(42.5, 320), PortWidget::OUTPUT, module, Divider::PHASE_OUTPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(42.5, 275), module, Divider::RESET_INPUT));
+  addOutput(createOutput<ZZC_PJ_Port>(Vec(8, 320), module, Divider::CLOCK_OUTPUT));
+  addOutput(createOutput<ZZC_PJ_Port>(Vec(42.5, 320), module, Divider::PHASE_OUTPUT));
 
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
   addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -200,7 +202,7 @@ DividerWidget::DividerWidget(Divider *module) : ModuleWidget(module) {
 
 struct DividerGateModeItem : MenuItem {
   Divider *divider;
-  void onAction(EventAction &e) override {
+  void onAction(const event::Action &e) override {
     divider->gateMode ^= true;
   }
   void step() override {

@@ -29,35 +29,35 @@ struct XYDisplayViewWidget : BaseDisplayWidget {
     return padding + ((value + 1.0f) / 2.0f) * (area - padding * 2.0f);
   }
 
-  void drawCross(NVGcontext *vg, Vec position) {
+  void drawCross(NVGcontext *args.vg, Vec position) {
     if (*y == 0.0f) {
-      nvgStrokeColor(vg, lcdGhostColor);
+      nvgStrokeColor(args.vg, lcdGhostColor);
     } else if (*y < 0.0f) {
-      nvgStrokeColor(vg, negColor);
+      nvgStrokeColor(args.vg, negColor);
     } else {
-      nvgStrokeColor(vg, posColor);
+      nvgStrokeColor(args.vg, posColor);
     }
-    nvgStrokeWidth(vg, 1.0f);
+    nvgStrokeWidth(args.vg, 1.0f);
 
-    nvgBeginPath(vg);
-    nvgMoveTo(vg, position.x - 5.5f, position.y);
-    nvgLineTo(vg, position.x + 5.5f, position.y);
-    nvgStroke(vg);
+    nvgBeginPath(args.vg);
+    nvgMoveTo(args.vg, position.x - 5.5f, position.y);
+    nvgLineTo(args.vg, position.x + 5.5f, position.y);
+    nvgStroke(args.vg);
 
-    nvgBeginPath(vg);
-    nvgMoveTo(vg, position.x, position.y - 5.5f);
-    nvgLineTo(vg, position.x, position.y + 5.5f);
-    nvgStroke(vg);
+    nvgBeginPath(args.vg);
+    nvgMoveTo(args.vg, position.x, position.y - 5.5f);
+    nvgLineTo(args.vg, position.x, position.y + 5.5f);
+    nvgStroke(args.vg);
   }
 
-  void draw(NVGcontext *vg) override {
-    drawBackground(vg);
-    nvgScissor(vg, padding, padding, box.size.x - padding * 2.0f, box.size.y - padding * 2.0f);
-    drawCross(vg, Vec(
+  void draw(const DrawArgs &args) override {
+    drawBackground(args.vg);
+    nvgScissor(args.vg, padding, padding, box.size.x - padding * 2.0f, box.size.y - padding * 2.0f);
+    drawCross(args.vg, Vec(
       scaleValue(x ? *x : 0.0f, box.size.x),
       scaleValue(y ? -*y : 0.0f, box.size.y)
     ));
-    nvgResetScissor(vg);
+    nvgResetScissor(args.vg);
     this->drawnX = *x;
     this->drawnY = *y;
     this->lastDrawnAt = glfwGetTime();
@@ -95,30 +95,44 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
     this->disp->y = this->y;
   }
 
-  void onDragStart(DragStart &e) override {
-    windowCursorLock();
+  void onDragStart(const event::DragStart &e) override {
+    if (e.button != GLFW_MOUSE_BUTTON_LEFT) {
+		  return;
+    }
+    APP->window->cursorLock();
     dragDelta = 0.0;
   }
 
   virtual void onInput(float x, float y) = 0;
   virtual void onReset() = 0;
 
-  void onDragMove(DragMove &e) override {
-    float deltaX = KNOB_SENSITIVITY * e.mouseRel.x * speed;
-    float deltaY = KNOB_SENSITIVITY * -e.mouseRel.y * speed;
+  void onDragMove(const event::DragMove &e) override {
+    float deltaX = KNOB_SENSITIVITY * e.mouseDelta.x * speed;
+    float deltaY = KNOB_SENSITIVITY * -e.mouseDelta.y * speed;
 
-    if (windowIsModPressed()) {
-      deltaX /= 16.f;
-      deltaY /= 16.f;
-    }
+    // Drag slower if mod is held
+		int mods = APP->window->getMods();
+		if ((mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
+			deltaX /= 16.f;
+			deltaY /= 16.f;
+		}
+		// Drag even slower if mod+shift is held
+		if ((mods & RACK_MOD_MASK) == (RACK_MOD_CTRL | GLFW_MOD_SHIFT)) {
+			deltaX /= 256.f;
+			deltaY /= 256.f;
+		}
 
     onInput(deltaX, deltaY);
 
     dirty = true;
   }
 
-  void onDragEnd(DragEnd &e) override {
-    windowCursorUnlock();
+  void onDragEnd(const event::DragEnd &e) override {
+    if (e.button != GLFW_MOUSE_BUTTON_LEFT) {
+		  return;
+    }
+
+	  APP->window->cursorUnlock();
   }
   void reset() override {
     this->onReset();
@@ -134,8 +148,8 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
     FramebufferWidget::step();
   }
 
-  void draw(NVGcontext *vg) override {
+  void draw(const DrawArgs &args) override {
     // Bypass framebuffer rendering entirely
-    Widget::draw(vg);
+    Widget::draw(args);
   }
 };

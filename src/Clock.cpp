@@ -94,12 +94,12 @@ struct Clock : Module {
   SchmittTrigger externalClockTrigger;
 
   inline void processButtons() {
-    if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].value) || (inputs[EXT_RUN_INPUT].active && externalRunTrigger.process(inputs[EXT_RUN_INPUT].value))) {
+    if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].value) || (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].value))) {
       running = !running;
       runPulseGenerator.trigger(1e-3f);
     }
 
-    if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].value) || (inputs[EXT_RESET_INPUT].active && externalResetTrigger.process(inputs[EXT_RESET_INPUT].value))) {
+    if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].value) || (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].value))) {
       resetWasHit = true;
       resetPulseGenerator.trigger(1e-3f);
     }
@@ -111,7 +111,7 @@ struct Clock : Module {
 
   inline void processSwingInputs() {
     swing8thsFinal = params[SWING_8THS_PARAM].value;
-    if (inputs[SWING_8THS_INPUT].active) {
+    if (inputs[SWING_8THS_INPUT].isConnected()) {
       float swing8thsInput = clamp(inputs[SWING_8THS_INPUT].value / 5.0f, -1.0f, 1.0f);
       if (swing8thsInput < 0.0f) {
         swing8thsFinal += (swing8thsFinal - 1.0f) * swing8thsInput;
@@ -120,7 +120,7 @@ struct Clock : Module {
       }
     }
     swing16thsFinal = params[SWING_16THS_PARAM].value;
-    if (inputs[SWING_16THS_INPUT].active) {
+    if (inputs[SWING_16THS_INPUT].isConnected()) {
       float swing16thsInput = clamp(inputs[SWING_16THS_INPUT].value / 5.0f, -1.0f, 1.0f);
       if (swing16thsInput < 0.0f) {
         swing16thsFinal += (swing16thsFinal - 1.0f) * swing16thsInput;
@@ -148,13 +148,13 @@ struct Clock : Module {
   }
 
   inline enum Modes detectMode() {
-    if (inputs[CLOCK_INPUT].active && inputs[PHASE_INPUT].active) {
+    if (inputs[CLOCK_INPUT].isConnected() && inputs[PHASE_INPUT].isConnected()) {
       return EXT_CLOCK_AND_PHASE_MODE;
-    } else if (inputs[CLOCK_INPUT].active) {
+    } else if (inputs[CLOCK_INPUT].isConnected()) {
       return EXT_CLOCK_MODE;
-    } else if (inputs[PHASE_INPUT].active) {
+    } else if (inputs[PHASE_INPUT].isConnected()) {
       return EXT_PHASE_MODE;
-    } else if (inputs[VBPS_INPUT].active) {
+    } else if (inputs[VBPS_INPUT].isConnected()) {
       return EXT_VBPS_MODE;
     }
     return INTERNAL_MODE;
@@ -163,7 +163,7 @@ struct Clock : Module {
   Clock() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
     clockTracker.init();
   }
-  void step() override;
+  void process(const ProcessArgs &args) override;
 
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
@@ -185,7 +185,7 @@ struct Clock : Module {
 };
 
 
-void Clock::step() {
+void Clock::process(const ProcessArgs &args) {
   lastMode = mode;
   mode = detectMode();
 
@@ -325,7 +325,7 @@ struct ClockWidget : ModuleWidget {
   ClockWidget(Clock *module) : ModuleWidget(module) {
     setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/Clock.svg")));
 
-    addInput(createPort<ZZC_PJ_Port>(Vec(10.8f, 52), PortWidget::INPUT, module, Clock::VBPS_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(10.8f, 52), module, Clock::VBPS_INPUT));
     addChild(createLight<TinyLight<GreenLight>>(Vec(33, 52), module, Clock::EXT_VBPS_MODE_LED));
 
     addParam(createParam<ZZC_LEDBezelDark>(Vec(116.3f, 53.0f), module, Clock::REVERSE_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
@@ -334,7 +334,9 @@ struct ClockWidget : ModuleWidget {
     Display32Widget *bpmDisplay = new Display32Widget();
     bpmDisplay->box.pos = Vec(46.0f, 40.0f);
     bpmDisplay->box.size = Vec(58.0f, 21.0f);
-    bpmDisplay->value = &module->bpm;
+    if (module) {
+      bpmDisplay->value = &module->bpm;
+    }
     addChild(bpmDisplay);
 
     addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(71.75, 66.5), module, Clock::CLOCK_LED));
@@ -344,31 +346,31 @@ struct ClockWidget : ModuleWidget {
     addParam(createParam<ZZC_Knob27Snappy>(Vec(13.5, 186), module, Clock::SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f));
     addParam(createParam<ZZC_Knob27Snappy>(Vec(109.5, 186), module, Clock::SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f));
 
-    addInput(createPort<ZZC_PJ_Port>(Vec(45.5, 224), PortWidget::INPUT, module, Clock::CLOCK_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(45.5, 224), module, Clock::CLOCK_INPUT));
     addChild(createLight<TinyLight<GreenLight>>(Vec(67.5, 224), module, Clock::EXT_CLOCK_MODE_LED));
-    addInput(createPort<ZZC_PJ_Port>(Vec(80, 224), PortWidget::INPUT, module, Clock::PHASE_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(80, 224), module, Clock::PHASE_INPUT));
     addChild(createLight<TinyLight<GreenLight>>(Vec(102, 224), module, Clock::EXT_PHASE_MODE_LED));
 
-    addOutput(createPort<ZZC_PJ_Port>(Vec(45.5, 272), PortWidget::OUTPUT, module, Clock::CLOCK_OUTPUT));
-    addOutput(createPort<ZZC_PJ_Port>(Vec(80, 272), PortWidget::OUTPUT, module, Clock::PHASE_OUTPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(45.5, 272), module, Clock::CLOCK_OUTPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(80, 272), module, Clock::PHASE_OUTPUT));
 
-    addOutput(createPort<ZZC_PJ_Port>(Vec(10.8f, 320), PortWidget::OUTPUT, module, Clock::VBPS_OUTPUT));
-    addOutput(createPort<ZZC_PJ_Port>(Vec(114.8f, 320), PortWidget::OUTPUT, module, Clock::VSPB_OUTPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(10.8f, 320), module, Clock::VBPS_OUTPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(114.8f, 320), module, Clock::VSPB_OUTPUT));
 
-    addInput(createPort<ZZC_PJ_Port>(Vec(10.8f, 145), PortWidget::INPUT, module, Clock::EXT_RUN_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(10.8f, 145), module, Clock::EXT_RUN_INPUT));
     addParam(createParam<ZZC_LEDBezelDark>(Vec(47.3f, 168.0f), module, Clock::RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
     addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(49.1f, 169.7f), module, Clock::RUN_LED));
-    addOutput(createPort<ZZC_PJ_Port>(Vec(45.5, 320), PortWidget::OUTPUT, module, Clock::RUN_OUTPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(45.5, 320), module, Clock::RUN_OUTPUT));
 
-    addInput(createPort<ZZC_PJ_Port>(Vec(114.8f, 145), PortWidget::INPUT, module, Clock::EXT_RESET_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(114.8f, 145), module, Clock::EXT_RESET_INPUT));
     addParam(createParam<ZZC_LEDBezelDark>(Vec(81.3f, 168.0f), module, Clock::RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f));
     addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(83.1f, 169.7f), module, Clock::RESET_LED));
-    addOutput(createPort<ZZC_PJ_Port>(Vec(80, 320), PortWidget::OUTPUT, module, Clock::RESET_OUTPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(80, 320), module, Clock::RESET_OUTPUT));
 
-    addInput(createPort<ZZC_PJ_Port>(Vec(10.8f, 224), PortWidget::INPUT, module, Clock::SWING_8THS_INPUT));
-    addInput(createPort<ZZC_PJ_Port>(Vec(114.8f, 224), PortWidget::INPUT, module, Clock::SWING_16THS_INPUT));
-    addOutput(createPort<ZZC_PJ_Port>(Vec(10.8f, 272), PortWidget::OUTPUT, module, Clock::CLOCK_8THS_OUTPUT));
-    addOutput(createPort<ZZC_PJ_Port>(Vec(114.8f, 272), PortWidget::OUTPUT, module, Clock::CLOCK_16THS_OUTPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(10.8f, 224), module, Clock::SWING_8THS_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(114.8f, 224), module, Clock::SWING_16THS_INPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(10.8f, 272), module, Clock::CLOCK_8THS_OUTPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(114.8f, 272), module, Clock::CLOCK_16THS_OUTPUT));
 
     addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
     addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

@@ -40,44 +40,44 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
     colored = true;
   }
 
-  void draw(NVGcontext *vg) override {
+  void draw(const DrawArgs &args) override {
     if (!value) {
       return;
     }
     lastDrawnAt = glfwGetTime();
     drawnValue = *value;
     // return;
-    nvgLineCap(vg, NSVG_CAP_ROUND);
-    nvgStrokeWidth(vg, strokeWidth);
+    nvgLineCap(args.vg, NSVG_CAP_ROUND);
+    nvgStrokeWidth(args.vg, strokeWidth);
 
-    nvgStrokeColor(vg, backdropColor);
-    nvgBeginPath(vg);
+    nvgStrokeColor(args.vg, backdropColor);
+    nvgBeginPath(args.vg);
     nvgArc(
-      vg,
+      args.vg,
       box.size.x / 2.0, box.size.y / 2.0, box.size.x / 2.0 - strokeWidth / 2.0,
       (center + girth) * 2 * M_PI,
       (center - girth) * 2 * M_PI,
       1
     );
-    nvgStroke(vg);
+    nvgStroke(args.vg);
 
     if (*value == 0.0) {
       return;
     }
     if (colored) {
-      nvgStrokeColor(vg, *value > 0.0 ? posColor : negColor);
+      nvgStrokeColor(args.vg, *value > 0.0 ? posColor : negColor);
     } else {
-      nvgStrokeColor(vg, valueColor);
+      nvgStrokeColor(args.vg, valueColor);
     }
-    nvgBeginPath(vg);
+    nvgBeginPath(args.vg);
     nvgArc(
-      vg,
+      args.vg,
       box.size.x / 2.0, box.size.y / 2.0, box.size.x / 2.0 - strokeWidth / 2.0,
       startFrom * 2 * M_PI,
       (startFrom + (*value / maxVal) * range) * 2 * M_PI,
       *value >= 0 ? 2 : 1
     );
-    nvgStroke(vg);
+    nvgStroke(args.vg);
   }
 
   bool shouldUpdate(float *newValue) {
@@ -154,7 +154,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     }
   }
 
-  void onDragStart(DragStart &e) override {
+  void onDragStart(const event::DragStart &e) override {
     windowCursorLock();
     randomizable = false;
   }
@@ -162,7 +162,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
   virtual void onInput(float factor) = 0;
   virtual void onReset() = 0;
 
-  void onDragMove(DragMove &e) override {
+  void onDragMove(const event::DragMove &e) override {
     float delta = KNOB_SENSITIVITY * -e.mouseRel.y * speed;
     if (windowIsModPressed()) { delta /= 16.f; }
     rotation += delta * rotationMult;
@@ -170,7 +170,7 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     dirty = true;
   }
 
-  void onDragEnd(DragEnd &e) override {
+  void onDragEnd(const event::DragEnd &e) override {
     windowCursorUnlock();
     randomizable = true;
   }
@@ -205,8 +205,8 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     }
   }
 
-  void draw(NVGcontext *vg) override {
+  void draw(const DrawArgs &args) override {
     // Bypass framebuffer rendering entirely
-    Widget::draw(vg);
+    Widget::draw(args);
   }
 };

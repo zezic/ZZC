@@ -23,23 +23,23 @@ struct SH8 : Module {
   SchmittTrigger triggers[NUM_CHANNELS];
 
   SH8() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-  void step() override;
+  void process(const ProcessArgs &args) override;
 };
 
 
-void SH8::step() {
+void SH8::process(const ProcessArgs &args) {
   bool previousIsTriggered = false;
   for (int i = 0; i < NUM_CHANNELS; i++) {
-    if (inputs[TRIG_INPUT + i].active) {
+    if (inputs[TRIG_INPUT + i].isConnected()) {
       if (triggers[i].process(inputs[TRIG_INPUT + i].value)) {
-        outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].active ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
+        outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].isConnected() ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
         previousIsTriggered = true;
       } else {
         previousIsTriggered = false;
       }
     } else {
       if (i > 0 && previousIsTriggered) {
-        outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].active ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
+        outputs[HOLD_OUTPUT + i].value = inputs[NOISE_INPUT].isConnected() ? inputs[NOISE_INPUT].value : randomNormal() * 2.0;
       }
     }
   }
@@ -50,14 +50,14 @@ struct SH8Widget : ModuleWidget {
   SH8Widget(SH8 *module) : ModuleWidget(module) {
     setPanel(SVG::load(assetPlugin(pluginInstance, "res/panels/SH-8.svg")));
 
-    addInput(createPort<ZZC_PJ_Port>(Vec(25, 53), PortWidget::INPUT, module, SH8::NOISE_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(25, 53), module, SH8::NOISE_INPUT));
 
     for (int i = 0; i < NUM_CHANNELS; i++) {
-      addInput(createPort<ZZC_PJ_Port>(Vec(7.25f, 109 + 30 * i), PortWidget::INPUT, module, SH8::TRIG_INPUT + i));
+      addInput(createInput<ZZC_PJ_Port>(Vec(7.25f, 109 + 30 * i), module, SH8::TRIG_INPUT + i));
     }
 
     for (int i = 0; i < NUM_CHANNELS; i++) {
-      addOutput(createPort<ZZC_PJ_Port>(Vec(42.25f, 109 + 30 * i), PortWidget::OUTPUT, module, SH8::HOLD_OUTPUT + i));
+      addOutput(createOutput<ZZC_PJ_Port>(Vec(42.25f, 109 + 30 * i), module, SH8::HOLD_OUTPUT + i));
     }
 
     addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));

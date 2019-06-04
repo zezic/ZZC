@@ -1,4 +1,4 @@
-#include "util/math.hpp"
+#include "math.hpp"
 
 using namespace rack;
 

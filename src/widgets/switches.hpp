@@ -4,14 +4,14 @@ using namespace rack;
 
 extern Plugin *pluginInstance;
 
-struct ZZC_Switch2 : SVGSwitch, ToggleSwitch {
+struct ZZC_Switch2 : SvgSwitch {
   ZZC_Switch2() {
     addFrame(SVG::load(assetPlugin(pluginInstance,"res/switches/ZZC-Switch-2_0.svg")));
     addFrame(SVG::load(assetPlugin(pluginInstance,"res/switches/ZZC-Switch-2_1.svg")));
   }
 };
 
-struct ZZC_Switch3 : SVGSwitch, ToggleSwitch {
+struct ZZC_Switch3 : SvgSwitch {
   ZZC_Switch3() {
     addFrame(SVG::load(assetPlugin(pluginInstance,"res/switches/ZZC-Switch-3_0.svg")));
     addFrame(SVG::load(assetPlugin(pluginInstance,"res/switches/ZZC-Switch-3_1.svg")));
@@ -19,7 +19,7 @@ struct ZZC_Switch3 : SVGSwitch, ToggleSwitch {
   }
 };
 
-struct ZZC_FN3WaveSwitch : SVGSwitch, ToggleSwitch {
+struct ZZC_FN3WaveSwitch : SvgSwitch {
   ZZC_FN3WaveSwitch() {
     addFrame(SVG::load(assetPlugin(pluginInstance,"res/switches/ZZC-FN-3-Wave-Switch_0.svg")));
     addFrame(SVG::load(assetPlugin(pluginInstance,"res/switches/ZZC-FN-3-Wave-Switch_1.svg")));
@@ -27,15 +27,16 @@ struct ZZC_FN3WaveSwitch : SVGSwitch, ToggleSwitch {
   }
 };
 
-struct ZZC_FN3UniBiSwitch : SVGSwitch, ToggleSwitch {
+struct ZZC_FN3UniBiSwitch : SvgSwitch {
   ZZC_FN3UniBiSwitch() {
     addFrame(SVG::load(assetPlugin(pluginInstance,"res/switches/ZZC-FN-3-Uni-Bi-Switch_0.svg")));
     addFrame(SVG::load(assetPlugin(pluginInstance,"res/switches/ZZC-FN-3-Uni-Bi-Switch_1.svg")));
   }
 };
 
-struct ZZC_LEDBezelDark : SVGSwitch, MomentarySwitch {
+struct ZZC_LEDBezelDark : SvgSwitch {
   ZZC_LEDBezelDark() {
+    momentary = true;
     addFrame(SVG::load(assetPlugin(pluginInstance, "res/switches/ZZC-LED-Bezel-Dark.svg")));
   }
 };

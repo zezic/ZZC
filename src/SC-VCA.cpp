@@ -53,18 +53,18 @@ struct SCVCA : Module {
   }
 
   SCVCA() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-  void step() override;
+  void process(const ProcessArgs &args) override;
 };
 
 
-void SCVCA::step() {
+void SCVCA::process(const ProcessArgs &args) {
   float gain = params[GAIN_PARAM].value;
   float clip = params[CLIP_PARAM].value;
   float softness = params[CLIP_SOFTNESS_PARAM].value;
 
-  if (inputs[GAIN_INPUT].active) { gain = gain * inputs[GAIN_INPUT].value / 10.0f; }
-  if (inputs[CLIP_INPUT].active) { clip = clip * clamp(inputs[CLIP_INPUT].value, 0.0f, 10.0f) / 10.0f; }
-  if (inputs[CLIP_SOFTNESS_INPUT].active) { softness = softness * clamp(inputs[CLIP_SOFTNESS_INPUT].value, 0.0f, 10.0f) / 10.0f; }
+  if (inputs[GAIN_INPUT].isConnected()) { gain = gain * inputs[GAIN_INPUT].value / 10.0f; }
+  if (inputs[CLIP_INPUT].isConnected()) { clip = clip * clamp(inputs[CLIP_INPUT].value, 0.0f, 10.0f) / 10.0f; }
+  if (inputs[CLIP_SOFTNESS_INPUT].isConnected()) { softness = softness * clamp(inputs[CLIP_SOFTNESS_INPUT].value, 0.0f, 10.0f) / 10.0f; }
 
   float gained_1 = inputs[SIG1_INPUT].value * gain;
   float gained_2 = inputs[SIG2_INPUT].value * gain;
@@ -90,14 +90,14 @@ struct SCVCAWidget : ModuleWidget {
     addParam(createParam<ZZC_BigKnobInner>(Vec(24, 94.7), module, SCVCA::CLIP_PARAM, 0.0f, 10.0f, 5.0f));
     addParam(createParam<ZZC_Knob25>(Vec(42.5, 175.7), module, SCVCA::CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f));
 
-    addInput(createPort<ZZC_PJ_Port>(Vec(8, 221), PortWidget::INPUT, module, SCVCA::GAIN_INPUT));
-    addInput(createPort<ZZC_PJ_Port>(Vec(42.5, 221), PortWidget::INPUT, module, SCVCA::CLIP_INPUT));
-    addInput(createPort<ZZC_PJ_Port>(Vec(8, 176), PortWidget::INPUT, module, SCVCA::CLIP_SOFTNESS_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(8, 221), module, SCVCA::GAIN_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(42.5, 221), module, SCVCA::CLIP_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(8, 176), module, SCVCA::CLIP_SOFTNESS_INPUT));
 
-    addInput(createPort<ZZC_PJ_Port>(Vec(8, 275), PortWidget::INPUT, module, SCVCA::SIG1_INPUT));
-    addInput(createPort<ZZC_PJ_Port>(Vec(42.5, 275), PortWidget::INPUT, module, SCVCA::SIG2_INPUT));
-    addOutput(createPort<ZZC_PJ_Port>(Vec(8, 319.75), PortWidget::OUTPUT, module, SCVCA::SIG1_OUTPUT));
-    addOutput(createPort<ZZC_PJ_Port>(Vec(42.5, 319.75), PortWidget::OUTPUT, module, SCVCA::SIG2_OUTPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(8, 275), module, SCVCA::SIG1_INPUT));
+    addInput(createInput<ZZC_PJ_Port>(Vec(42.5, 275), module, SCVCA::SIG2_INPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(8, 319.75), module, SCVCA::SIG1_OUTPUT));
+    addOutput(createOutput<ZZC_PJ_Port>(Vec(42.5, 319.75), module, SCVCA::SIG2_OUTPUT));
 
     addChild(createLight<SmallLight<GreenRedLight>>(Vec(34.2f, 43.9f), module, SCVCA::CLIPPING_POS_LIGHT));
 
