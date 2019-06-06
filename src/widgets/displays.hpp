@@ -90,7 +90,7 @@ struct Display32Widget : BaseDisplayWidget {
 };
 
 struct DisplayIntpartWidget : BaseDisplayWidget {
-  float *value;
+  float *value = nullptr;
   std::shared_ptr<Font> font;
 
   DisplayIntpartWidget() {
@@ -109,7 +109,7 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
     nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
 
     char integerPartString[10];
-    snprintf(integerPartString, sizeof(integerPartString), "%8.0f", *value);
+    snprintf(integerPartString, sizeof(integerPartString), "%8.0f", value ? *value : 8.0f);
 
     Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 

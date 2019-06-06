@@ -29,10 +29,10 @@ struct XYDisplayViewWidget : BaseDisplayWidget {
     return padding + ((value + 1.0f) / 2.0f) * (area - padding * 2.0f);
   }
 
-  void drawCross(NVGcontext *args.vg, Vec position) {
-    if (*y == 0.0f) {
+  void drawCross(const DrawArgs &args, Vec position) {
+    if (!y || (y && *y == 0.0f)) {
       nvgStrokeColor(args.vg, lcdGhostColor);
-    } else if (*y < 0.0f) {
+    } else if (y && *y < 0.0f) {
       nvgStrokeColor(args.vg, negColor);
     } else {
       nvgStrokeColor(args.vg, posColor);
@@ -51,15 +51,17 @@ struct XYDisplayViewWidget : BaseDisplayWidget {
   }
 
   void draw(const DrawArgs &args) override {
-    drawBackground(args.vg);
+    drawBackground(args);
     nvgScissor(args.vg, padding, padding, box.size.x - padding * 2.0f, box.size.y - padding * 2.0f);
-    drawCross(args.vg, Vec(
+    drawCross(args, Vec(
       scaleValue(x ? *x : 0.0f, box.size.x),
       scaleValue(y ? -*y : 0.0f, box.size.y)
     ));
     nvgResetScissor(args.vg);
-    this->drawnX = *x;
-    this->drawnY = *y;
+    if (x && y) {
+      this->drawnX = *x;
+      this->drawnY = *y;
+    }
     this->lastDrawnAt = glfwGetTime();
   }
 
@@ -71,7 +73,7 @@ struct XYDisplayViewWidget : BaseDisplayWidget {
   }
 };
 
-struct XYDisplayWidget : ParamWidget, FramebufferWidget {
+struct XYDisplayWidget : ParamWidget {
   float *x = nullptr;
   float *y = nullptr;
   float lastX = 0.0f;
@@ -79,15 +81,19 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
   float dragDelta;
   XYDisplayViewWidget *disp;
   float speed = 4.0;
+  widget::FramebufferWidget *fb;
 
   XYDisplayWidget() {
+    fb = new widget::FramebufferWidget;
+	  addChild(fb);
+
     disp = new XYDisplayViewWidget();
+    fb->addChild(disp);
   }
 
   void setupSize() {
     disp->box.pos = Vec(0, 0);
     disp->box.size = this->box.size;
-    addChild(disp);
   }
 
   void setupPtrs() {
@@ -124,7 +130,7 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
 
     onInput(deltaX, deltaY);
 
-    dirty = true;
+    fb->dirty = true;
   }
 
   void onDragEnd(const event::DragEnd &e) override {
@@ -136,16 +142,16 @@ struct XYDisplayWidget : ParamWidget, FramebufferWidget {
   }
   void reset() override {
     this->onReset();
-    this->dirty = true;
+    fb->dirty = true;
   }
 
   void step() override {
     if (x && y && this->disp->shouldUpdate(x, y)) {
-      dirty = true;
+      fb->dirty = true;
       lastX = *x;
       lastY = *y;
     }
-    FramebufferWidget::step();
+    ParamWidget::step();
   }
 
   void draw(const DrawArgs &args) override {

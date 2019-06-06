@@ -37,6 +37,7 @@ struct ZZC_FN3UniBiSwitch : SvgSwitch {
 struct ZZC_LEDBezelDark : SvgSwitch {
   ZZC_LEDBezelDark() {
     momentary = true;
+    shadow->opacity = 0.0f;
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/switches/ZZC-LED-Bezel-Dark.svg")));
   }
 };

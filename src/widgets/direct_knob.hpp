@@ -41,11 +41,8 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
   }
 
   void draw(const DrawArgs &args) override {
-    if (!value) {
-      return;
-    }
     lastDrawnAt = glfwGetTime();
-    drawnValue = *value;
+    drawnValue = value ? *value : 0.0f;
     // return;
     nvgLineCap(args.vg, NSVG_CAP_ROUND);
     nvgStrokeWidth(args.vg, strokeWidth);
@@ -61,11 +58,11 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
     );
     nvgStroke(args.vg);
 
-    if (*value == 0.0) {
+    if (drawnValue == 0.0) {
       return;
     }
     if (colored) {
-      nvgStrokeColor(args.vg, *value > 0.0 ? posColor : negColor);
+      nvgStrokeColor(args.vg, drawnValue > 0.0 ? posColor : negColor);
     } else {
       nvgStrokeColor(args.vg, valueColor);
     }
@@ -74,8 +71,8 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
       args.vg,
       box.size.x / 2.0, box.size.y / 2.0, box.size.x / 2.0 - strokeWidth / 2.0,
       startFrom * 2 * M_PI,
-      (startFrom + (*value / maxVal) * range) * 2 * M_PI,
-      *value >= 0 ? 2 : 1
+      (startFrom + (drawnValue / maxVal) * range) * 2 * M_PI,
+      drawnValue >= 0 ? 2 : 1
     );
     nvgStroke(args.vg);
   }
@@ -87,13 +84,12 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
   }
 };
 
-struct CachingTransformWidget : TransformWidget {
-};
+struct ZZC_CallbackKnob : Knob {
+  widget::FramebufferWidget *fb;
+  CircularShadow *shadow;
+  widget::TransformWidget *tw;
+  widget::SvgWidget *sw;
 
-struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
-  SVGWidget *sw = nullptr;
-  CachingTransformWidget *tw = nullptr;
-  CircularShadow *shadow = nullptr;
   ZZC_DirectKnobDisplay *disp = nullptr;
   float *value = nullptr;
   bool randomizable = true;
@@ -106,8 +102,28 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
   float padding = strokeWidth + 2.0;
   float rotationMult = 1.0;
   float deltaMult = 1.0f;
+  bool dirty = true;
+  bool showDisplay = true;
 
   ZZC_CallbackKnob() {
+    fb = new widget::FramebufferWidget;
+    addChild(fb);
+
+    if (showDisplay) {
+      disp = new ZZC_DirectKnobDisplay();
+      fb->addChild(disp);
+      disp->box.pos = math::Vec(0, 0);
+    }
+
+    shadow = new CircularShadow;
+    fb->addChild(shadow);
+    shadow->box.size = math::Vec();
+
+    tw = new widget::TransformWidget;
+    fb->addChild(tw);
+
+    sw = new widget::SvgWidget;
+    tw->addChild(sw);
   }
 
   void attachValue(float *valuePointer, float limitLow, float limitHigh, float defaultValue) {
@@ -120,69 +136,59 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
     }
   }
 
-  void setSvg(std::shared_ptr<SVG> svg, bool showDisplay) {
-    if (showDisplay) {
-      disp = new ZZC_DirectKnobDisplay();
-      addChild(disp);
-      disp->box.pos = Vec(0, 0);
-    }
-
-    shadow = new CircularShadow();
-    addChild(shadow);
-    shadow->box.size = Vec();
-
-    tw = new CachingTransformWidget();
-    addChild(tw);
-
-    sw = new SVGWidget();
-    tw->addChild(sw);
+  void setSvg(std::shared_ptr<Svg> svg) {
 
     padding = strokeWidth + 2.0;
+
+    sw->setSvg(svg);
+    sw->box.pos = showDisplay ? math::Vec(padding, padding) : math::Vec(0, 0);
+    tw->box.size = sw->box.size;
+    fb->box.size = showDisplay ? math::Vec(padding * 2, padding * 2).plus(sw->box.size) : sw->box.size;
+    box.size = sw->box.size;
+    shadow->box.size = sw->box.size;
+    // Move shadow downward by 20% and take value display into account
+    shadow->box.pos = showDisplay ? math::Vec(padding, padding).plus(math::Vec(0, sw->box.size.y * 0.2)) : math::Vec(0, sw->box.size.y * 0.2);
 
     if (disp) {
       disp->strokeWidth = strokeWidth;
     }
 
-    setSvg(svg);
-    sw->box.pos = showDisplay ? Vec(padding, padding) : Vec(0, 0);
-    tw->box.size = sw->box.size;
-    box.size = showDisplay ? Vec(padding * 2, padding * 2).plus(sw->box.size) : sw->box.size;
-    shadow->box.size = sw->box.size;
-    shadow->box.pos = showDisplay ? Vec(padding, padding).plus(Vec(0, sw->box.size.y * 0.2)) : Vec(0, sw->box.size.y * 0.2);
     if (disp) {
-      disp->box.size = box.size;
+      disp->box.size = fb->box.size;
     }
-  }
-
-  void onDragStart(const event::DragStart &e) override {
-    windowCursorLock();
-    randomizable = false;
   }
 
   virtual void onInput(float factor) = 0;
   virtual void onReset() = 0;
 
   void onDragMove(const event::DragMove &e) override {
-    float delta = KNOB_SENSITIVITY * -e.mouseRel.y * speed;
-    if (windowIsModPressed()) { delta /= 16.f; }
+    if (e.button != GLFW_MOUSE_BUTTON_LEFT) {
+		  return;
+    }
+    float delta = KNOB_SENSITIVITY * -e.mouseDelta.y * speed;
+
+    // Drag slower if mod is held
+		int mods = APP->window->getMods();
+		if ((mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
+			delta /= 16.f;
+		}
+		// Drag even slower if mod+shift is held
+		if ((mods & RACK_MOD_MASK) == (RACK_MOD_CTRL | GLFW_MOD_SHIFT)) {
+			delta /= 256.f;
+		}
     rotation += delta * rotationMult;
     this->onInput(delta * deltaMult);
     dirty = true;
   }
-
-  void onDragEnd(const event::DragEnd &e) override {
-    windowCursorUnlock();
-    randomizable = true;
-  }
-
-  void reset() override {
+  void onDoubleClick(const event::DoubleClick &e) override {
     this->onReset();
-    this->dirty = true;
+    this->fb->dirty = true;
   }
 
   void step() override {
     if (disp && value && disp->shouldUpdate(value)) {
       dirty = true;
+      fb->dirty = true;
     }
     if (dirty && (rotation != lastRotation)) {
       float angle;
@@ -190,13 +196,14 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
       angle = fmodf(angle, 2*M_PI);
       tw->identity();
       // Rotate SVG
-      Vec center = sw->box.getCenter();
+      math::Vec center = sw->box.getCenter();
       tw->translate(center);
       tw->rotate(angle);
       tw->translate(center.neg());
       lastRotation = rotation;
+      fb->dirty = true;
     }
-    FramebufferWidget::step();
+    Widget::step();
   }
 
   void enableColor() {
@@ -206,7 +213,6 @@ struct ZZC_CallbackKnob : ParamWidget, FramebufferWidget {
   }
 
   void draw(const DrawArgs &args) override {
-    // Bypass framebuffer rendering entirely
     Widget::draw(args);
   }
 };
