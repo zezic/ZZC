@@ -1,6 +1,34 @@
 #include "ZZC.hpp"
 
 
+template <typename T>
+static T softClip(T x) {
+  x = simd::clamp(x, -3.f, 3.f);
+  return x * (27 + x * x) / (27 + 9 * x * x);
+}
+
+
+template <typename T>
+static T softClipTo(T input, T ceiling, T softness) {
+  T clean_range;
+  clean_range += 1.f;
+  clean_range -= softness;
+  clean_range *= ceiling;
+
+  T ws_range = ceiling * softness;
+
+  T clean_part = simd::clamp(input, -clean_range, clean_range);
+
+  T ws_part = input;
+  ws_part -= clean_part;
+  ws_part /= ws_range;
+  ws_part = softClip(ws_part);
+  ws_part *= ws_range;
+
+  return clean_part + ws_part;
+}
+
+
 struct SCVCA : Module {
   enum ParamIds {
     GAIN_PARAM,
@@ -28,28 +56,90 @@ struct SCVCA : Module {
     NUM_LIGHTS
   };
 
-  inline float SoftLimit(float x) {
-    return x * (27.0f + x * x) / (27.0f + 9.0f * x * x);
-  }
-
-  inline float SoftClip(float x) {
-    return x > 3.0f ? 1.0f : SoftLimit(x);
-  }
-
-  inline void SoftClipTo(float x, float ceiling, float softness, Output &out) {
-    float ws_range = ceiling * softness;
-    float clean_range = ceiling - ws_range;
-    float abso = fabsf(x);
-
-    if (abso > clean_range) {
-      out.value = copysignf(clean_range + SoftClip((abso - clean_range) / ws_range) * ws_range, x);
-    } else {
-      out.value = x;
+  void processChannel(
+    Input &in,
+    Param &gainParam, Param &softnessParam, Param &clipParam,
+    Input &gainInput, Input &softnessInput, Input &clipInput,
+    Output &out
+  ) {
+    // Get input
+    int channels = in.getChannels();
+    simd::float_4 v[4];
+    for (int c = 0; c < channels; c += 4) {
+      v[c / 4] = simd::float_4::load(in.getVoltages(c));
     }
-  }
 
-  inline void HardClipTo(float x, float ceiling, Output &out) {
-    out.value = clamp(x, -ceiling, ceiling);
+    // Apply knob gain
+    float gain = gainParam.getValue();
+    for (int c = 0; c < channels; c += 4) {
+      v[c / 4] *= gain;
+    }
+
+    // Apply CV gain
+    if (gainInput.isConnected()) {
+      if (gainInput.isPolyphonic()) {
+        for (int c = 0; c < channels; c += 4) {
+          simd::float_4 cv = simd::float_4::load(gainInput.getVoltages(c)) / 10.f;
+          cv = clamp(cv, 0.f, 1.f);
+          v[c / 4] *= cv;
+        }
+      } else {
+        float cv = gainInput.getVoltage() / 10.f;
+        cv = clamp(cv, 0.f, 1.f);
+        for (int c = 0; c < channels; c += 4) {
+          v[c / 4] *= cv;
+        }
+      }
+    }
+
+    // Load clip level CV
+    simd::float_4 clipValue[4];
+    if (clipInput.isConnected()) {
+      if (clipInput.isPolyphonic()) {
+        for (int c = 0; c < channels; c += 4) {
+          simd::float_4 clipValue = simd::float_4::load(clipInput.getVoltages(c)) / 10.f;
+          clipValue = clamp(clipValue, 0.f, 1.f);
+        }
+      } else {
+        for (int c = 0; c < channels; c += 4) {
+          clipValue[c / 4] += clipParam.getValue() * clamp(clipInput.getVoltage() / 10.f, 0.f, 1.f);
+        }
+      }
+    } else {
+      for (int c = 0; c < channels; c += 4) {
+        clipValue[c / 4] += clipParam.getValue();
+      }
+    }
+
+    // Load clip softness CV
+    simd::float_4 softnessValue[4];
+    if (softnessInput.isConnected()) {
+      if (softnessInput.isPolyphonic()) {
+        for (int c = 0; c < channels; c += 4) {
+          simd::float_4 softnessValue = simd::float_4::load(softnessInput.getVoltages(c)) / 10.f;
+          softnessValue = clamp(softnessValue, 0.f, 1.f);
+        }
+      } else {
+        for (int c = 0; c < channels; c += 4) {
+          softnessValue[c / 4] += softnessParam.getValue() * clamp(softnessInput.getVoltage() / 10.f, 0.f, 1.f);
+        }
+      }
+    } else {
+      for (int c = 0; c < channels; c += 4) {
+        softnessValue[c / 4] += softnessParam.getValue();
+      }
+    }
+
+    // Apply softclipping
+    for (int c = 0; c < channels; c += 4) {
+      v[c / 4] = softClipTo(v[c / 4], clipValue[c / 4], softnessValue[c / 4]);
+    }
+
+    // Set output
+    out.setChannels(channels);
+    for (int c = 0; c < channels; c += 4) {
+      v[c / 4].store(out.getVoltages(c));
+    }
   }
 
   SCVCA() {
@@ -63,19 +153,19 @@ struct SCVCA : Module {
 
 
 void SCVCA::process(const ProcessArgs &args) {
-  float gain = params[GAIN_PARAM].getValue();
-  float clip = params[CLIP_PARAM].getValue();
-  float softness = params[CLIP_SOFTNESS_PARAM].getValue();
-
-  if (inputs[GAIN_INPUT].isConnected()) { gain = gain * inputs[GAIN_INPUT].getVoltage() / 10.0f; }
-  if (inputs[CLIP_INPUT].isConnected()) { clip = clip * clamp(inputs[CLIP_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f; }
-  if (inputs[CLIP_SOFTNESS_INPUT].isConnected()) { softness = softness * clamp(inputs[CLIP_SOFTNESS_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f; }
-
-  float gained_1 = inputs[SIG1_INPUT].getVoltage() * gain;
-  float gained_2 = inputs[SIG2_INPUT].getVoltage() * gain;
-  SoftClipTo(gained_1, clip, softness, outputs[SIG1_OUTPUT]);
-  SoftClipTo(gained_2, clip, softness, outputs[SIG2_OUTPUT]);
-
+  processChannel(
+    inputs[SIG1_INPUT],
+    params[GAIN_PARAM], params[CLIP_SOFTNESS_PARAM], params[CLIP_PARAM],
+    inputs[GAIN_INPUT], inputs[CLIP_SOFTNESS_INPUT], inputs[CLIP_INPUT],
+    outputs[SIG1_OUTPUT]
+  );
+  processChannel(
+    inputs[SIG2_INPUT],
+    params[GAIN_PARAM], params[CLIP_SOFTNESS_PARAM], params[CLIP_PARAM],
+    inputs[GAIN_INPUT], inputs[CLIP_SOFTNESS_INPUT], inputs[CLIP_INPUT],
+    outputs[SIG2_OUTPUT]
+  );
+  /*
   lights[CLIPPING_POS_LIGHT].setSmoothBrightness(fmaxf(
     fminf(1.0f, gained_1 - outputs[SIG1_OUTPUT].value),
     fminf(1.0f, gained_2 - outputs[SIG2_OUTPUT].value)
@@ -84,6 +174,7 @@ void SCVCA::process(const ProcessArgs &args) {
     fmaxf(-1.0f, -(gained_1 - outputs[SIG1_OUTPUT].value)),
     fmaxf(-1.0f, -(gained_2 - outputs[SIG2_OUTPUT].value))
   ), args.sampleTime);
+  */
 }
 
 
