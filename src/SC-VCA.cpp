@@ -11,7 +11,7 @@ static T softClip(T x) {
 template <typename T>
 static T softClipTo(T input, T ceiling, T softness) {
   T clean_range;
-  clean_range += 1.f;
+  clean_range = 1.f;
   clean_range -= softness;
   clean_range *= ceiling;
 
@@ -102,12 +102,12 @@ struct SCVCA : Module {
         }
       } else {
         for (int c = 0; c < channels; c += 4) {
-          clipValue[c / 4] += clipParam.getValue() * clamp(clipInput.getVoltage() / 10.f, 0.f, 1.f);
+          clipValue[c / 4] = clipParam.getValue() * clamp(clipInput.getVoltage() / 10.f, 0.f, 1.f);
         }
       }
     } else {
       for (int c = 0; c < channels; c += 4) {
-        clipValue[c / 4] += clipParam.getValue();
+        clipValue[c / 4] = clipParam.getValue();
       }
     }
 
@@ -121,12 +121,12 @@ struct SCVCA : Module {
         }
       } else {
         for (int c = 0; c < channels; c += 4) {
-          softnessValue[c / 4] += softnessParam.getValue() * clamp(softnessInput.getVoltage() / 10.f, 0.f, 1.f);
+          softnessValue[c / 4] = softnessParam.getValue() * clamp(softnessInput.getVoltage() / 10.f, 0.f, 1.f);
         }
       }
     } else {
       for (int c = 0; c < channels; c += 4) {
-        softnessValue[c / 4] += softnessParam.getValue();
+        softnessValue[c / 4] = softnessParam.getValue();
       }
     }
 
