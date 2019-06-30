@@ -24,6 +24,7 @@ struct ZZC_FN3WaveSwitch : SvgSwitch {
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-FN-3-Wave-Switch_0.svg")));
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-FN-3-Wave-Switch_1.svg")));
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-FN-3-Wave-Switch_2.svg")));
+    shadow->opacity = 0.f;
   }
 };
 
@@ -31,13 +32,14 @@ struct ZZC_FN3UniBiSwitch : SvgSwitch {
   ZZC_FN3UniBiSwitch() {
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-FN-3-Uni-Bi-Switch_0.svg")));
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-FN-3-Uni-Bi-Switch_1.svg")));
+    shadow->opacity = 0.f;
   }
 };
 
 struct ZZC_LEDBezelDark : SvgSwitch {
   ZZC_LEDBezelDark() {
     momentary = true;
-    shadow->opacity = 0.0f;
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/switches/ZZC-LED-Bezel-Dark.svg")));
+    shadow->opacity = 0.0f;
   }
 };

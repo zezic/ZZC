@@ -1,29 +1,37 @@
 #include "ZZC.hpp"
 #include "window.hpp"
 
+using simd::float_4;
+
 const float M_PI_X2 = M_PI * 2.0f;
 
-inline float fn3Sin(float phase) {
-  return (sinf(phase * M_PI_X2 - M_PI_2) + 1.0f) * 0.5f;
+template <typename T>
+inline T fn3Sin(T phase) {
+  return (simd::sin(phase * M_PI_X2 - M_PI_2) + 1.f) * 0.5f;
 }
 
-inline float fn3Sqr(float phase) {
-  return phase < 0.5f ? 1.0f : 0.0f;
+template <typename T>
+inline T fn3Sqr(T phase) {
+  T high = (phase < 0.5f);
+  return simd::ifelse(high, 1.f, 0.0f);
 }
 
-inline float fn3Tri(float phase) {
-  return phase < 0.5f ? phase * 2.0f : (1.0f - phase) * 2.0f;
+template <typename T>
+inline T fn3Tri(T phase) {
+  return 2.f * simd::fabs(phase - simd::round(phase));
 }
 
-inline float applyPW(float phase, float pw) {
-  if (pw == 0.0f) {
-    return 0.5f + phase / 2.0f;
-  }
-  if (phase > pw) {
-    return (phase - pw) / (1.0f - pw) / 2.0f + 0.5f;
-  } else {
-    return phase / pw / 2.0f;
-  }
+template <typename T>
+inline T applyPW(T phase, T pw) {
+  return simd::ifelse(
+    pw == 0.f,
+    0.5f + phase / 2.f,
+    simd::ifelse(
+      phase > pw,
+      (phase - pw) / (1.0f - pw) / 2.0f + 0.5f,
+      phase / pw / 2.0f
+    )
+  );
 }
 
 struct FN3TextDisplayWidget : TransparentWidget {
@@ -80,46 +88,58 @@ struct FN3TextDisplayWidget : TransparentWidget {
 
 struct FN3DisplayWidget : BaseDisplayWidget {
   float *wave = nullptr;
-  float *pw = nullptr;
-  float *shift = nullptr;
+  simd::float_4 *pw = nullptr;
+  simd::float_4 *shift = nullptr;
+  int *channels = nullptr;
+  NVGcolor monoColor = nvgRGB(0xff, 0xd4, 0x2a);
+  NVGcolor polyColor = nvgRGB(0x29, 0xb2, 0xef);
 
   void draw(const DrawArgs &args) override {
     float waveVal = wave ? *wave : 0.0f;
-    float pwVal = pw ? *pw : 0.5f;
-    float shiftVal = shift ? *shift : 0.0f;
+    int channelsVal = channels ? *channels : 1;
     drawBackground(args);
 
-    NVGcolor graphColor = nvgRGB(0xff, 0xd4, 0x2a);
+    NVGcolor graphColor = channelsVal == 1 ? monoColor : polyColor;
 
-    nvgBeginPath(args.vg);
-    float firstCoord = true;
-    for (float i = 0.0f; i < 1.00f; i = i + 0.01f) {
-      float x, y, value, phase;
-      value = 0.0f;
-      x = 2.0f + (box.size.x - 4.0f) * i;
-      phase = applyPW(eucMod(i + shiftVal, 1.0f), pwVal);
-      if (waveVal == 0.0f) {
-        value = fn3Sin(phase);
-      } else if (waveVal == 1.0f) {
-        value = fn3Tri(phase);
-      } else if (waveVal == 2.0f) {
-        value = fn3Sqr(phase);
-      }
-      y = (1.0f - value) * (box.size.y / 4.0f) + (0.375f * box.size.y);
+		for (int c = 0; c < channelsVal; c += 4) {
+      simd::float_4 pwValSimd = pw ? pw[c / 4] : 0.5f;
+      simd::float_4 shiftValSimd = shift ? shift[c / 4] : 0.f;
+      int chunkSize = std::min(4, channelsVal - c);
+      for (int subC = 0; subC < chunkSize; subC++) {
+        float pwVal = pwValSimd[subC];
+        float shiftVal = shiftValSimd[subC];
+        nvgBeginPath(args.vg);
+        float firstCoord = true;
+        for (float i = 0.0f; i < 1.00f; i = i + 0.01f) {
+          float x, y, value, phase;
+          value = 0.0f;
+          x = 2.0f + (box.size.x - 4.0f) * i;
+          phase = applyPW(eucMod(i + shiftVal, 1.0f), pwVal);
+          if (waveVal == 0.0f) {
+            value = fn3Sin(phase);
+          } else if (waveVal == 1.0f) {
+            value = fn3Tri(phase);
+          } else if (waveVal == 2.0f) {
+            value = fn3Sqr(phase);
+          }
+          y = (1.0f - value) * (box.size.y / 4.0f) + (0.375f * box.size.y);
 
-      if (firstCoord) {
-        nvgMoveTo(args.vg, x, y);
-        firstCoord = false;
-        continue;
+          if (firstCoord) {
+            nvgMoveTo(args.vg, x, y);
+            firstCoord = false;
+            continue;
+          }
+          nvgLineTo(args.vg, x, y);
+        }
+
+        nvgStrokeColor(args.vg, graphColor);
+        nvgLineCap(args.vg, NVG_ROUND);
+        nvgMiterLimit(args.vg, 2.0f);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
+        nvgStroke(args.vg);
       }
-      nvgLineTo(args.vg, x, y);
     }
-
-    nvgStrokeColor(args.vg, graphColor);
-    nvgLineCap(args.vg, NVG_ROUND);
-    nvgMiterLimit(args.vg, 2.0f);
-    nvgStrokeWidth(args.vg, 1.0f);
-    nvgStroke(args.vg);
   }
 };
 
@@ -146,18 +166,20 @@ struct FN3 : Module {
     NUM_LIGHTS
   };
 
-  float phase = 0.0f;
-  float pw = 0.5f;
-  float shift = 0.0f;
-  float wave = 0.0f;
+  simd::float_4 phase[4] = {0.f};
+  simd::float_4 pw[4] = {0.5f};
+  simd::float_4 shift[4] = {0.f};
+  simd::float_4 output[4] = {0.f};
+  float wave = 0.f;
+  int channels = 1;
 
   float pwParam = 0.5f;
   float lastPwParam = 0.5f;
   float pwDisplay = 50.0f;
 
-  float shiftParam = 0.0f;
-  float lastShiftParam = 0.0f;
-  float shiftDisplay = 0.0f;
+  float shiftParam = 0.f;
+  float lastShiftParam = 0.f;
+  float shiftDisplay = 0.f;
 
   inline float snap(float value) {
     if (value > 0.33f && value < 0.34f) {
@@ -185,30 +207,85 @@ struct FN3 : Module {
 
 
 void FN3::process(const ProcessArgs &args) {
+  channels = std::max(1, inputs[PHASE_INPUT].getChannels());
+  channels = std::max(channels, inputs[PW_INPUT].getChannels());
+  channels = std::max(channels, inputs[SHIFT_INPUT].getChannels());
+
   if (params[PW_PARAM].getValue() != lastPwParam) {
     pwParam = snap(params[PW_PARAM].getValue());
     lastPwParam = params[PW_PARAM].getValue();
   }
-  pw = clamp(pwParam + (inputs[PW_INPUT].isConnected() ? inputs[PW_INPUT].getVoltage() / 10.0f : 0.0f), 0.0f, 1.0f);
-  pwDisplay = pw * 100.0f;
+
+  if (inputs[PW_INPUT].isConnected()) {
+		for (int c = 0; c < channels; c += 4) {
+      pw[c / 4] = inputs[PW_INPUT].getVoltageSimd<float_4>(c) / 10.f + pwParam;
+      pw[c / 4] = clamp(pw[c / 4], 0.f, 1.f);
+    }
+  } else {
+		for (int c = 0; c < channels; c += 4) {
+      pw[c / 4] = pwParam;
+      pw[c / 4] = clamp(pw[c / 4], 0.f, 1.f);
+    }
+  }
+  pwDisplay = pwParam * 100.0f;
 
   if (params[SHIFT_PARAM].getValue() != lastShiftParam) {
     shiftParam = snap(params[SHIFT_PARAM].getValue());
     lastShiftParam = params[SHIFT_PARAM].getValue();
   }
-  shift = shiftParam + (inputs[SHIFT_INPUT].isConnected() ? inputs[SHIFT_INPUT].getVoltage() / -5.0f : 0.0f);
-  shiftDisplay = shift * -100.0f;
 
-  phase = applyPW(eucMod((inputs[PHASE_INPUT].isConnected() ? inputs[PHASE_INPUT].getVoltage() / 10.0f : 0.0f) + shift, 1.0f), pw);
+  if (inputs[SHIFT_INPUT].isConnected()) {
+		for (int c = 0; c < channels; c += 4) {
+      shift[c / 4] = inputs[SHIFT_INPUT].getVoltageSimd<float_4>(c) / -5.f + shiftParam;
+    }
+  } else {
+		for (int c = 0; c < channels; c += 4) {
+      shift[c / 4] = shiftParam;
+    }
+  }
+  shiftDisplay = shiftParam * -100.0f;
+
+  if (inputs[PHASE_INPUT].isConnected()) {
+		for (int c = 0; c < channels; c += 4) {
+      simd::float_4 newPhase = inputs[PHASE_INPUT].getVoltageSimd<float_4>(c) / 10.f + shift[c / 4];
+      newPhase -= simd::floor(newPhase); // wrap
+      phase[c / 4] = applyPW(newPhase, pw[c / 4]);
+    }
+  } else {
+		for (int c = 0; c < channels; c += 4) {
+      phase[c / 4] = shift[c / 4];
+      phase[c / 4] -= simd::floor(phase[c / 4]); // wrap
+      phase[c / 4] = applyPW(phase[c / 4], pw[c / 4]);
+    }
+  }
+
   wave = params[WAVE_PARAM].getValue();
 
   if (wave == 0.0f) {
-    outputs[WAVE_OUTPUT].setVoltage(fn3Sin(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
+    // outputs[WAVE_OUTPUT].setVoltage(fn3Sin(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
+		for (int c = 0; c < channels; c += 4) {
+      output[c / 4] = fn3Sin(phase[c / 4]) * 10.f;
+    }
   } else if (wave == 1.0f) {
-    outputs[WAVE_OUTPUT].setVoltage(fn3Tri(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
+    // outputs[WAVE_OUTPUT].setVoltage(fn3Tri(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
+		for (int c = 0; c < channels; c += 4) {
+      output[c / 4] = fn3Tri(phase[c / 4]) * 10.f;
+    }
   } else {
-    outputs[WAVE_OUTPUT].setVoltage(fn3Sqr(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
+    // outputs[WAVE_OUTPUT].setVoltage(fn3Sqr(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
+		for (int c = 0; c < channels; c += 4) {
+      output[c / 4] = fn3Sqr(phase[c / 4]) * 10.f;
+    }
   }
+  if (params[OFFSET_PARAM].getValue() == 1.f) {
+		for (int c = 0; c < channels; c += 4) {
+      output[c / 4] -= 5.f;
+    }
+  }
+  for (int c = 0; c < channels; c += 4) {
+    outputs[WAVE_OUTPUT].setVoltageSimd(output[c / 4], c);
+  }
+  outputs[WAVE_OUTPUT].setChannels(channels);
 }
 
 
@@ -225,8 +302,9 @@ struct FN3Widget : ModuleWidget {
     display->box.size = Vec(29.0f, 49.0f);
     if (module) {
       display->wave = &module->wave;
-      display->pw = &module->pw;
-      display->shift = &module->shift;
+      display->pw = module->pw;
+      display->shift = module->shift;
+      display->channels = &module->channels;
     }
     addChild(display);
     addParam(createParam<ZZC_FN3WaveSwitch>(Vec(8, 126), module, FN3::WAVE_PARAM));

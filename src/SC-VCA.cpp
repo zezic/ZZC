@@ -1,10 +1,12 @@
 #include "ZZC.hpp"
 
+using simd::float_4;
+
 
 template <typename T>
 static T softClip(T x) {
   x = simd::clamp(x, -3.f, 3.f);
-  return x * (27 + x * x) / (27 + 9 * x * x);
+  return x * (27.f + x * x) / (27.f + 9.f * x * x);
 }
 
 
