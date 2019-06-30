@@ -24,4 +24,6 @@ make -j7
 ```bash
 pip install compiledb
 compiledb make
+# or
+make -Bnwk | compiledb -o- > compile_commands.json
 ```
