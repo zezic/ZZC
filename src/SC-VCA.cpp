@@ -58,11 +58,14 @@ struct SCVCA : Module {
     NUM_LIGHTS
   };
 
+  dsp::ClockDivider lightDivider;
+
   void processChannel(
     Input &in,
     Param &gainParam, Param &softnessParam, Param &clipParam,
     Input &gainInput, Input &softnessInput, Input &clipInput,
-    Output &out
+    Output &out,
+    float &negOverload, float &posOverload, bool processLight
   ) {
     // Get input
     int channels = in.getChannels();
@@ -99,8 +102,8 @@ struct SCVCA : Module {
     if (clipInput.isConnected()) {
       if (clipInput.isPolyphonic()) {
         for (int c = 0; c < channels; c += 4) {
-          simd::float_4 clipValue = simd::float_4::load(clipInput.getVoltages(c)) / 10.f;
-          clipValue = clamp(clipValue, 0.f, 1.f);
+          clipValue[c / 4] = simd::float_4::load(clipInput.getVoltages(c)) / 10.f;
+          clipValue[c / 4] = clamp(clipValue[c / 4], 0.f, 1.f) * clipParam.getValue();
         }
       } else {
         for (int c = 0; c < channels; c += 4) {
@@ -118,8 +121,8 @@ struct SCVCA : Module {
     if (softnessInput.isConnected()) {
       if (softnessInput.isPolyphonic()) {
         for (int c = 0; c < channels; c += 4) {
-          simd::float_4 softnessValue = simd::float_4::load(softnessInput.getVoltages(c)) / 10.f;
-          softnessValue = clamp(softnessValue, 0.f, 1.f);
+          softnessValue[c / 4] = simd::float_4::load(softnessInput.getVoltages(c)) / 10.f;
+          softnessValue[c / 4] = clamp(softnessValue[c / 4], 0.f, 1.f) * softnessParam.getValue();
         }
       } else {
         for (int c = 0; c < channels; c += 4) {
@@ -134,7 +137,16 @@ struct SCVCA : Module {
 
     // Apply softclipping
     for (int c = 0; c < channels; c += 4) {
-      v[c / 4] = softClipTo(v[c / 4], clipValue[c / 4], softnessValue[c / 4]);
+      simd::float_4 shaped = softClipTo(v[c / 4], clipValue[c / 4], softnessValue[c / 4]);
+      if (processLight) {
+        simd::float_4 diff = v[c / 4] - shaped;
+        for (int subC = 0; subC < 4; subC++) {
+          float delta = diff[subC];
+          negOverload = std::min(negOverload, delta);
+          posOverload = std::max(posOverload, delta);
+        }
+      }
+      v[c / 4] = shaped;
     }
 
     // Set output
@@ -143,40 +155,41 @@ struct SCVCA : Module {
       v[c / 4].store(out.getVoltages(c));
     }
   }
-
+ 
   SCVCA() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
     configParam(GAIN_PARAM, 0.0f, 2.0f, 1.0f);
     configParam(CLIP_PARAM, 0.0f, 10.0f, 5.0f);
     configParam(CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f);
+    lightDivider.setDivision(16);
   }
   void process(const ProcessArgs &args) override;
 };
 
 
 void SCVCA::process(const ProcessArgs &args) {
+  float negOverload = 0.f;
+  float posOverload = 0.f;
+  bool processLight = lightDivider.process();
+
   processChannel(
     inputs[SIG1_INPUT],
     params[GAIN_PARAM], params[CLIP_SOFTNESS_PARAM], params[CLIP_PARAM],
     inputs[GAIN_INPUT], inputs[CLIP_SOFTNESS_INPUT], inputs[CLIP_INPUT],
-    outputs[SIG1_OUTPUT]
+    outputs[SIG1_OUTPUT],
+    negOverload, posOverload, processLight
   );
   processChannel(
     inputs[SIG2_INPUT],
     params[GAIN_PARAM], params[CLIP_SOFTNESS_PARAM], params[CLIP_PARAM],
     inputs[GAIN_INPUT], inputs[CLIP_SOFTNESS_INPUT], inputs[CLIP_INPUT],
-    outputs[SIG2_OUTPUT]
+    outputs[SIG2_OUTPUT],
+    negOverload, posOverload, processLight
   );
-  /*
-  lights[CLIPPING_POS_LIGHT].setSmoothBrightness(fmaxf(
-    fminf(1.0f, gained_1 - outputs[SIG1_OUTPUT].value),
-    fminf(1.0f, gained_2 - outputs[SIG2_OUTPUT].value)
-  ), args.sampleTime);
-  lights[CLIPPING_NEG_LIGHT].setSmoothBrightness(fmaxf(
-    fmaxf(-1.0f, -(gained_1 - outputs[SIG1_OUTPUT].value)),
-    fmaxf(-1.0f, -(gained_2 - outputs[SIG2_OUTPUT].value))
-  ), args.sampleTime);
-  */
+  if (processLight) {
+    lights[CLIPPING_NEG_LIGHT].setSmoothBrightness(fminf(1.f, -negOverload), args.sampleTime * lightDivider.getDivision());
+    lights[CLIPPING_POS_LIGHT].setSmoothBrightness(fminf(1.f, posOverload), args.sampleTime * lightDivider.getDivision());
+  }
 }
 
 

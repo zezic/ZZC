@@ -2,6 +2,7 @@
 
 static const NVGcolor COLOR_ZZC_YELLOW = nvgRGB(0xff, 0xd4, 0x2a);
 static const NVGcolor COLOR_NEG = nvgRGB(0xe7, 0x34, 0x2d);
+static const NVGcolor COLOR_POS = nvgRGB(0x90, 0xc7, 0x3e);
 
 using namespace rack;
 
@@ -82,6 +83,13 @@ struct ZZC_YellowLight : ZZC_BaseLight {
 
 struct ZZC_RedLight : ZZC_BaseLight {
   ZZC_RedLight() {
+    addBaseColor(COLOR_NEG);
+  }
+};
+
+struct ZZC_GreenRedLight : ZZC_BaseLight {
+  ZZC_GreenRedLight() {
+    addBaseColor(COLOR_POS);
     addBaseColor(COLOR_NEG);
   }
 };
