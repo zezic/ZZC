@@ -81,9 +81,9 @@ struct Divider : Module {
 
   Divider() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f);
-    configParam(OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f);
-    configParam(SWING_PARAM, 1.0f, 99.0f, 50.0f);
+    configParam(IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f, "Ratio Numerator");
+    configParam(OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f, "Ratio Denominator");
+    configParam(SWING_PARAM, 1.0f, 99.0f, 50.0f, "Swing");
   }
   void process(const ProcessArgs &args) override;
 

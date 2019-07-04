@@ -197,10 +197,10 @@ struct FN3 : Module {
 
   FN3() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(PW_PARAM, 0.0f, 1.0f, 0.5f);
-    configParam(WAVE_PARAM, 0.0f, 2.0f, 0.0f);
-    configParam(OFFSET_PARAM, 0.0f, 1.0f, 0.0f);
-    configParam(SHIFT_PARAM, 1.0f, -1.0f, 0.0f);
+    configParam(PW_PARAM, 0.0f, 1.0f, 0.5f, "Pulse Width");
+    configParam(WAVE_PARAM, 0.0f, 2.0f, 0.0f, "Waveform");
+    configParam(OFFSET_PARAM, 0.0f, 1.0f, 0.0f, "Bipolar Mode");
+    configParam(SHIFT_PARAM, 1.0f, -1.0f, 0.0f, "Phase Shift");
   }
   void process(const ProcessArgs &args) override;
 };

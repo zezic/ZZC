@@ -119,9 +119,9 @@ struct SRC : Module {
 
   SRC() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(COARSE_PARAM, -10.0f, 10.0f, 0.0f);
-    configParam(FINE_PARAM, -1.0f, 1.0f, 0.0f);
-    configParam(ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f);
+    configParam(COARSE_PARAM, -10.0f, 10.0f, 0.0f, "Coarse Tuning");
+    configParam(FINE_PARAM, -1.0f, 1.0f, 0.0f, "Fine Tuning");
+    configParam(ON_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "On/Off");
   }
   void process(const ProcessArgs &args) override;
 

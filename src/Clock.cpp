@@ -162,12 +162,12 @@ struct Clock : Module {
 
   Clock() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(REVERSE_SWITCH_PARAM, 0.0f, 1.0f, 0.0f);
-    configParam(BPM_PARAM, 0.0f, 240.0f, 120.0f);
-    configParam(SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f);
-    configParam(SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f);
-    configParam(RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f);
-    configParam(RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f);
+    configParam(REVERSE_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Reverse");
+    configParam(BPM_PARAM, 0.0f, 240.0f, 120.0f, "BPM");
+    configParam(SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f, "x2 Swing");
+    configParam(SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f, "x4 Swing");
+    configParam(RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+    configParam(RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
     clockTracker.init();
   }
   void process(const ProcessArgs &args) override;

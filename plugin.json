@@ -33,7 +33,8 @@
       "name": "FN-3",
       "description": "Function Generator",
       "tags": [
-        "Function generator"
+        "Function generator",
+        "Polyphonic"
       ]
     },
     {
@@ -42,7 +43,8 @@
       "description": "Soft Clipping VCA",
       "tags": [
         "VCA",
-        "Waveshaper"
+        "Waveshaper",
+        "Polyphonic"
       ]
     },
     {

@@ -158,9 +158,9 @@ struct SCVCA : Module {
  
   SCVCA() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(GAIN_PARAM, 0.0f, 2.0f, 1.0f);
-    configParam(CLIP_PARAM, 0.0f, 10.0f, 5.0f);
-    configParam(CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f);
+    configParam(GAIN_PARAM, 0.0f, 2.0f, 1.0f, "Gain (Multiplier)");
+    configParam(CLIP_PARAM, 0.0f, 10.0f, 5.0f, "Clip Ceiling");
+    configParam(CLIP_SOFTNESS_PARAM, 0.0f, 1.0f, 0.5f, "Clip Softness");
     lightDivider.setDivision(16);
   }
   void process(const ProcessArgs &args) override;
