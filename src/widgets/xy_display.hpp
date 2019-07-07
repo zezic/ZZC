@@ -154,6 +154,10 @@ struct XYDisplayWidget : ParamWidget {
     ParamWidget::step();
   }
 
+  void onButton(const event::Button &e) override {
+    OpaqueWidget::onButton(e);
+  }
+
   void draw(const DrawArgs &args) override {
     // Bypass framebuffer rendering entirely
     Widget::draw(args);

@@ -104,6 +104,8 @@ struct ZZC_CallbackKnob : Knob {
   float deltaMult = 1.0f;
   bool dirty = true;
   bool showDisplay = true;
+  float lastQuantityValue = 0.f;
+  float *lastQuantityValueP = nullptr;
 
   ZZC_CallbackKnob() {
     fb = new widget::FramebufferWidget;
@@ -159,6 +161,7 @@ struct ZZC_CallbackKnob : Knob {
   }
 
   virtual void onInput(float factor) = 0;
+  virtual void onAbsInput(float value) = 0;
   virtual void onReset() = 0;
 
   void onDragMove(const event::DragMove &e) override {
@@ -202,6 +205,17 @@ struct ZZC_CallbackKnob : Knob {
       tw->translate(center.neg());
       lastRotation = rotation;
       fb->dirty = true;
+    }
+    if (paramQuantity) {
+      float quantityValue = paramQuantity->getValue();
+      if (lastQuantityValueP) {
+        if (lastQuantityValue != quantityValue) {
+          this->onAbsInput(quantityValue);
+        }
+      } else {
+        lastQuantityValueP = &lastQuantityValue;
+      }
+      lastQuantityValue = quantityValue;
     }
     Widget::step();
   }
