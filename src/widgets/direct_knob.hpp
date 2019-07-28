@@ -14,7 +14,7 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
   NVGcolor posColor = nvgRGB(0x9c, 0xd7, 0x43);
   NVGcolor negColor = nvgRGB(0xe7, 0x34, 0x2d);
 
-  float *value = nullptr;
+  float value = 0.f;
   float drawnValue = 0.0f;
   double lastDrawnAt = 0.0;
   float minVal;
@@ -42,7 +42,7 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
 
   void draw(const DrawArgs &args) override {
     lastDrawnAt = glfwGetTime();
-    drawnValue = value ? *value : 0.0f;
+    drawnValue = value;
     // return;
     nvgLineCap(args.vg, NSVG_CAP_ROUND);
     nvgStrokeWidth(args.vg, strokeWidth);
@@ -132,7 +132,7 @@ struct ZZC_CallbackKnob : Knob {
     value = valuePointer;
     deltaMult = (limitHigh - limitLow) * 0.5f;
     if (disp) {
-      disp->value = value;
+      // disp->value = value;
       disp->setLimits(limitLow, limitHigh);
       disp->defaultValue = defaultValue;
     }

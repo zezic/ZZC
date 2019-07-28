@@ -155,7 +155,7 @@ struct SCVCA : Module {
       v[c / 4].store(out.getVoltages(c));
     }
   }
- 
+
   SCVCA() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
     configParam(GAIN_PARAM, 0.0f, 2.0f, 1.0f, "Gain (Multiplier)");

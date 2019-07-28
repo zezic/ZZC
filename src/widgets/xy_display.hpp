@@ -14,8 +14,8 @@ static const float KNOB_SENSITIVITY = 0.0015f;
 using namespace rack;
 
 struct XYDisplayViewWidget : BaseDisplayWidget {
-  float *x = nullptr;
-  float *y = nullptr;
+  float x = 0.f;
+  float y = 0.f;
   float drawnX = 0.0f;
   float drawnY = 0.0f;
   float padding = 2.0f;
@@ -30,9 +30,9 @@ struct XYDisplayViewWidget : BaseDisplayWidget {
   }
 
   void drawCross(const DrawArgs &args, Vec position) {
-    if (!y || (y && *y == 0.0f)) {
+    if (!y || (y == 0.0f)) {
       nvgStrokeColor(args.vg, lcdGhostColor);
-    } else if (y && *y < 0.0f) {
+    } else if (y < 0.0f) {
       nvgStrokeColor(args.vg, negColor);
     } else {
       nvgStrokeColor(args.vg, posColor);
@@ -54,30 +54,30 @@ struct XYDisplayViewWidget : BaseDisplayWidget {
     drawBackground(args);
     nvgScissor(args.vg, padding, padding, box.size.x - padding * 2.0f, box.size.y - padding * 2.0f);
     drawCross(args, Vec(
-      scaleValue(x ? *x : 0.0f, box.size.x),
-      scaleValue(y ? -*y : 0.0f, box.size.y)
+      scaleValue(x, box.size.x),
+      scaleValue(-y, box.size.y)
     ));
     nvgResetScissor(args.vg);
-    if (x && y) {
-      this->drawnX = *x;
-      this->drawnY = *y;
-    }
+    this->drawnX = x;
+    this->drawnY = y;
     this->lastDrawnAt = glfwGetTime();
   }
 
-  bool shouldUpdate(float *xPtr, float *yPtr) {
+  bool shouldUpdate() {
     if (glfwGetTime() - this->lastDrawnAt < 0.016) { return false; } // ~60 FPS
-    if (*xPtr == this->drawnX && *yPtr == this->drawnY) { return false; }
-    if (*xPtr == 0.0f || *yPtr == 0.0f) { return true; }
-    return fabsf(this->drawnX - *xPtr) > 0.05 || fabsf(this->drawnY - *yPtr) > 0.05;
+    if (x == this->drawnX && y == this->drawnY) { return false; }
+    if (x == 0.0f || y == 0.0f) { return true; }
+    return fabsf(this->drawnX - x) > 0.05 || fabsf(this->drawnY - y) > 0.05;
   }
 };
 
 struct XYDisplayWidget : ParamWidget {
-  float *x = nullptr;
-  float *y = nullptr;
+  engine::ParamQuantity *paramQuantityX = NULL;
+  engine::ParamQuantity *paramQuantityY = NULL;
   float lastX = 0.0f;
   float lastY = 0.0f;
+  float oldValueX = 0.f;
+  float oldValueY = 0.f;
   float dragDelta;
   XYDisplayViewWidget *disp;
   float speed = 4.0;
@@ -94,39 +94,36 @@ struct XYDisplayWidget : ParamWidget {
   void setupSize() {
     disp->box.pos = Vec(0, 0);
     disp->box.size = this->box.size;
-  }
-
-  void setupPtrs() {
-    this->disp->x = this->x;
-    this->disp->y = this->y;
+    fb->box.size = this->box.size;
   }
 
   void onDragStart(const event::DragStart &e) override {
     if (e.button != GLFW_MOUSE_BUTTON_LEFT) {
 		  return;
     }
+    if (paramQuantityX && paramQuantityY) {
+      oldValueX = paramQuantityX->getValue();
+      oldValueY = paramQuantityY->getValue();
+    }
     APP->window->cursorLock();
     dragDelta = 0.0;
   }
-
-  virtual void onInput(float x, float y) = 0;
-  virtual void onReset() = 0;
 
   void onDragMove(const event::DragMove &e) override {
     float deltaX = KNOB_SENSITIVITY * e.mouseDelta.x * speed;
     float deltaY = KNOB_SENSITIVITY * -e.mouseDelta.y * speed;
 
     // Drag slower if mod is held
-		int mods = APP->window->getMods();
-		if ((mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
-			deltaX /= 16.f;
-			deltaY /= 16.f;
-		}
-		// Drag even slower if mod+shift is held
-		if ((mods & RACK_MOD_MASK) == (RACK_MOD_CTRL | GLFW_MOD_SHIFT)) {
-			deltaX /= 256.f;
-			deltaY /= 256.f;
-		}
+    int mods = APP->window->getMods();
+    if ((mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
+      deltaX /= 16.f;
+      deltaY /= 16.f;
+    }
+    // Drag even slower if mod+shift is held
+    if ((mods & RACK_MOD_MASK) == (RACK_MOD_CTRL | GLFW_MOD_SHIFT)) {
+      deltaX /= 256.f;
+      deltaY /= 256.f;
+    }
 
     onInput(deltaX, deltaY);
 
@@ -145,21 +142,49 @@ struct XYDisplayWidget : ParamWidget {
     fb->dirty = true;
   }
 
-  void step() override {
-    if (x && y && this->disp->shouldUpdate(x, y)) {
-      fb->dirty = true;
-      lastX = *x;
-      lastY = *y;
+  void onInput(float deltaX, float deltaY) {
+    if (paramQuantityX && paramQuantityY) {
+      paramQuantityX->setValue(math::clamp(paramQuantityX->getValue() + deltaX, paramQuantityX->getMinValue(), paramQuantityX->getMaxValue()));
+      paramQuantityY->setValue(math::clamp(paramQuantityY->getValue() + deltaY, paramQuantityY->getMinValue(), paramQuantityY->getMaxValue()));
     }
-    ParamWidget::step();
+  }
+
+  void onReset() {
+    if (paramQuantityX && paramQuantityY) {
+      paramQuantityX->reset();
+      paramQuantityY->reset();
+      fb->dirty = true;
+    }
+  }
+
+  void onChange(const event::Change &e) override {
+    if (paramQuantityX && paramQuantityY) {
+      fb->dirty = true;
+    }
+    ParamWidget::onChange(e);
+  }
+
+  void step() override {
+    if (paramQuantityX && paramQuantityY) {
+      disp->x = paramQuantityX->getValue();
+      disp->y = paramQuantityY->getValue();
+      if (disp->shouldUpdate()) {
+        event::Change eChange;
+        onChange(eChange);
+      }
+    }
+
+    Widget::step();
+  }
+
+  void randomize() override {
+    if (paramQuantityX && paramQuantityY) {
+      paramQuantityX->setValue(math::rescale(random::uniform(), 0.f, 1.f, paramQuantityX->getMinValue(), paramQuantityX->getMaxValue()));
+      paramQuantityY->setValue(math::rescale(random::uniform(), 0.f, 1.f, paramQuantityY->getMinValue(), paramQuantityY->getMaxValue()));
+    }
   }
 
   void onButton(const event::Button &e) override {
     OpaqueWidget::onButton(e);
-  }
-
-  void draw(const DrawArgs &args) override {
-    // Bypass framebuffer rendering entirely
-    Widget::draw(args);
   }
 };

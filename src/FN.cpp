@@ -262,17 +262,14 @@ void FN3::process(const ProcessArgs &args) {
   wave = params[WAVE_PARAM].getValue();
 
   if (wave == 0.0f) {
-    // outputs[WAVE_OUTPUT].setVoltage(fn3Sin(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
 		for (int c = 0; c < channels; c += 4) {
       output[c / 4] = fn3Sin(phase[c / 4]) * 10.f;
     }
   } else if (wave == 1.0f) {
-    // outputs[WAVE_OUTPUT].setVoltage(fn3Tri(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
 		for (int c = 0; c < channels; c += 4) {
       output[c / 4] = fn3Tri(phase[c / 4]) * 10.f;
     }
   } else {
-    // outputs[WAVE_OUTPUT].setVoltage(fn3Sqr(phase) * 10.0f - (params[OFFSET_PARAM].getValue() == 1.0f ? 5.0f : 0.0f));
 		for (int c = 0; c < channels; c += 4) {
       output[c / 4] = fn3Sqr(phase[c / 4]) * 10.f;
     }
