@@ -97,19 +97,23 @@ struct Clock : Module {
   bool resetOnStart = false;
   bool resetOnStop = false;
 
+  void toggle() {
+    running = !running;
+    if (running) {
+      if (resetOnStart) {
+        resetWasHit = true;
+      }
+    } else {
+      if (resetOnStop) {
+        resetWasHit = true;
+      }
+    }
+    runPulseGenerator.trigger(1e-3f);
+  }
+
   inline void processButtons() {
     if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].getValue()) || (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].getVoltage()))) {
-      running = !running;
-      if (running) {
-        if (resetOnStart) {
-          resetWasHit = true;
-        }
-      } else {
-        if (resetOnStop) {
-          resetWasHit = true;
-        }
-      }
-      runPulseGenerator.trigger(1e-3f);
+      toggle();
     }
 
     if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].getValue()) || (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].getVoltage()))) {
@@ -357,6 +361,7 @@ void Clock::process(const ProcessArgs &args) {
 struct ClockWidget : ModuleWidget {
   ClockWidget(Clock *module);
   void appendContextMenu(Menu *menu) override;
+  void onHoverKey(const event::HoverKey& e) override;
 };
 
 ClockWidget::ClockWidget(Clock *module) {
@@ -449,6 +454,20 @@ void ClockWidget::appendContextMenu(Menu *menu) {
   ClockResetOnStopItem *resetOnStopItem = createMenuItem<ClockResetOnStopItem>("Reset on Stop");
   resetOnStopItem->clock = clock;
   menu->addChild(resetOnStopItem);
+}
+
+void ClockWidget::onHoverKey(const event::HoverKey &e) {
+  if (e.action == GLFW_PRESS) {
+    if ((e.mods & RACK_MOD_MASK) == 0) {
+      if (e.key == GLFW_KEY_SPACE) {
+        Clock *clock = dynamic_cast<Clock*>(module);
+        clock->toggle();
+        e.consume(this);
+        return;
+      }
+    }
+  }
+  ModuleWidget::onHoverKey(e);
 }
 
 Model *modelClock = createModel<Clock, ClockWidget>("Clock");
