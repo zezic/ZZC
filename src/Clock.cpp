@@ -52,12 +52,12 @@ struct Clock : Module {
   };
 
   ClockTracker clockTracker;
+  LowFrequencyOscillator oscillator;
 
   enum Modes mode;
   enum Modes lastMode;
 
   float lastExtPhase = 0.0f;
-  LowFrequencyOscillator oscillator;
 
   bool running = true;
   bool reverse = false;
@@ -219,7 +219,10 @@ void Clock::process(const ProcessArgs &args) {
     if (reverse) {
       bpm = bpm * -1.0f;
     }
-    oscillator.setPitch(bpm / 60.0f);
+
+    if (oscillator.freqCorrectionSuggestion == 0.0f) {
+      oscillator.setPitch(bpm / 60.0f);
+    }
 
     if (running) {
 
@@ -228,6 +231,10 @@ void Clock::process(const ProcessArgs &args) {
       }
 
       bool phaseFlipped = oscillator.step(args.sampleTime);
+      if (mode == EXT_CLOCK_MODE) {
+        oscillator.adjustPhase(inputs[CLOCK_INPUT].getVoltage());
+      }
+
       if (phaseFlipped || resetWasHit) {
         clockPulseGenerator.trigger(1e-3f);
         clock8thsPulseGenerator.trigger(1e-3f);

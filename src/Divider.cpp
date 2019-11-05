@@ -26,8 +26,6 @@ struct Divider : Module {
     NUM_LIGHTS
   };
 
-  LowFrequencyOscillator oscillator;
-
   float from = 1.0f;
   float to = 1.0f;
   float ratio = 1.0f;
