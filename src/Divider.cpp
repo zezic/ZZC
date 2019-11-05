@@ -44,7 +44,10 @@ struct Divider : Module {
   dsp::PulseGenerator resetPulseGenerator;
   bool clockPulse = false;
   bool resetPulse = false;
+
+  /* Settings */
   bool gateMode = false;
+  bool tickOnStart = false;
 
   dsp::SchmittTrigger clockTrigger;
   dsp::SchmittTrigger resetTrigger;
@@ -88,12 +91,15 @@ struct Divider : Module {
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
     json_object_set_new(rootJ, "gateMode", json_boolean(gateMode));
+    json_object_set_new(rootJ, "tickOnStart", json_boolean(tickOnStart));
     return rootJ;
   }
 
   void dataFromJson(json_t *rootJ) override {
     json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+    json_t *tickOnStartJ = json_object_get(rootJ, "tickOnStart");
     if (gateModeJ) { gateMode = json_boolean_value(gateModeJ); }
+    if (tickOnStartJ) { tickOnStart = json_boolean_value(tickOnStartJ); }
   }
 };
 
@@ -140,7 +146,8 @@ void Divider::process(const ProcessArgs &args) {
   // Trigger swinged beat
   if (!gateMode) {
     if ((lastHalfPhaseOut < swingTresh && swingTresh <= halfPhaseOut) ||
-        (lastHalfPhaseOut > swingTresh && swingTresh >= halfPhaseOut)) {
+        (lastHalfPhaseOut > swingTresh && swingTresh >= halfPhaseOut) ||
+        (tickOnStart && lastHalfPhaseOut == 0.0f && halfPhaseOut != 0.0f)) {
       clockPulseGenerator.trigger(gateMode ? 1e-4f : 1e-3f);
     }
   }
@@ -214,6 +221,16 @@ struct DividerGateModeItem : MenuItem {
   }
 };
 
+struct DividerTickOnStartItem : MenuItem {
+  Divider *divider;
+  void onAction(const event::Action &e) override {
+    divider->tickOnStart ^= true;
+  }
+  void step() override {
+    rightText = CHECKMARK(divider->tickOnStart);
+  }
+};
+
 void DividerWidget::appendContextMenu(Menu *menu) {
   menu->addChild(new MenuSeparator());
 
@@ -223,6 +240,10 @@ void DividerWidget::appendContextMenu(Menu *menu) {
   DividerGateModeItem *gateModeItem = createMenuItem<DividerGateModeItem>("Gate Mode");
   gateModeItem->divider = divider;
   menu->addChild(gateModeItem);
+
+  DividerTickOnStartItem *tickOnStartItem = createMenuItem<DividerTickOnStartItem>("Tick on Start");
+  tickOnStartItem->divider = divider;
+  menu->addChild(tickOnStartItem);
 }
 
 

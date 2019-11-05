@@ -102,21 +102,25 @@ struct Clock : Module {
     if (running) {
       if (resetOnStart) {
         resetWasHit = true;
+        resetPulseGenerator.trigger(1e-3f);
       }
     } else {
       if (resetOnStop) {
         resetWasHit = true;
+        resetPulseGenerator.trigger(1e-3f);
       }
     }
     runPulseGenerator.trigger(1e-3f);
   }
 
   inline void processButtons() {
-    if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].getValue()) || (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].getVoltage()))) {
+    if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].getValue()) ||
+        (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].getVoltage()))) {
       toggle();
     }
 
-    if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].getValue()) || (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].getVoltage()))) {
+    if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].getValue()) ||
+        (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].getVoltage()))) {
       resetWasHit = true;
       resetPulseGenerator.trigger(1e-3f);
     }
