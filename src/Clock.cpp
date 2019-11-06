@@ -96,6 +96,8 @@ struct Clock : Module {
   /* Settings */
   bool resetOnStart = false;
   bool resetOnStop = false;
+  bool runInputIsGate = false;
+  bool runOutputIsGate = false;
 
   void toggle() {
     running = !running;
@@ -114,9 +116,21 @@ struct Clock : Module {
   }
 
   inline void processButtons() {
-    if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].getValue()) ||
-        (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].getVoltage()))) {
-      toggle();
+    if (runInputIsGate && inputs[EXT_RUN_INPUT].isConnected()) {
+      if (inputs[EXT_RUN_INPUT].getVoltage() > 1.0f) {
+        if (!running) {
+          toggle();
+        }
+      } else {
+        if (running) {
+          toggle();
+        }
+      }
+    } else {
+      if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].getValue()) ||
+          (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].getVoltage()))) {
+        toggle();
+      }
     }
 
     if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].getValue()) ||
@@ -199,6 +213,8 @@ struct Clock : Module {
     json_object_set_new(rootJ, "reverse", json_integer((int) reverse));
     json_object_set_new(rootJ, "resetOnStart", json_boolean(resetOnStart));
     json_object_set_new(rootJ, "resetOnStop", json_boolean(resetOnStop));
+    json_object_set_new(rootJ, "runInputIsGate", json_boolean(runInputIsGate));
+    json_object_set_new(rootJ, "runOutputIsGate", json_boolean(runOutputIsGate));
     return rootJ;
   }
 
@@ -207,6 +223,8 @@ struct Clock : Module {
     json_t *reverseJ = json_object_get(rootJ, "reverse");
     json_t *resetOnStartJ = json_object_get(rootJ, "resetOnStart");
     json_t *resetOnStopJ = json_object_get(rootJ, "resetOnStop");
+    json_t *runInputIsGateJ = json_object_get(rootJ, "runInputIsGate");
+    json_t *runOutputIsGateJ = json_object_get(rootJ, "runOutputIsGate");
     if (runningJ) {
       running = json_integer_value(runningJ);
     }
@@ -215,6 +233,8 @@ struct Clock : Module {
     }
     if (resetOnStartJ) { resetOnStart = json_boolean_value(resetOnStartJ); }
     if (resetOnStopJ) { resetOnStop = json_boolean_value(resetOnStopJ); }
+    if (runInputIsGateJ) { runInputIsGate = json_boolean_value(runInputIsGateJ); }
+    if (runOutputIsGateJ) { runOutputIsGate = json_boolean_value(runOutputIsGateJ); }
   }
 };
 
@@ -331,7 +351,11 @@ void Clock::process(const ProcessArgs &args) {
   outputs[CLOCK_OUTPUT].setVoltage(clockPulse ? 10.0f : 0.0f);
   outputs[CLOCK_8THS_OUTPUT].setVoltage(clock8thsPulse ? 10.0f : 0.0f);
   outputs[CLOCK_16THS_OUTPUT].setVoltage(clock16thsPulse ? 10.0f : 0.0f);
-  outputs[RUN_OUTPUT].setVoltage(runPulse ? 10.0f : 0.0f);
+  if (runOutputIsGate) {
+    outputs[RUN_OUTPUT].setVoltage(running ? 10.0f : 0.0f);
+  } else {
+    outputs[RUN_OUTPUT].setVoltage(runPulse ? 10.0f : 0.0f);
+  }
   outputs[RESET_OUTPUT].setVoltage(resetPulse ? 10.0f : 0.0f);
 
   // Output Voltages
@@ -445,6 +469,76 @@ struct ClockResetOnStopItem : MenuItem {
   }
 };
 
+struct RunInputTriggerItem : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->runInputIsGate = false;
+  }
+};
+
+struct RunInputGateItem : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->runInputIsGate = true;
+  }
+};
+
+struct RunOutputTriggerItem : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->runOutputIsGate = false;
+  }
+};
+
+struct RunOutputGateItem : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->runOutputIsGate = true;
+  }
+};
+
+struct RunInputModeItem : MenuItem {
+  Clock *module;
+  Menu *createChildMenu() override {
+    Menu *menu = new Menu;
+
+    RunInputTriggerItem *runInputTriggerItem = new RunInputTriggerItem;
+    runInputTriggerItem->text = "Toggle";
+    runInputTriggerItem->rightText = CHECKMARK(!module->runInputIsGate);
+    runInputTriggerItem->module = module;
+    menu->addChild(runInputTriggerItem);
+
+    RunInputGateItem *runInputGateItem = new RunInputGateItem;
+    runInputGateItem->text = "Hold";
+    runInputGateItem->rightText = CHECKMARK(module->runInputIsGate);
+    runInputGateItem->module = module;
+    menu->addChild(runInputGateItem);
+
+    return menu;
+  }
+};
+
+struct RunOutputModeItem : MenuItem {
+  Clock *module;
+  Menu *createChildMenu() override {
+    Menu *menu = new Menu;
+
+    RunOutputTriggerItem *runOutputTriggerItem = new RunOutputTriggerItem;
+    runOutputTriggerItem->text = "Trigger";
+    runOutputTriggerItem->rightText = CHECKMARK(!module->runOutputIsGate);
+    runOutputTriggerItem->module = module;
+    menu->addChild(runOutputTriggerItem);
+
+    RunOutputGateItem *runOutputGateItem = new RunOutputGateItem;
+    runOutputGateItem->text = "Gate";
+    runOutputGateItem->rightText = CHECKMARK(module->runOutputIsGate);
+    runOutputGateItem->module = module;
+    menu->addChild(runOutputGateItem);
+
+    return menu;
+  }
+};
+
 void ClockWidget::appendContextMenu(Menu *menu) {
   menu->addChild(new MenuSeparator());
 
@@ -458,6 +552,20 @@ void ClockWidget::appendContextMenu(Menu *menu) {
   ClockResetOnStopItem *resetOnStopItem = createMenuItem<ClockResetOnStopItem>("Reset on Stop");
   resetOnStopItem->clock = clock;
   menu->addChild(resetOnStopItem);
+
+  menu->addChild(new MenuSeparator());
+
+  RunInputModeItem *runInputModeItem = new RunInputModeItem;
+  runInputModeItem->text = "Run Input Mode";
+  runInputModeItem->rightText = RIGHT_ARROW;
+  runInputModeItem->module = clock;
+  menu->addChild(runInputModeItem);
+
+  RunOutputModeItem *runOutputModeItem = new RunOutputModeItem;
+  runOutputModeItem->text = "Run Output Mode";
+  runOutputModeItem->rightText = RIGHT_ARROW;
+  runOutputModeItem->module = clock;
+  menu->addChild(runOutputModeItem);
 }
 
 void ClockWidget::onHoverKey(const event::HoverKey &e) {
