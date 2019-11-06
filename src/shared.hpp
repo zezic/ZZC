@@ -30,6 +30,7 @@ struct LowFrequencyOscillator {
   bool step(float dt) {
     float deltaPhase = (freq + this->freqCorrection) * dt;
     float summ = phase + deltaPhase;
+    this->lastPhase = this->phase;
     this->phase = rack::math::eucMod(summ, 1.0f);
     bool flipped = freq >= 0.0f ? summ >= 1.0f : summ < 0.0f;
     if (flipped) {
