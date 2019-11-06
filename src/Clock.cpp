@@ -98,6 +98,7 @@ struct Clock : Module {
   bool resetOnStop = false;
   bool runInputIsGate = false;
   bool runOutputIsGate = false;
+  int externalClockPPQN = 1;
 
   void toggle() {
     running = !running;
@@ -215,6 +216,7 @@ struct Clock : Module {
     json_object_set_new(rootJ, "resetOnStop", json_boolean(resetOnStop));
     json_object_set_new(rootJ, "runInputIsGate", json_boolean(runInputIsGate));
     json_object_set_new(rootJ, "runOutputIsGate", json_boolean(runOutputIsGate));
+    json_object_set_new(rootJ, "externalClockPPQN", json_integer(externalClockPPQN));
     return rootJ;
   }
 
@@ -225,6 +227,7 @@ struct Clock : Module {
     json_t *resetOnStopJ = json_object_get(rootJ, "resetOnStop");
     json_t *runInputIsGateJ = json_object_get(rootJ, "runInputIsGate");
     json_t *runOutputIsGateJ = json_object_get(rootJ, "runOutputIsGate");
+    json_t *externalClockPPQNJ = json_object_get(rootJ, "externalClockPPQN");
     if (runningJ) {
       running = json_integer_value(runningJ);
     }
@@ -235,6 +238,7 @@ struct Clock : Module {
     if (resetOnStopJ) { resetOnStop = json_boolean_value(resetOnStopJ); }
     if (runInputIsGateJ) { runInputIsGate = json_boolean_value(runInputIsGateJ); }
     if (runOutputIsGateJ) { runOutputIsGate = json_boolean_value(runOutputIsGateJ); }
+    if (externalClockPPQNJ) { externalClockPPQN = json_integer_value(externalClockPPQNJ); }
   }
 };
 
@@ -246,6 +250,8 @@ void Clock::process(const ProcessArgs &args) {
   processButtons();
   processSwingInputs();
 
+  oscillator.PPQN = externalClockPPQN;
+
   if (mode == INTERNAL_MODE || mode == EXT_VBPS_MODE || mode == EXT_CLOCK_MODE) {
 
     if (mode == EXT_CLOCK_MODE) {
@@ -255,7 +261,7 @@ void Clock::process(const ProcessArgs &args) {
       }
       clockTracker.process(args.sampleTime, inputs[CLOCK_INPUT].getVoltage());
       if (clockTracker.freqDetected) {
-        bpm = clockTracker.freq * 60.0f;
+        bpm = clockTracker.freq * 60.0f / externalClockPPQN;
       }
     } else if (mode == EXT_VBPS_MODE) {
       bpm = params[BPM_PARAM].getValue() + inputs[VBPS_INPUT].getVoltage() * 60.0f;
@@ -267,9 +273,7 @@ void Clock::process(const ProcessArgs &args) {
       bpm = bpm * -1.0f;
     }
 
-    if (oscillator.freqCorrectionSuggestion == 0.0f) {
-      oscillator.setPitch(bpm / 60.0f);
-    }
+    oscillator.setPitch(bpm / 60.0f);
 
     if (running) {
 
@@ -277,10 +281,11 @@ void Clock::process(const ProcessArgs &args) {
         oscillator.reset((reverse ? 1.0f : 0.0f));
       }
 
-      bool phaseFlipped = oscillator.step(args.sampleTime);
       if (mode == EXT_CLOCK_MODE) {
         oscillator.adjustPhase(inputs[CLOCK_INPUT].getVoltage());
       }
+
+      bool phaseFlipped = oscillator.step(args.sampleTime);
 
       if (phaseFlipped || resetWasHit) {
         clockPulseGenerator.trigger(1e-3f);
@@ -324,7 +329,7 @@ void Clock::process(const ProcessArgs &args) {
     }
 
     if (mode == EXT_CLOCK_AND_PHASE_MODE) {
-      triggered = externalClockTrigger.process(inputs[CLOCK_INPUT].getVoltage());
+      triggered = externalClockTrigger.process(inputs[CLOCK_INPUT].getVoltage()) && (externalClockPPQN == 1 || externalClockPPQN == 2);
     }
 
     if (running) {
@@ -539,6 +544,33 @@ struct RunOutputModeItem : MenuItem {
   }
 };
 
+struct ExternalClockPPQNOptionItem : MenuItem {
+  Clock *module;
+  int targetPPQN;
+  void onAction(const event::Action &e) override {
+    module->externalClockPPQN = this->targetPPQN;
+  }
+};
+
+struct ExternalClockPPQNItem : MenuItem {
+  Clock *module;
+  Menu *createChildMenu() override {
+    Menu *menu = new Menu;
+    std::vector<int> PPQNModes = {
+      1, 2, 4, 8, 12, 16, 24, 48, 72, 96, 120, 144, 168, 192, 384, 768, 960
+    };
+    for (int PPQN : PPQNModes) {
+      ExternalClockPPQNOptionItem *item = new ExternalClockPPQNOptionItem;
+      item->text = std::to_string(PPQN);
+      item->rightText = CHECKMARK(module->externalClockPPQN == PPQN);
+      item->module = module;
+      item->targetPPQN = PPQN;
+      menu->addChild(item);
+    }
+    return menu;
+  }
+};
+
 void ClockWidget::appendContextMenu(Menu *menu) {
   menu->addChild(new MenuSeparator());
 
@@ -566,6 +598,14 @@ void ClockWidget::appendContextMenu(Menu *menu) {
   runOutputModeItem->rightText = RIGHT_ARROW;
   runOutputModeItem->module = clock;
   menu->addChild(runOutputModeItem);
+
+  menu->addChild(new MenuSeparator());
+
+  ExternalClockPPQNItem *externalClockPPQNItem = new ExternalClockPPQNItem;
+  externalClockPPQNItem->text = "External Clock PPQN";
+  externalClockPPQNItem->rightText = RIGHT_ARROW;
+  externalClockPPQNItem->module = clock;
+  menu->addChild(externalClockPPQNItem);
 }
 
 void ClockWidget::onHoverKey(const event::HoverKey &e) {

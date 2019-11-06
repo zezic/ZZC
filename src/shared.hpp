@@ -7,8 +7,10 @@ struct LowFrequencyOscillator {
   float phase = 0.0f;
   float lastPhase = 0.0f;
   float freq = 1.0f;
-  float freqCorrectionSuggestion = 0.0f;
   float freqCorrection = 0.0f;
+
+  int PPQN = 1;
+  float freqTarget = 1.0f;
 
   dsp::SchmittTrigger clockTrigger;
 
@@ -25,6 +27,7 @@ struct LowFrequencyOscillator {
 
   void reset(float value) {
     this->phase = std::fmod(value, 1.0f);
+    this->freqCorrection = 0.0f;
   }
 
   bool step(float dt) {
@@ -33,14 +36,6 @@ struct LowFrequencyOscillator {
     this->lastPhase = this->phase;
     this->phase = rack::math::eucMod(summ, 1.0f);
     bool flipped = freq >= 0.0f ? summ >= 1.0f : summ < 0.0f;
-    if (flipped) {
-      if (this->freqCorrectionSuggestion != 0.0f) {
-        this->freqCorrection = this->freqCorrectionSuggestion;
-        this->freqCorrectionSuggestion = 0.0f;
-      } else {
-        this->freqCorrection = 0.0f;
-      }
-    }
     return flipped;
   }
 
@@ -50,21 +45,29 @@ struct LowFrequencyOscillator {
       this->freqCorrection = 0.0f;
       return;
     }
-    if (freq >= 0.0f) {
-      if (phase < 0.5f) {
+    float segmentLength = 1.0f / this->PPQN;
+    float absoluteSegmentPhase = std::fmod(this->phase, segmentLength);
+    float scaledPhase = absoluteSegmentPhase * this->PPQN;
+    float tempoBendingLimit = 0.99f * std::abs(this->freq);
+    if (this->freq >= 0.0f) {
+      if (scaledPhase < 0.5f) {
         // We are moving too fast
-        this->freqCorrectionSuggestion = this->freq * ((1.0f - this->phase) / 1.0f) - this->freq;
+        float deviation = scaledPhase;
+        this->freqCorrection = -std::min(this->freq * deviation, tempoBendingLimit);
       } else {
         // We are lagging behind
-        this->freqCorrectionSuggestion = this->freq / this->phase - this->freq;
+        float deviation = 1.0f - scaledPhase;
+        this->freqCorrection = std::min(this->freq * deviation, tempoBendingLimit);
       }
     } else {
-      if (phase < 0.5f) {
-        // We are lagging behind
-        this->freqCorrectionSuggestion = (-this->freq) / (1.0f - this->phase) + this->freq;
-      } else {
+      if (scaledPhase >= 0.5f) {
         // We are moving too fast
-        this->freqCorrectionSuggestion = (-this->freq) * ((this->phase) / 1.0f) + this->freq;
+        float deviation = 1.0f - scaledPhase;
+        this->freqCorrection = std::min(-this->freq * deviation, tempoBendingLimit);
+      } else {
+        // We are lagging behind
+        float deviation = scaledPhase;
+        this->freqCorrection = -std::min(-this->freq * deviation, tempoBendingLimit);
       }
     }
   }
