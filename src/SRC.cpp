@@ -13,12 +13,12 @@ void writeMusicalNotation(char *output, size_t size, float voltage) {
   char notes[20][20] = {"c", "ic", "d", "id", "e", "f", "if", "g", "ig", "a", "ia", "b"};
   int noteIdx = (int)(eucMod(voltage, 1.0f) / (1.0f / 12.05f));
   char *note = notes[noteIdx];
-  if (voltage > 5.0f) {
+  if (voltage >= 6.0f) {
     snprintf(output, size, "%sh", note);
   } else if (voltage < -4.0f) {
     snprintf(output, size, "%sl", note);
   } else {
-    snprintf(output, size, "%s%d", note, ((int)(voltage)) + 4);
+    snprintf(output, size, "%s%2.0f", note, std::floor(voltage) + 4);
   }
 }
 
