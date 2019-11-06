@@ -72,7 +72,7 @@ struct Divider : Module {
       float swingInput = clamp(inputs[SWING_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
       if (swingInput < 0.0f) {
         swing = swingParam + (swingParam - 1.0f) * swingInput;
-      } else if (swingInput > 0.0f) {
+      } else if (swingInput >= 0.0f) {
         swing = swingParam + (99.0f - swingParam) * swingInput;
       }
     } else {
