@@ -10,7 +10,6 @@ struct LowFrequencyOscillator {
   float freqCorrection = 0.0f;
 
   int PPQN = 1;
-  float freqTarget = 1.0f;
 
   dsp::SchmittTrigger clockTrigger;
 
@@ -48,28 +47,8 @@ struct LowFrequencyOscillator {
     float segmentLength = 1.0f / this->PPQN;
     float absoluteSegmentPhase = std::fmod(this->phase, segmentLength);
     float scaledPhase = absoluteSegmentPhase * this->PPQN;
-    float tempoBendingLimit = 0.99f * std::abs(this->freq);
-    if (this->freq >= 0.0f) {
-      if (scaledPhase < 0.5f) {
-        // We are moving too fast
-        float deviation = scaledPhase;
-        this->freqCorrection = -std::min(this->freq * deviation, tempoBendingLimit);
-      } else {
-        // We are lagging behind
-        float deviation = 1.0f - scaledPhase;
-        this->freqCorrection = std::min(this->freq * deviation, tempoBendingLimit);
-      }
-    } else {
-      if (scaledPhase >= 0.5f) {
-        // We are moving too fast
-        float deviation = 1.0f - scaledPhase;
-        this->freqCorrection = std::min(-this->freq * deviation, tempoBendingLimit);
-      } else {
-        // We are lagging behind
-        float deviation = scaledPhase;
-        this->freqCorrection = -std::min(-this->freq * deviation, tempoBendingLimit);
-      }
-    }
+    float deviation = scaledPhase - (scaledPhase < 0.5f ? 0.0f : 1.0f);
+    this->freqCorrection = -std::abs(this->freq) * deviation;
   }
 };
 
