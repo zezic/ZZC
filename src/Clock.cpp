@@ -94,6 +94,9 @@ struct Clock : Module {
   dsp::SchmittTrigger externalClockTrigger;
 
   /* Settings */
+  bool baseClockGateMode = false;
+  bool x2ClockGateMode = false;
+  bool x4ClockGateMode = false;
   bool resetOnStart = false;
   bool resetOnStop = false;
   bool runInputIsGate = false;
@@ -168,18 +171,35 @@ struct Clock : Module {
 
   inline void triggerThsByPhase(float phase, float lastPhase) {
     float trigger8thsAtPhase = swing8thsFinal / 100.0f;
-    if ((lastPhase < trigger8thsAtPhase && trigger8thsAtPhase <= phase) ||
-        (lastPhase > trigger8thsAtPhase && trigger8thsAtPhase >= phase)) {
-      clock8thsPulseGenerator.trigger(1e-3f);
-      clock16thsPulseGenerator.trigger(1e-3f);
-    }
     float triggerSecond16thAtPhase = trigger8thsAtPhase * swing16thsFinal / 100.0f;
-    float triggerThird16thAtPhase = trigger8thsAtPhase + (1.0f - trigger8thsAtPhase) * swing16thsFinal / 100.0f;
-    if ((lastPhase < triggerSecond16thAtPhase && triggerSecond16thAtPhase <= phase) ||
-        (lastPhase > triggerSecond16thAtPhase && triggerSecond16thAtPhase >= phase) ||
-        (lastPhase < triggerThird16thAtPhase && triggerThird16thAtPhase <= phase) ||
-        (lastPhase > triggerThird16thAtPhase && triggerThird16thAtPhase >= phase)) {
-      clock16thsPulseGenerator.trigger(1e-3f);
+    float triggerFourth16thAtPhase = trigger8thsAtPhase + (1.0f - trigger8thsAtPhase) * swing16thsFinal / 100.0f;
+    if (!x2ClockGateMode || !x4ClockGateMode) {
+      if ((lastPhase < trigger8thsAtPhase && trigger8thsAtPhase <= phase) ||
+          (lastPhase > trigger8thsAtPhase && trigger8thsAtPhase >= phase)) {
+        clock8thsPulseGenerator.trigger(1e-3f);
+        clock16thsPulseGenerator.trigger(1e-3f);
+      }
+    }
+    if (x2ClockGateMode) {
+      clock8thsPulse = (
+        (phase < triggerSecond16thAtPhase) ||
+        (phase >= trigger8thsAtPhase && phase < triggerFourth16thAtPhase)
+      );
+    }
+    if (x4ClockGateMode) {
+      clock16thsPulse = (
+        (phase < triggerSecond16thAtPhase / 2.0f) ||
+        (phase >= triggerSecond16thAtPhase && phase < (trigger8thsAtPhase - (trigger8thsAtPhase - triggerSecond16thAtPhase) / 2.0f)) ||
+        (phase >= trigger8thsAtPhase && phase < (triggerFourth16thAtPhase - ((triggerFourth16thAtPhase - trigger8thsAtPhase) / 2.0f))) ||
+        (phase >= triggerFourth16thAtPhase && phase < (1.0f - (1.0f - triggerFourth16thAtPhase) / 2.0f))
+      );
+    } else {
+      if ((lastPhase < triggerSecond16thAtPhase && triggerSecond16thAtPhase <= phase) ||
+          (lastPhase > triggerSecond16thAtPhase && triggerSecond16thAtPhase >= phase) ||
+          (lastPhase < triggerFourth16thAtPhase && triggerFourth16thAtPhase <= phase) ||
+          (lastPhase > triggerFourth16thAtPhase && triggerFourth16thAtPhase >= phase)) {
+        clock16thsPulseGenerator.trigger(1e-3f);
+      }
     }
   }
 
@@ -212,6 +232,9 @@ struct Clock : Module {
     json_t *rootJ = json_object();
     json_object_set_new(rootJ, "running", json_integer((int) running));
     json_object_set_new(rootJ, "reverse", json_integer((int) reverse));
+    json_object_set_new(rootJ, "baseClockGateMode", json_boolean(baseClockGateMode));
+    json_object_set_new(rootJ, "x2ClockGateMode", json_boolean(x2ClockGateMode));
+    json_object_set_new(rootJ, "x4ClockGateMode", json_boolean(x4ClockGateMode));
     json_object_set_new(rootJ, "resetOnStart", json_boolean(resetOnStart));
     json_object_set_new(rootJ, "resetOnStop", json_boolean(resetOnStop));
     json_object_set_new(rootJ, "runInputIsGate", json_boolean(runInputIsGate));
@@ -223,17 +246,19 @@ struct Clock : Module {
   void dataFromJson(json_t *rootJ) override {
     json_t *runningJ = json_object_get(rootJ, "running");
     json_t *reverseJ = json_object_get(rootJ, "reverse");
+    json_t *baseClockGateModeJ = json_object_get(rootJ, "baseClockGateMode");
+    json_t *x2ClockGateModeJ = json_object_get(rootJ, "x2ClockGateMode");
+    json_t *x4ClockGateModeJ = json_object_get(rootJ, "x4ClockGateMode");
     json_t *resetOnStartJ = json_object_get(rootJ, "resetOnStart");
     json_t *resetOnStopJ = json_object_get(rootJ, "resetOnStop");
     json_t *runInputIsGateJ = json_object_get(rootJ, "runInputIsGate");
     json_t *runOutputIsGateJ = json_object_get(rootJ, "runOutputIsGate");
     json_t *externalClockPPQNJ = json_object_get(rootJ, "externalClockPPQN");
-    if (runningJ) {
-      running = json_integer_value(runningJ);
-    }
-    if (reverseJ) {
-      reverse = json_integer_value(reverseJ);
-    }
+    if (runningJ) { running = json_integer_value(runningJ); }
+    if (reverseJ) { reverse = json_integer_value(reverseJ); }
+    if (baseClockGateModeJ) { baseClockGateMode = json_boolean_value(baseClockGateModeJ); }
+    if (x2ClockGateModeJ) { x2ClockGateMode = json_boolean_value(x2ClockGateModeJ); }
+    if (x4ClockGateModeJ) { x4ClockGateMode = json_boolean_value(x4ClockGateModeJ); }
     if (resetOnStartJ) { resetOnStart = json_boolean_value(resetOnStartJ); }
     if (resetOnStopJ) { resetOnStop = json_boolean_value(resetOnStopJ); }
     if (runInputIsGateJ) { runInputIsGate = json_boolean_value(runInputIsGateJ); }
@@ -288,9 +313,9 @@ void Clock::process(const ProcessArgs &args) {
       bool phaseFlipped = oscillator.step(args.sampleTime);
 
       if (phaseFlipped || resetWasHit) {
-        clockPulseGenerator.trigger(1e-3f);
-        clock8thsPulseGenerator.trigger(1e-3f);
-        clock16thsPulseGenerator.trigger(1e-3f);
+        if (!baseClockGateMode) { clockPulseGenerator.trigger(1e-3f); }
+        if (!x2ClockGateMode) { clock8thsPulseGenerator.trigger(1e-3f); }
+        if (!x4ClockGateMode) { clock16thsPulseGenerator.trigger(1e-3f); }
       } else {
         triggerThsByPhase(oscillator.phase, oscillator.lastPhase);
       }
@@ -334,9 +359,9 @@ void Clock::process(const ProcessArgs &args) {
 
     if (running) {
       if (triggered) {
-        clockPulseGenerator.trigger(1e-3f);
-        clock8thsPulseGenerator.trigger(1e-3f);
-        clock16thsPulseGenerator.trigger(1e-3f);
+        if (!baseClockGateMode) { clockPulseGenerator.trigger(1e-3f); }
+        if (!x2ClockGateMode) { clock8thsPulseGenerator.trigger(1e-3f); }
+        if (!x4ClockGateMode) { clock16thsPulseGenerator.trigger(1e-3f); }
       } else {
         if (lastMode == EXT_PHASE_MODE || lastMode == EXT_CLOCK_AND_PHASE_MODE) {
           triggerThsByPhase(inputs[PHASE_INPUT].getVoltage() / 10.0f, lastExtPhase  / 10.0f);
@@ -347,15 +372,19 @@ void Clock::process(const ProcessArgs &args) {
   }
 
   // Generate Pulse
-  clockPulse = clockPulseGenerator.process(args.sampleTime);
-  clock8thsPulse = clock8thsPulseGenerator.process(args.sampleTime);
-  clock16thsPulse = clock16thsPulseGenerator.process(args.sampleTime);
+  if (!baseClockGateMode) { clockPulse = clockPulseGenerator.process(args.sampleTime); }
+  if (!x2ClockGateMode) { clock8thsPulse = clock8thsPulseGenerator.process(args.sampleTime); }
+  if (!x4ClockGateMode) { clock16thsPulse = clock16thsPulseGenerator.process(args.sampleTime); }
   runPulse = runPulseGenerator.process(args.sampleTime);
   resetPulse = resetPulseGenerator.process(args.sampleTime);
 
-  outputs[CLOCK_OUTPUT].setVoltage(clockPulse ? 10.0f : 0.0f);
-  outputs[CLOCK_8THS_OUTPUT].setVoltage(clock8thsPulse ? 10.0f : 0.0f);
-  outputs[CLOCK_16THS_OUTPUT].setVoltage(clock16thsPulse ? 10.0f : 0.0f);
+  if (baseClockGateMode) {
+    outputs[CLOCK_OUTPUT].setVoltage(running && oscillator.phase < 0.5f ? 10.0f : 0.0f);
+  } else {
+    outputs[CLOCK_OUTPUT].setVoltage(clockPulse ? 10.0f : 0.0f);
+  }
+  outputs[CLOCK_8THS_OUTPUT].setVoltage(running && clock8thsPulse ? 10.0f : 0.0f);
+  outputs[CLOCK_16THS_OUTPUT].setVoltage(running && clock16thsPulse ? 10.0f : 0.0f);
   if (runOutputIsGate) {
     outputs[RUN_OUTPUT].setVoltage(running ? 10.0f : 0.0f);
   } else {
@@ -453,6 +482,54 @@ ClockWidget::ClockWidget(Clock *module) {
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 }
+
+struct BaseClockGateModeItem : MenuItem {
+  Clock *clock;
+  void onAction(const event::Action &e) override {
+    clock->baseClockGateMode ^= true;
+  }
+};
+
+struct X2ClockGateModeItem : MenuItem {
+  Clock *clock;
+  void onAction(const event::Action &e) override {
+    clock->x2ClockGateMode ^= true;
+  }
+};
+
+struct X4ClockGateModeItem : MenuItem {
+  Clock *clock;
+  void onAction(const event::Action &e) override {
+    clock->x4ClockGateMode ^= true;
+  }
+};
+
+struct UseGatesForItem : MenuItem {
+  Clock *module;
+  Menu *createChildMenu() override {
+    Menu *menu = new Menu;
+
+    BaseClockGateModeItem *baseClockGateModeItem = new BaseClockGateModeItem;
+    baseClockGateModeItem->text = "Main Clock Output";
+    baseClockGateModeItem->rightText = CHECKMARK(module->baseClockGateMode);
+    baseClockGateModeItem->clock = module;
+    menu->addChild(baseClockGateModeItem);
+
+    X2ClockGateModeItem *x2ClockGateModeItem = new X2ClockGateModeItem;
+    x2ClockGateModeItem->text = "X2 Clock Output";
+    x2ClockGateModeItem->rightText = CHECKMARK(module->x2ClockGateMode);
+    x2ClockGateModeItem->clock = module;
+    menu->addChild(x2ClockGateModeItem);
+
+    X4ClockGateModeItem *x4ClockGateModeItem = new X4ClockGateModeItem;
+    x4ClockGateModeItem->text = "X4 Clock Output";
+    x4ClockGateModeItem->rightText = CHECKMARK(module->x4ClockGateMode);
+    x4ClockGateModeItem->clock = module;
+    menu->addChild(x4ClockGateModeItem);
+
+    return menu;
+  }
+};
 
 struct ClockResetOnStartItem : MenuItem {
   Clock *clock;
@@ -572,10 +649,19 @@ struct ExternalClockPPQNItem : MenuItem {
 };
 
 void ClockWidget::appendContextMenu(Menu *menu) {
-  menu->addChild(new MenuSeparator());
 
   Clock *clock = dynamic_cast<Clock*>(module);
   assert(clock);
+
+  menu->addChild(new MenuSeparator());
+
+  UseGatesForItem *useGatesForItem = new UseGatesForItem;
+  useGatesForItem->text = "Use Gates For";
+  useGatesForItem->rightText = RIGHT_ARROW;
+  useGatesForItem->module = clock;
+  menu->addChild(useGatesForItem);
+
+  menu->addChild(new MenuSeparator());
 
   ClockResetOnStartItem *resetOnStartItem = createMenuItem<ClockResetOnStartItem>("Reset on Start");
   resetOnStartItem->clock = clock;
