@@ -115,7 +115,7 @@ void Divider::process(const ProcessArgs &args) {
     clockPulseGenerator.trigger(gateMode ? 1e-4f : 1e-3f);
   } else if (inputs[PHASE_INPUT].isConnected()) {
     if (lastPhaseInState) {
-      phaseIn = inputs[PHASE_INPUT].getVoltage();
+      phaseIn = std::fmod(inputs[PHASE_INPUT].getVoltage(), 10.0f);
       float phaseInDelta = phaseIn - lastPhaseIn;
       if (fabsf(phaseInDelta) > 0.1f && (sgn(phaseInDelta) != sgn(lastPhaseInDelta))) {
         phaseInDelta = lastPhaseInDelta;
@@ -154,7 +154,7 @@ void Divider::process(const ProcessArgs &args) {
 
   lastHalfPhaseOut = halfPhaseOut;
 
-  lastPhaseIn = inputs[PHASE_INPUT].getVoltage();
+  lastPhaseIn = std::fmod(inputs[PHASE_INPUT].getVoltage(), 10.0f);
   lastPhaseInState = inputs[PHASE_INPUT].isConnected();
 
 
