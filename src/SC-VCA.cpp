@@ -60,6 +60,9 @@ struct SCVCA : Module {
 
   dsp::ClockDivider lightDivider;
 
+  /* Settings */
+  bool exponentialMode = false;
+
   void processChannel(
     Input &in,
     Param &gainParam, Param &softnessParam, Param &clipParam,
@@ -81,16 +84,29 @@ struct SCVCA : Module {
     }
 
     // Apply CV gain
+    const float expBase = 50.f;
     if (gainInput.isConnected()) {
       if (gainInput.isPolyphonic()) {
-        for (int c = 0; c < channels; c += 4) {
-          simd::float_4 cv = simd::float_4::load(gainInput.getVoltages(c)) / 10.f;
-          cv = clamp(cv, 0.f, 1.f);
-          v[c / 4] *= cv;
+        if (exponentialMode) {
+          for (int c = 0; c < channels; c += 4) {
+            simd::float_4 cv = simd::float_4::load(gainInput.getVoltages(c)) / 10.f;
+            cv = clamp(cv, 0.f, 1.f);
+            cv = rescale(pow(expBase, cv), 1.f, expBase, 0.f, 1.f);
+            v[c / 4] *= cv;
+          }
+        } else {
+          for (int c = 0; c < channels; c += 4) {
+            simd::float_4 cv = simd::float_4::load(gainInput.getVoltages(c)) / 10.f;
+            cv = clamp(cv, 0.f, 1.f);
+            v[c / 4] *= cv;
+          }
         }
       } else {
         float cv = gainInput.getVoltage() / 10.f;
         cv = clamp(cv, 0.f, 1.f);
+        if (exponentialMode) {
+          cv = rescale(std::pow(expBase, cv), 1.f, expBase, 0.f, 1.f);
+        }
         for (int c = 0; c < channels; c += 4) {
           v[c / 4] *= cv;
         }
@@ -164,6 +180,17 @@ struct SCVCA : Module {
     lightDivider.setDivision(16);
   }
   void process(const ProcessArgs &args) override;
+
+  json_t *dataToJson() override {
+    json_t *rootJ = json_object();
+    json_object_set_new(rootJ, "exponentialMode", json_boolean(exponentialMode));
+    return rootJ;
+  }
+
+  void dataFromJson(json_t *rootJ) override {
+    json_t *exponentialModeJ = json_object_get(rootJ, "exponentialMode");
+    if (exponentialModeJ) { exponentialMode = json_boolean_value(exponentialModeJ); }
+  }
 };
 
 
@@ -218,7 +245,45 @@ struct SCVCAWidget : ModuleWidget {
     addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
     addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   }
+
+  void appendContextMenu(Menu *menu) override;
 };
 
+struct LinearModeItem : MenuItem {
+  SCVCA *module;
+  void onAction(const event::Action &e) override {
+    module->exponentialMode = false;
+  }
+  void step() override {
+    rightText = CHECKMARK(!module->exponentialMode);
+  }
+};
+
+struct ExponentialModeItem : MenuItem {
+  SCVCA *module;
+  void onAction(const event::Action &e) override {
+    module->exponentialMode = true;
+  }
+  void step() override {
+    rightText = CHECKMARK(module->exponentialMode);
+  }
+};
+
+void SCVCAWidget::appendContextMenu(Menu *menu) {
+  menu->addChild(new MenuSeparator());
+
+  SCVCA *scvca = dynamic_cast<SCVCA*>(module);
+  assert(scvca);
+
+  menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Pre(Gain) CV Mode"));
+
+  LinearModeItem * linearModeItem = createMenuItem<LinearModeItem>("Linear");
+  linearModeItem->module = scvca;
+  menu->addChild(linearModeItem);
+
+  ExponentialModeItem * exponentialModeItem = createMenuItem<ExponentialModeItem>("Exponential");
+  exponentialModeItem->module = scvca;
+  menu->addChild(exponentialModeItem);
+}
 
 Model *modelSCVCA = createModel<SCVCA, SCVCAWidget>("SC-VCA");
