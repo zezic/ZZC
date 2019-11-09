@@ -122,6 +122,7 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
 
 struct IntDisplayWidget : BaseDisplayWidget {
   int *value;
+  std::string textGhost = "88";
   std::shared_ptr<Font> font;
   NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
   NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
@@ -139,12 +140,12 @@ struct IntDisplayWidget : BaseDisplayWidget {
     nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
 
     char integerString[10];
-    snprintf(integerString, sizeof(integerString), "%d", *value);
+    snprintf(integerString, sizeof(integerString), "%d", value ? *value : 1);
 
     Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 
     nvgFillColor(args.vg, lcdGhostColor);
-    nvgText(args.vg, textPos.x, textPos.y, "88", NULL);
+    nvgText(args.vg, textPos.x, textPos.y, textGhost.c_str(), NULL);
     nvgFillColor(args.vg, lcdTextColor);
     nvgText(args.vg, textPos.x, textPos.y, integerString, NULL);
   }

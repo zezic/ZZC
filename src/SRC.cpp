@@ -196,9 +196,7 @@ SRCWidget::SRCWidget(SRC *module) {
   addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 320), module, SRC::VOLTAGE_OUTPUT));
 
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
-  addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-  addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 }
 
 

@@ -64,6 +64,14 @@
         "Quantizer",
         "Utility"
       ]
+    },
+    {
+      "slug": "Div",
+      "name": "Div",
+      "description": "Phase Clock Divider (Compact)",
+      "tags": [
+        "Clock modulator"
+      ]
     }
   ]
 }

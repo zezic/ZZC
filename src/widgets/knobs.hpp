@@ -10,7 +10,7 @@ using namespace rack;
 
 extern Plugin *pluginInstance;
 
-struct ZZC_BaseKnob : SVGKnob {
+struct ZZC_BaseKnob : SvgKnob {
   ZZC_BaseKnob() {
     minAngle = -0.75 * M_PI;
     maxAngle = 0.75 * M_PI;
@@ -136,6 +136,16 @@ struct ZZC_Knob27Snappy : ZZC_Knob27 {
   ZZC_Knob27Snappy() {
     snap = true;
     smooth = false;
+  }
+};
+
+struct ZZC_Knob27Blind : ZZC_BaseKnob {
+  ZZC_Knob27Blind() {
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-27-Encoder.svg")) );
+    shadow->box.size = Vec(33, 33);
+    shadow->box.pos = Vec(-3, 2);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
   }
 };
 

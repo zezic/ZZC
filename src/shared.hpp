@@ -1,6 +1,9 @@
 #include "math.hpp"
 #include "dsp/digital.hpp"
 
+#ifndef ZZC_SHARED_H
+#define ZZC_SHARED_H
+
 using namespace rack;
 
 struct LowFrequencyOscillator {
@@ -81,3 +84,5 @@ struct ClockTracker {
     }
   }
 };
+
+#endif

@@ -16,3 +16,4 @@ extern Model *modelFN3;
 extern Model *modelSCVCA;
 extern Model *modelSH8;
 extern Model *modelSRC;
+extern Model *modelDiv;

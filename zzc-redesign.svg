@@ -1399,19 +1399,19 @@
      borderopacity="0.16470588"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="11.313708"
-     inkscape:cx="630.8967"
-     inkscape:cy="134.36152"
+     inkscape:zoom="2"
+     inkscape:cx="469.9017"
+     inkscape:cy="252.84195"
      inkscape:document-units="px"
      inkscape:current-layer="svg8"
-     showgrid="true"
+     showgrid="false"
      units="px"
      guidecolor="#00d1ae"
      guideopacity="0.49803922"
      inkscape:window-width="2567"
      inkscape:window-height="1683"
-     inkscape:window-x="605"
-     inkscape:window-y="210"
+     inkscape:window-x="708"
+     inkscape:window-y="195"
      inkscape:window-maximized="0"
      inkscape:snap-global="false"
      showguides="false"
@@ -12612,20 +12612,20 @@
   <text
      id="text3497"
      y="45.914978"
-     x="635.20435"
+     x="638.20435"
      style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:6.96164751px;line-height:1.25;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';letter-spacing:0px;word-spacing:0px;fill:#eaeae3;fill-opacity:1;stroke:none;stroke-width:1.00001252"
      xml:space="preserve"
      inkscape:export-xdpi="192"
      inkscape:export-ydpi="192"><tspan
        y="45.914978"
-       x="635.20435"
+       x="638.20435"
        id="tspan3495"
        sodipodi:role="line"
        style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';text-align:center;text-anchor:middle;fill:#eaeae3;fill-opacity:1;stroke-width:1.00001252">1-8</tspan></text>
   <text
      xml:space="preserve"
      style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:6.96164751px;line-height:1.25;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';letter-spacing:0px;word-spacing:0px;fill:#eaeae3;fill-opacity:1;stroke:none;stroke-width:1.00001252"
-     x="669.82306"
+     x="668.82306"
      y="45.914978"
      id="text3501"
      inkscape:export-xdpi="192"
@@ -12633,7 +12633,7 @@
        style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';text-align:center;text-anchor:middle;fill:#eaeae3;fill-opacity:1;stroke-width:1.00001252"
        sodipodi:role="line"
        id="tspan3499"
-       x="669.82306"
+       x="668.82306"
        y="45.914978">9-16</tspan></text>
   <text
      inkscape:export-ydpi="192"
@@ -12647,7 +12647,7 @@
        x="669.4884"
        id="tspan3503"
        sodipodi:role="line"
-       style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';text-align:center;text-anchor:middle;fill:#eaeae3;fill-opacity:1;stroke-width:1.00001252">WAIT</tspan></text>
+       style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';text-align:center;text-anchor:middle;fill:#eaeae3;fill-opacity:1;stroke-width:1.00001252">SYNC</tspan></text>
   <use
      inkscape:export-ydpi="192"
      inkscape:export-xdpi="192"
