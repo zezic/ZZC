@@ -47,7 +47,6 @@ void Div::process(const ProcessArgs &args) {
       simd::float_4 fractionCV = simd::float_4::load(inputs[CV_INPUT].getVoltages(c));
       simd::float_4 fractionCVPower = simd::pow(2.f, fractionCV);
       simd::float_4 gt0mask = fractionCV > 0.f;
-      std::cout << gt0mask[0] << std::endl;
       simd::float_4 flooredCVPower = simd::ifelse(
         gt0mask,
         simd::floor(fractionCVPower),
