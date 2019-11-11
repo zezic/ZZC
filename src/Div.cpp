@@ -34,18 +34,28 @@ struct Div : Module {
 };
 
 void Div::process(const ProcessArgs &args) {
-  fractionDisplay = std::max((int) abs(params[FRACTION_PARAM].getValue()), 1);
+  float fractionParam = params[FRACTION_PARAM].getValue();
+  fractionDisplay = clamp(std::max((int) abs(fractionParam), 1), -199, 199);
 
   simd::float_4 phaseInValue[4];
   if (inputs[PHASE_INPUT].isConnected()) {
-    if (inputs[PHASE_INPUT].isPolyphonic()) {
-      int channels = inputs[PHASE_INPUT].getChannels();
-      outputs[PHASE_OUTPUT].setChannels(channels);
-      for (int c = 0; c < channels; c += 4) {
-        phaseInValue[c / 4] = simd::float_4::load(inputs[PHASE_INPUT].getVoltages(c)) / 10.f;
-        divCore[c / 4].process(phaseInValue[c / 4]);
-        divCore[c / 4].phase10.store(outputs[PHASE_OUTPUT].getVoltages(c));
-      }
+    int channels = std::max(inputs[PHASE_INPUT].getChannels(), inputs[CV_INPUT].getChannels());
+    outputs[PHASE_OUTPUT].setChannels(channels);
+    for (int c = 0; c < channels; c += 4) {
+      phaseInValue[c / 4] = simd::float_4::load(inputs[PHASE_INPUT].getVoltages(c)) * 0.1f;
+      float fraction = fractionParam >= 0.f ? fractionDisplay : 1.f / fractionDisplay;
+      simd::float_4 fractionCV = simd::float_4::load(inputs[CV_INPUT].getVoltages(c));
+      simd::float_4 fractionCVPower = simd::pow(2.f, fractionCV);
+      simd::float_4 gt0mask = fractionCV > 0.f;
+      std::cout << gt0mask[0] << std::endl;
+      simd::float_4 flooredCVPower = simd::ifelse(
+        gt0mask,
+        simd::floor(fractionCVPower),
+        fractionCVPower
+      );
+      divCore[c / 4].fraction = clamp(flooredCVPower, -199.f, 199.f);
+      divCore[c / 4].process(phaseInValue[c / 4]);
+      divCore[c / 4].phase10.store(outputs[PHASE_OUTPUT].getVoltages(c));
     }
   }
 }

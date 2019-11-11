@@ -142,6 +142,10 @@ struct ZZC_Knob27Snappy : ZZC_Knob27 {
 struct ZZC_Knob27Blind : ZZC_BaseKnob {
   ZZC_Knob27Blind() {
     setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-27-Encoder.svg")) );
+    speed = 0.1f;
+    minAngle = -5.f * M_PI;
+    maxAngle = 5.f * M_PI;
+    snap = true;
     shadow->box.size = Vec(33, 33);
     shadow->box.pos = Vec(-3, 2);
     shadow->blurRadius = 15.0f;

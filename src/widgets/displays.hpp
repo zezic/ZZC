@@ -121,7 +121,7 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
 };
 
 struct IntDisplayWidget : BaseDisplayWidget {
-  int *value;
+  int *value = nullptr;
   std::string textGhost = "88";
   std::shared_ptr<Font> font;
   NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
