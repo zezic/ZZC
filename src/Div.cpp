@@ -22,6 +22,7 @@ struct Div : Module {
   };
 
   DivCore<float_4> divCore[4];
+  PolySchmittTrigger<float_4> polySchmittTrigger[4];
 
   int fractionDisplay = 1;
   int fractionDisplayPolarity = 0;
@@ -42,20 +43,22 @@ void Div::process(const ProcessArgs &args) {
   float fractionAbs = std::max(1.f, abs(fractionParam));
 
   int phaseChannels = inputs[PHASE_INPUT].getChannels();
+  int resetChannels = inputs[RESET_INPUT].getChannels();
   int cvChannels = inputs[CV_INPUT].getChannels();
-  int channels = std::max(phaseChannels, cvChannels);
+  int channels = std::max(std::max(phaseChannels, resetChannels), cvChannels);
   outputs[PHASE_OUTPUT].setChannels(channels);
-
 
   float paramMultiplier = fractionParam >= 0.f ? fractionAbs : 1.f / fractionAbs;
 
   simd::float_4 dummyPhaseInValue = phaseChannels > 0 ? inputs[PHASE_INPUT].getVoltage(phaseChannels - 1) * 0.1f : 0.f;
+  simd::float_4 dummyResetInValue = resetChannels > 0 ? inputs[RESET_INPUT].getVoltage(resetChannels - 1) : 0.f;
   simd::float_4 dummyCVInValue = cvChannels > 0 ? inputs[CV_INPUT].getVoltage(cvChannels - 1) : 0.f;
 
   if (phaseChannels > 0) {
     for (int c = 0; c < channels; c += 4) {
       int blockIdx = c / 4;
       auto* core = &divCore[blockIdx];
+      auto* schmitt = &polySchmittTrigger[blockIdx];
       simd::float_4 combinedMultiplier = paramMultiplier;
       if (cvChannels > 0) {
         float realCVInputsForBlock = c < cvChannels ? cvChannels - c : 0.f;
@@ -86,6 +89,14 @@ void Div::process(const ProcessArgs &args) {
         simd::float_4::load(inputs[PHASE_INPUT].getVoltages(c)) * 0.1f,
         dummyPhaseInValue
       );
+
+      float realResetInputsForBlock = c < resetChannels ? resetChannels - c : 0.f;
+      simd::float_4 resetInValue = simd::ifelse(
+        maskBase < realResetInputsForBlock,
+        simd::float_4::load(inputs[RESET_INPUT].getVoltages(c)),
+        dummyResetInValue
+      );
+      core->reset(schmitt->process(resetInValue));
       core->process(phaseInValue);
       core->phase10.store(outputs[PHASE_OUTPUT].getVoltages(c));
     }

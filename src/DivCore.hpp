@@ -2,18 +2,22 @@
 
 using simd::float_4;
 
-struct SchmittTriggerT {
-  float lastValue;
+template <typename T>
+struct PolySchmittTrigger {
+  T lastValue = 0.f;
 
-  bool process(float value) {
-    if (value > 1.f && lastValue <= 1.f) {
-      lastValue = value;
-      return true;
-    }
+  T process(T value) {
+    T output = (value >= 1.f) & (lastValue < 1.f);
     lastValue = value;
-    return false;
+    return output;
   }
 };
+
+inline float_4 eucMod(float_4 a, float_4 b) {
+	float_4 mod = fmod(a, b);
+  mod = ifelse(mod < 0.f, mod + b, mod);
+	return mod;
+}
 
 template <typename T>
 struct DivCore {
@@ -23,8 +27,8 @@ struct DivCore {
   T lastPhaseInDelta = 0.f;
   T multiplier = 1.f;
 
-  void reset(T resetMask, T newPhaseIn) {
-    phase = ifelse(resetMask, newPhaseIn, phase);
+  void reset(T resetMask) {
+    phase = ifelse(resetMask, 0.f, phase);
     phase10 = ifelse(resetMask, phase * 10.f, phase10);
     lastPhaseIn = ifelse(resetMask, phase, lastPhaseIn);
     lastPhaseInDelta = ifelse(resetMask, 0.f, lastPhaseInDelta);
@@ -39,7 +43,7 @@ struct DivCore {
     phaseInDelta = ifelse(phaseInWrapMask, lastPhaseInDelta, phaseInDelta);
     T multipliedDelta = phaseInDelta * multiplier;
     phase = phase + multipliedDelta;
-    phase = fmod(phase, 1.f);
+    phase = eucMod(phase, 1.f);
     phase = ifelse(phase < 0.f, 1.f - phase, phase);
     phase10 = phase * 10.f;
 
