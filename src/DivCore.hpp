@@ -23,6 +23,13 @@ struct DivCore {
   T lastPhaseInDelta = 0.f;
   T multiplier = 1.f;
 
+  void reset(T resetMask, T newPhaseIn) {
+    phase = ifelse(resetMask, newPhaseIn, phase);
+    phase10 = ifelse(resetMask, phase * 10.f, phase10);
+    lastPhaseIn = ifelse(resetMask, phase, lastPhaseIn);
+    lastPhaseInDelta = ifelse(resetMask, 0.f, lastPhaseInDelta);
+  }
+
   void process(T newPhaseIn) {
     T newPhaseInMod = fmod(newPhaseIn, 1.f);
     T phaseInDelta = newPhaseInMod - lastPhaseIn;
