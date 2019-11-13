@@ -64,7 +64,10 @@ void Div::process(const ProcessArgs &args) {
           simd::float_4::load(inputs[CV_INPUT].getVoltages(c)),
           dummyCVInValue
         );
-        simd::float_4 cvMultiplier = simd::pow(2.f, cvVoltage);
+
+        // Not sure how to make it output 2 when cvVoltage is 1
+        simd::float_4 cvMultiplier = dsp::approxExp2_taylor5(cvVoltage + 0.001f);
+        // simd::float_4 cvMultiplier = simd::pow(2.f, cvVoltage);
         combinedMultiplier *= cvMultiplier;
       }
       simd::float_4 combinedMultiplierLo = 1.f / simd::floor(1.f / combinedMultiplier);
