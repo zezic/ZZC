@@ -122,10 +122,15 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
 
 struct IntDisplayWidget : BaseDisplayWidget {
   int *value = nullptr;
+  int *polarity = nullptr;
+  bool *isPoly = nullptr;
   std::string textGhost = "88";
   std::shared_ptr<Font> font;
   NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
   NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+  NVGcolor negColor = nvgRGB(0xe7, 0x34, 0x2d);
+  NVGcolor posColor = nvgRGB(0x9c, 0xd7, 0x43);
+  NVGcolor polyColor = nvgRGB(0x76, 0xdc, 0xfa);
 
   IntDisplayWidget() {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
@@ -146,7 +151,18 @@ struct IntDisplayWidget : BaseDisplayWidget {
 
     nvgFillColor(args.vg, lcdGhostColor);
     nvgText(args.vg, textPos.x, textPos.y, textGhost.c_str(), NULL);
-    nvgFillColor(args.vg, lcdTextColor);
+    if (isPoly && *isPoly) {
+      nvgFillColor(args.vg, polyColor);
+    } else {
+      if (polarity) {
+        if (*polarity == 0) {
+          nvgFillColor(args.vg, lcdTextColor);
+        } else {
+          nvgFillColor(args.vg, *polarity > 0 ? posColor : negColor);
+        }
+      } else {
+      }
+    }
     nvgText(args.vg, textPos.x, textPos.y, integerString, NULL);
   }
 };

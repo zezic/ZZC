@@ -21,7 +21,7 @@ struct DivCore {
   T phase10 = 0.f;
   T lastPhaseIn = 0.f;
   T lastPhaseInDelta = 0.f;
-  T fraction = 1.f;
+  T multiplier = 1.f;
 
   void process(T newPhaseIn) {
     T newPhaseInMod = fmod(newPhaseIn, 1.f);
@@ -30,7 +30,7 @@ struct DivCore {
     T bigDeltaMask = abs(phaseInDelta) > 0.1f;
     T phaseInWrapMask = signMask & bigDeltaMask;
     phaseInDelta = ifelse(phaseInWrapMask, lastPhaseInDelta, phaseInDelta);
-    T multipliedDelta = phaseInDelta * fraction;
+    T multipliedDelta = phaseInDelta * multiplier;
     phase = phase + multipliedDelta;
     phase = fmod(phase, 1.f);
     phase = ifelse(phase < 0.f, 1.f - phase, phase);

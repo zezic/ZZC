@@ -24,6 +24,8 @@ struct Div : Module {
   DivCore<float_4> divCore[4];
 
   int fractionDisplay = 1;
+  int fractionDisplayPolarity = 0;
+  bool hasPolyMultiplier = false;
 
   Div() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -33,30 +35,77 @@ struct Div : Module {
   void process(const ProcessArgs &args) override;
 };
 
-void Div::process(const ProcessArgs &args) {
-  float fractionParam = params[FRACTION_PARAM].getValue();
-  fractionDisplay = clamp(std::max((int) abs(fractionParam), 1), -199, 199);
+simd::float_4 maskBase = { 0.f, 1.f, 2.f, 3.f };
 
-  simd::float_4 phaseInValue[4];
-  if (inputs[PHASE_INPUT].isConnected()) {
-    int channels = std::max(inputs[PHASE_INPUT].getChannels(), inputs[CV_INPUT].getChannels());
-    outputs[PHASE_OUTPUT].setChannels(channels);
+void Div::process(const ProcessArgs &args) {
+  float fractionParam = std::trunc(params[FRACTION_PARAM].getValue());
+  float fractionAbs = std::max(1.f, abs(fractionParam));
+
+  int phaseChannels = inputs[PHASE_INPUT].getChannels();
+  int cvChannels = inputs[CV_INPUT].getChannels();
+  int channels = std::max(phaseChannels, cvChannels);
+  outputs[PHASE_OUTPUT].setChannels(channels);
+
+
+  float paramMultiplier = fractionParam >= 0.f ? fractionAbs : 1.f / fractionAbs;
+
+  simd::float_4 dummyPhaseInValue = phaseChannels > 0 ? inputs[PHASE_INPUT].getVoltage(phaseChannels - 1) * 0.1f : 0.f;
+  simd::float_4 dummyCVInValue = cvChannels > 0 ? inputs[CV_INPUT].getVoltage(cvChannels - 1) : 0.f;
+
+  if (phaseChannels > 0) {
     for (int c = 0; c < channels; c += 4) {
-      phaseInValue[c / 4] = simd::float_4::load(inputs[PHASE_INPUT].getVoltages(c)) * 0.1f;
-      float fraction = fractionParam >= 0.f ? fractionDisplay : 1.f / fractionDisplay;
-      simd::float_4 fractionCV = simd::float_4::load(inputs[CV_INPUT].getVoltages(c));
-      simd::float_4 fractionCVPower = simd::pow(2.f, fractionCV);
-      simd::float_4 gt0mask = fractionCV > 0.f;
-      simd::float_4 flooredCVPower = simd::ifelse(
-        gt0mask,
-        simd::floor(fractionCVPower),
-        fractionCVPower
+      int blockIdx = c / 4;
+      auto* core = &divCore[blockIdx];
+      simd::float_4 combinedMultiplier = paramMultiplier;
+      if (cvChannels > 0) {
+        float realCVInputsForBlock = c < cvChannels ? cvChannels - c : 0.f;
+        simd::float_4 cvVoltage = simd::ifelse(
+          maskBase < realCVInputsForBlock,
+          simd::float_4::load(inputs[CV_INPUT].getVoltages(c)),
+          dummyCVInValue
+        );
+        simd::float_4 cvMultiplier = simd::pow(2.f, cvVoltage);
+        combinedMultiplier *= cvMultiplier;
+      }
+      simd::float_4 combinedMultiplierLo = 1.f / simd::floor(1.f / combinedMultiplier);
+      simd::float_4 combinedMultiplierHi = simd::floor(combinedMultiplier);
+
+      simd::float_4 roundedMultiplier = simd::ifelse(
+        combinedMultiplier < 1.f,
+        combinedMultiplierLo,
+        combinedMultiplierHi
       );
-      divCore[c / 4].fraction = clamp(flooredCVPower, -199.f, 199.f);
-      divCore[c / 4].process(phaseInValue[c / 4]);
-      divCore[c / 4].phase10.store(outputs[PHASE_OUTPUT].getVoltages(c));
+      core->multiplier = clamp(roundedMultiplier, 0.f, 199.f);
+
+      float realPhaseInputsForBlock = c < phaseChannels ? phaseChannels - c : 0.f;
+      simd::float_4 phaseInValue = simd::ifelse(
+        maskBase < realPhaseInputsForBlock,
+        simd::float_4::load(inputs[PHASE_INPUT].getVoltages(c)) * 0.1f,
+        dummyPhaseInValue
+      );
+      core->process(phaseInValue);
+      core->phase10.store(outputs[PHASE_OUTPUT].getVoltages(c));
     }
   }
+
+  // Manage fraction display
+  hasPolyMultiplier = cvChannels > 1;
+  if (hasPolyMultiplier) {
+    fractionDisplay = fractionAbs;
+  } else {
+    float multiplier = divCore[0].multiplier[0];
+    if (multiplier == 1.f) {
+      fractionDisplay = 1;
+      fractionDisplayPolarity = 0;
+    } else if (multiplier > 1.f) {
+      fractionDisplay = clamp(multiplier, 1.f, 199.f);
+      fractionDisplayPolarity = 1;
+    } else {
+      fractionDisplay = clamp(1.f / multiplier, 1.f, 199.f);
+      fractionDisplayPolarity = -1;
+    }
+  }
+
 }
 
 struct DivWidget : ModuleWidget {
@@ -76,6 +125,8 @@ DivWidget::DivWidget(Div *module) {
   display->textGhost = "188";
   if (module) {
     display->value = &module->fractionDisplay;
+    display->isPoly = &module->hasPolyMultiplier;
+    display->polarity = &module->fractionDisplayPolarity;
   }
   addChild(display);
 
