@@ -14,9 +14,9 @@ struct PolySchmittTrigger {
 };
 
 inline float_4 eucMod(float_4 a, float_4 b) {
-	float_4 mod = fmod(a, b);
+  float_4 mod = fmod(a, b);
   mod = ifelse(mod < 0.f, mod + b, mod);
-	return mod;
+  return mod;
 }
 
 template <typename T>
