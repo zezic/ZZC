@@ -2,17 +2,6 @@
 
 using simd::float_4;
 
-template <typename T>
-struct PolySchmittTrigger {
-  T lastValue = 0.f;
-
-  T process(T value) {
-    T output = (value >= 1.f) & (lastValue < 1.f);
-    lastValue = value;
-    return output;
-  }
-};
-
 inline float_4 eucMod(float_4 a, float_4 b) {
   float_4 mod = fmod(a, b);
   mod = ifelse(mod < 0.f, mod + b, mod);
@@ -34,7 +23,7 @@ struct DivCore {
     lastPhaseInDelta = ifelse(resetMask, 0.f, lastPhaseInDelta);
   }
 
-  void process(T newPhaseIn) {
+  T process(T newPhaseIn) {
     T newPhaseInMod = fmod(newPhaseIn, 1.f);
     T phaseInDelta = newPhaseInMod - lastPhaseIn;
     T signMask = sgn(phaseInDelta) != sgn(lastPhaseInDelta);
@@ -42,12 +31,15 @@ struct DivCore {
     T phaseInWrapMask = signMask & bigDeltaMask;
     phaseInDelta = ifelse(phaseInWrapMask, lastPhaseInDelta, phaseInDelta);
     T multipliedDelta = phaseInDelta * multiplier;
-    phase = phase + multipliedDelta;
-    phase = eucMod(phase, 1.f);
-    phase = ifelse(phase < 0.f, 1.f - phase, phase);
+
+    T newPhase = eucMod(phase + multipliedDelta, 1.f);
+    T flipMask = abs(newPhase - phase) > 0.9f;
+    phase = newPhase;
     phase10 = phase * 10.f;
 
     lastPhaseInDelta = phaseInDelta;
     lastPhaseIn = newPhaseInMod;
+
+    return flipMask;
   }
 };

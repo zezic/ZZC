@@ -6,6 +6,21 @@
 
 using namespace rack;
 
+template <typename T>
+struct TPulseGenerator {
+  T remaining = 0.f;
+
+  T process(float deltaTime) {
+    T output = remaining > 0.f;
+    remaining = simd::ifelse(output, remaining - deltaTime, remaining);
+    return output;
+  }
+
+  void trigger(T mask, float duration = 1e-3f) {
+    remaining = simd::ifelse(mask & (duration > remaining), duration, remaining);
+  }
+};
+
 struct LowFrequencyOscillator {
   float phase = 0.0f;
   float lastPhase = 0.0f;

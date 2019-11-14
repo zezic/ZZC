@@ -22,11 +22,15 @@ struct Div : Module {
   };
 
   DivCore<float_4> divCore[4];
-  PolySchmittTrigger<float_4> polySchmittTrigger[4];
+  TSchmittTrigger<float_4> schmittTrigger[4];
+  TPulseGenerator<float_4> pulseGenerator[4];
 
   int fractionDisplay = 1;
   int fractionDisplayPolarity = 0;
   bool hasPolyMultiplier = false;
+
+  /* Settings */
+  bool gateMode = false;
 
   Div() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -34,6 +38,17 @@ struct Div : Module {
   }
 
   void process(const ProcessArgs &args) override;
+
+  json_t *dataToJson() override {
+    json_t *rootJ = json_object();
+    json_object_set_new(rootJ, "gateMode", json_boolean(gateMode));
+    return rootJ;
+  }
+
+  void dataFromJson(json_t *rootJ) override {
+    json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+    if (gateModeJ) { gateMode = json_boolean_value(gateModeJ); }
+  }
 };
 
 simd::float_4 maskBase = { 0.f, 1.f, 2.f, 3.f };
@@ -58,7 +73,8 @@ void Div::process(const ProcessArgs &args) {
     for (int c = 0; c < channels; c += 4) {
       int blockIdx = c / 4;
       auto* core = &divCore[blockIdx];
-      auto* schmitt = &polySchmittTrigger[blockIdx];
+      auto* schmitt = &schmittTrigger[blockIdx];
+      auto* pulse = &pulseGenerator[blockIdx];
       simd::float_4 combinedMultiplier = paramMultiplier;
       if (cvChannels > 0) {
         float realCVInputsForBlock = c < cvChannels ? cvChannels - c : 0.f;
@@ -97,7 +113,15 @@ void Div::process(const ProcessArgs &args) {
         dummyResetInValue
       );
       core->reset(schmitt->process(resetInValue));
-      core->process(phaseInValue);
+      simd::float_4 flipMask = core->process(phaseInValue);
+      if (gateMode) {
+        simd::float_4 pulseSignal = simd::ifelse(core->phase < 0.5f, 10.f, 0.f);
+        pulseSignal.store(outputs[CLOCK_OUTPUT].getVoltages(c));
+      } else {
+        pulse->trigger(flipMask, 1e-3f);
+        simd::float_4 pulseSignal = simd::ifelse(pulse->process(args.sampleTime), 10.f, 0.f);
+        pulseSignal.store(outputs[CLOCK_OUTPUT].getVoltages(c));
+      }
       core->phase10.store(outputs[PHASE_OUTPUT].getVoltages(c));
     }
   }
@@ -124,6 +148,7 @@ void Div::process(const ProcessArgs &args) {
 
 struct DivWidget : ModuleWidget {
   DivWidget(Div *module);
+  void appendContextMenu(Menu *menu) override;
 };
 
 DivWidget::DivWidget(Div *module) {
@@ -153,6 +178,27 @@ DivWidget::DivWidget(Div *module) {
 
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+}
+
+struct DivGateModeItem : MenuItem {
+  Div *div;
+  void onAction(const event::Action &e) override {
+    div->gateMode ^= true;
+  }
+  void step() override {
+    rightText = CHECKMARK(div->gateMode);
+  }
+};
+
+void DivWidget::appendContextMenu(Menu *menu) {
+  menu->addChild(new MenuSeparator());
+
+  Div *div = dynamic_cast<Div*>(module);
+  assert(div);
+
+  DivGateModeItem *gateModeItem = createMenuItem<DivGateModeItem>("Gate Mode");
+  gateModeItem->div = div;
+  menu->addChild(gateModeItem);
 }
 
 Model *modelDiv = createModel<Div, DivWidget>("Div");
