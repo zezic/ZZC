@@ -32,7 +32,6 @@ struct DivBase {
   }
 
   void process(float phaseIn, float sampleTime) {
-    this->combineMultipliers();
     monoDivCore.ratio = roundedMultiplier;
 
     bool flipped = monoDivCore.process(phaseIn);
@@ -143,6 +142,8 @@ void Div::process(const ProcessArgs &args) {
   if (inputs[CV_INPUT].isConnected()) {
     divBase.handleCV(inputs[CV_INPUT].getVoltage());
   }
+
+  divBase.combineMultipliers();
 
   if (inputs[PHASE_INPUT].isConnected()) {
     divBase.process(inputs[PHASE_INPUT].getVoltage(), args.sampleTime);
