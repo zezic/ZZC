@@ -21,13 +21,12 @@ struct Div : Module {
     NUM_LIGHTS
   };
 
-  DivCore<float_4> divCore[4];
-  TSchmittTrigger<float_4> schmittTrigger[4];
-  TPulseGenerator<float_4> pulseGenerator[4];
+  MonoDiv monoDiv;
+  SchmittTrigger schmittTrigger;
+  PulseGenerator pulseGenerator;
 
   int fractionDisplay = 1;
   int fractionDisplayPolarity = 0;
-  bool hasPolyMultiplier = false;
 
   /* Settings */
   bool gateMode = false;
@@ -51,97 +50,61 @@ struct Div : Module {
   }
 };
 
-simd::float_4 maskBase = { 0.f, 1.f, 2.f, 3.f };
-
 void Div::process(const ProcessArgs &args) {
   float fractionParam = std::trunc(params[FRACTION_PARAM].getValue());
-  float fractionAbs = std::max(1.f, abs(fractionParam));
+  float fractionAbs = std::max(1.f, std::abs(fractionParam));
 
-  int phaseChannels = inputs[PHASE_INPUT].getChannels();
-  int resetChannels = inputs[RESET_INPUT].getChannels();
-  int cvChannels = inputs[CV_INPUT].getChannels();
-  int channels = std::max(std::max(phaseChannels, resetChannels), cvChannels);
-  outputs[PHASE_OUTPUT].setChannels(channels);
 
   float paramMultiplier = fractionParam >= 0.f ? fractionAbs : 1.f / fractionAbs;
 
-  simd::float_4 dummyPhaseInValue = phaseChannels > 0 ? inputs[PHASE_INPUT].getVoltage(phaseChannels - 1) * 0.1f : 0.f;
-  simd::float_4 dummyResetInValue = resetChannels > 0 ? inputs[RESET_INPUT].getVoltage(resetChannels - 1) : 0.f;
-  simd::float_4 dummyCVInValue = cvChannels > 0 ? inputs[CV_INPUT].getVoltage(cvChannels - 1) : 0.f;
 
-  if (phaseChannels > 0) {
-    for (int c = 0; c < channels; c += 4) {
-      int blockIdx = c / 4;
-      auto* core = &divCore[blockIdx];
-      auto* schmitt = &schmittTrigger[blockIdx];
-      auto* pulse = &pulseGenerator[blockIdx];
-      simd::float_4 combinedMultiplier = paramMultiplier;
-      if (cvChannels > 0) {
-        float realCVInputsForBlock = c < cvChannels ? cvChannels - c : 0.f;
-        simd::float_4 cvVoltage = simd::ifelse(
-          maskBase < realCVInputsForBlock,
-          simd::float_4::load(inputs[CV_INPUT].getVoltages(c)),
-          dummyCVInValue
-        );
-
-        // Not sure how to make it output 2 when cvVoltage is 1
-        simd::float_4 cvMultiplier = dsp::approxExp2_taylor5(cvVoltage + 0.001f);
-        // simd::float_4 cvMultiplier = simd::pow(2.f, cvVoltage);
-        combinedMultiplier *= cvMultiplier;
-      }
-      simd::float_4 combinedMultiplierLo = 1.f / simd::floor(1.f / combinedMultiplier);
-      simd::float_4 combinedMultiplierHi = simd::floor(combinedMultiplier);
-
-      simd::float_4 roundedMultiplier = simd::ifelse(
-        combinedMultiplier < 1.f,
-        combinedMultiplierLo,
-        combinedMultiplierHi
-      );
-      core->multiplier = clamp(roundedMultiplier, 0.f, 199.f);
-
-      float realPhaseInputsForBlock = c < phaseChannels ? phaseChannels - c : 0.f;
-      simd::float_4 phaseInValue = simd::ifelse(
-        maskBase < realPhaseInputsForBlock,
-        simd::float_4::load(inputs[PHASE_INPUT].getVoltages(c)) * 0.1f,
-        dummyPhaseInValue
-      );
-
-      float realResetInputsForBlock = c < resetChannels ? resetChannels - c : 0.f;
-      simd::float_4 resetInValue = simd::ifelse(
-        maskBase < realResetInputsForBlock,
-        simd::float_4::load(inputs[RESET_INPUT].getVoltages(c)),
-        dummyResetInValue
-      );
-      core->reset(schmitt->process(resetInValue));
-      simd::float_4 flipMask = core->process(phaseInValue);
-      if (gateMode) {
-        simd::float_4 pulseSignal = simd::ifelse(core->phase < 0.5f, 10.f, 0.f);
-        pulseSignal.store(outputs[CLOCK_OUTPUT].getVoltages(c));
-      } else {
-        pulse->trigger(flipMask, 1e-3f);
-        simd::float_4 pulseSignal = simd::ifelse(pulse->process(args.sampleTime), 10.f, 0.f);
-        pulseSignal.store(outputs[CLOCK_OUTPUT].getVoltages(c));
-      }
-      core->phase10.store(outputs[PHASE_OUTPUT].getVoltages(c));
+  if (inputs[RESET_INPUT].isConnected()) {
+    if (schmittTrigger.process(inputs[RESET_INPUT].getVoltage())) {
+      monoDiv.reset();
     }
   }
 
-  // Manage fraction display
-  hasPolyMultiplier = cvChannels > 1;
-  if (hasPolyMultiplier) {
-    fractionDisplay = fractionAbs;
-  } else {
-    float multiplier = divCore[0].multiplier[0];
-    if (multiplier == 1.f) {
-      fractionDisplay = 1;
-      fractionDisplayPolarity = 0;
-    } else if (multiplier > 1.f) {
-      fractionDisplay = clamp(multiplier, 1.f, 199.f);
-      fractionDisplayPolarity = 1;
-    } else {
-      fractionDisplay = clamp(1.f / multiplier, 1.f, 199.f);
-      fractionDisplayPolarity = -1;
+  if (inputs[PHASE_INPUT].isConnected()) {
+    float combinedMultiplier = paramMultiplier;
+    if (inputs[CV_INPUT].isConnected()) {
+      float cvVoltage = inputs[CV_INPUT].getVoltage();
+
+      // Not sure how to make it output 2 when cvVoltage is 1
+      float cvMultiplier = dsp::approxExp2_taylor5(cvVoltage);
+      // float cvMultiplier = std::pow(2.f, cvVoltage);
+      combinedMultiplier *= cvMultiplier;
     }
+    float combinedMultiplierLo = 1.f / std::round(1.f / combinedMultiplier);
+    float combinedMultiplierHi = std::round(combinedMultiplier);
+
+    float roundedMultiplier = combinedMultiplier < 1.f ? combinedMultiplierLo : combinedMultiplierHi;
+    // core->multiplier = clamp(roundedMultiplier, 0.f, 199.f);
+    monoDiv.ratio = clamp(roundedMultiplier, 0.f, 199.f);
+
+    bool flipped = monoDiv.process(inputs[PHASE_INPUT].getVoltage());
+
+    if (gateMode) {
+      outputs[CLOCK_OUTPUT].setVoltage(monoDiv.phase < 5.0 ? 10.f : 0.f);
+    } else {
+      if (flipped) {
+        pulseGenerator.trigger(1e-3f);
+      }
+      outputs[CLOCK_OUTPUT].setVoltage(pulseGenerator.process(args.sampleTime) ? 10.f : 0.f);
+    }
+    outputs[PHASE_OUTPUT].setVoltage(monoDiv.phase);
+  }
+
+  // Manage fraction display
+  float multiplier = monoDiv.ratio;
+  if (multiplier == 1.f) {
+    fractionDisplay = 1;
+    fractionDisplayPolarity = 0;
+  } else if (multiplier > 1.f) {
+    fractionDisplay = std::round(multiplier);
+    fractionDisplayPolarity = 1;
+  } else {
+    fractionDisplay = std::round(clamp(1.f / multiplier, 1.f, 199.f));
+    fractionDisplayPolarity = -1;
   }
 
 }
@@ -164,7 +127,6 @@ DivWidget::DivWidget(Div *module) {
   display->textGhost = "188";
   if (module) {
     display->value = &module->fractionDisplay;
-    display->isPoly = &module->hasPolyMultiplier;
     display->polarity = &module->fractionDisplayPolarity;
   }
   addChild(display);
