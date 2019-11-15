@@ -9,7 +9,7 @@ inline float_4 eucMod(float_4 a, float_4 b) {
 }
 
 template <typename T>
-struct DivCore {
+struct PolyDivCore {
   T phase = 0.f;
   T lastPhaseIn = 0.f;
   T lastPhaseInDelta = 0.f;
@@ -41,7 +41,7 @@ struct DivCore {
   }
 };
 
-struct MonoDiv {
+struct MonoDivCore {
   float ratio = 1.f;
   float lastPhaseIn = 0.f;
   float lastPhaseInDelta = 0.f;
@@ -56,7 +56,7 @@ struct MonoDiv {
   }
 
   bool process(float phaseIn) {
-    phaseIn = std::fmod(phaseIn, 10.f);
+    phaseIn = fmod(phaseIn, 10.f);
     float phaseInDelta = phaseIn - lastPhaseIn;
     if (std::abs(phaseInDelta) > 0.1f && (sgn(phaseInDelta) != sgn(lastPhaseInDelta))) {
       phaseInDelta = lastPhaseInDelta;
@@ -69,7 +69,7 @@ struct MonoDiv {
     while (phase < 0.0) {
       phase += 10.0;
     }
-    bool flipped = std::abs(lastPhase - phase) > 9.0;
+    bool flipped = abs(lastPhase - phase) > 9.0;
     lastPhase = phase;
     lastPhaseIn = phaseIn;
     return flipped;

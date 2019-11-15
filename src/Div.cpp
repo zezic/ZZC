@@ -1,6 +1,93 @@
 #include "ZZC.hpp"
 #include "DivCore.hpp"
 
+struct DivBase {
+  float clockOutput = 0.f;
+  float phaseOutput = 0.f;
+
+  float combinedMultiplier = 1.f;
+  bool combinedMultiplierDirty = false;
+  float roundedMultiplier = 1.f;
+
+  float paramMultiplier = 1.f;
+  float cvMultiplier = 1.f;
+
+  float lastParamMultiplier = 1.f;
+  float lastCVMultiplier = 1.f;
+
+  float lastFractionParam = 1.f;
+  float lastCVVoltage = 0.f;
+
+  MonoDivCore monoDivCore;
+  PulseGenerator pulseGenerator;
+
+  int fractionDisplay = 1;
+  int fractionDisplayPolarity = 0;
+
+  /* Settings */
+  bool gateMode = false;
+
+  void reset() {
+    this->monoDivCore.reset();
+  }
+
+  void process(float phaseIn, float sampleTime) {
+    this->combineMultipliers();
+    monoDivCore.ratio = roundedMultiplier;
+
+    bool flipped = monoDivCore.process(phaseIn);
+
+    if (this->gateMode) {
+      clockOutput = monoDivCore.phase < 5.0 ? 10.f : 0.f;
+    } else {
+      if (flipped) {
+        pulseGenerator.trigger(1e-3f);
+      }
+      clockOutput = pulseGenerator.process(sampleTime) ? 10.f : 0.f;
+    }
+    phaseOutput = monoDivCore.phase;
+  }
+
+  void handleFractionParam(float value) {
+    if (value == lastFractionParam) { return; }
+    float fractionParam = trunc(value);
+    float fractionAbs = std::max(1.f, abs(fractionParam));
+    this->paramMultiplier = fractionParam >= 0.f ? fractionAbs : 1.f / fractionAbs;
+    this->lastFractionParam = value;
+    this->combinedMultiplierDirty = true;
+  }
+
+  void handleCV(float cvVoltage) {
+    if (cvVoltage == lastCVVoltage) { return; }
+    this->cvMultiplier = dsp::approxExp2_taylor5(cvVoltage + 20) / 1048576;
+    this->lastCVVoltage = cvVoltage;
+    this->combinedMultiplierDirty = true;
+  }
+
+  void combineMultipliers() {
+    if (!this->combinedMultiplierDirty) { return; }
+    this->combinedMultiplier = paramMultiplier * cvMultiplier;
+
+    float combinedMultiplierLo = 1.f / roundf(1.f / this->combinedMultiplier);
+    float combinedMultiplierHi = roundf(this->combinedMultiplier);
+
+    this->roundedMultiplier = clamp(this->combinedMultiplier < 1.f ? combinedMultiplierLo : combinedMultiplierHi, 0.f, 199.f);
+    this->combinedMultiplierDirty = false;
+
+    // Manage fraction display
+    if (this->roundedMultiplier == 1.f) {
+      this->fractionDisplay = 1;
+      this->fractionDisplayPolarity = 0;
+    } else if (this->roundedMultiplier > 1.f) {
+      this->fractionDisplay = roundf(this->roundedMultiplier);
+      this->fractionDisplayPolarity = 1;
+    } else {
+      this->fractionDisplay = roundf(clamp(1.f / this->roundedMultiplier, 1.f, 199.f));
+      this->fractionDisplayPolarity = -1;
+    }
+  }
+};
+
 struct Div : Module {
   enum ParamIds {
     FRACTION_PARAM,
@@ -21,15 +108,9 @@ struct Div : Module {
     NUM_LIGHTS
   };
 
-  MonoDiv monoDiv;
+  DivBase divBase;
+
   SchmittTrigger schmittTrigger;
-  PulseGenerator pulseGenerator;
-
-  int fractionDisplay = 1;
-  int fractionDisplayPolarity = 0;
-
-  /* Settings */
-  bool gateMode = false;
 
   Div() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -40,73 +121,35 @@ struct Div : Module {
 
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
-    json_object_set_new(rootJ, "gateMode", json_boolean(gateMode));
+    json_object_set_new(rootJ, "gateMode", json_boolean(divBase.gateMode));
     return rootJ;
   }
 
   void dataFromJson(json_t *rootJ) override {
     json_t *gateModeJ = json_object_get(rootJ, "gateMode");
-    if (gateModeJ) { gateMode = json_boolean_value(gateModeJ); }
+    if (gateModeJ) { divBase.gateMode = json_boolean_value(gateModeJ); }
   }
 };
 
 void Div::process(const ProcessArgs &args) {
-  float fractionParam = std::trunc(params[FRACTION_PARAM].getValue());
-  float fractionAbs = std::max(1.f, std::abs(fractionParam));
-
-
-  float paramMultiplier = fractionParam >= 0.f ? fractionAbs : 1.f / fractionAbs;
-
+  divBase.handleFractionParam(params[FRACTION_PARAM].getValue());
 
   if (inputs[RESET_INPUT].isConnected()) {
     if (schmittTrigger.process(inputs[RESET_INPUT].getVoltage())) {
-      monoDiv.reset();
+      divBase.reset();
     }
+  }
+
+  if (inputs[CV_INPUT].isConnected()) {
+    divBase.handleCV(inputs[CV_INPUT].getVoltage());
   }
 
   if (inputs[PHASE_INPUT].isConnected()) {
-    float combinedMultiplier = paramMultiplier;
-    if (inputs[CV_INPUT].isConnected()) {
-      float cvVoltage = inputs[CV_INPUT].getVoltage();
-
-      // Not sure how to make it output 2 when cvVoltage is 1
-      float cvMultiplier = dsp::approxExp2_taylor5(cvVoltage + 20) / 1048576;
-      // float cvMultiplier = std::pow(2.f, cvVoltage);
-      combinedMultiplier *= cvMultiplier;
-    }
-    float combinedMultiplierLo = 1.f / std::round(1.f / combinedMultiplier);
-    float combinedMultiplierHi = std::round(combinedMultiplier);
-
-    float roundedMultiplier = combinedMultiplier < 1.f ? combinedMultiplierLo : combinedMultiplierHi;
-    // core->multiplier = clamp(roundedMultiplier, 0.f, 199.f);
-    monoDiv.ratio = clamp(roundedMultiplier, 0.f, 199.f);
-
-    bool flipped = monoDiv.process(inputs[PHASE_INPUT].getVoltage());
-
-    if (gateMode) {
-      outputs[CLOCK_OUTPUT].setVoltage(monoDiv.phase < 5.0 ? 10.f : 0.f);
-    } else {
-      if (flipped) {
-        pulseGenerator.trigger(1e-3f);
-      }
-      outputs[CLOCK_OUTPUT].setVoltage(pulseGenerator.process(args.sampleTime) ? 10.f : 0.f);
-    }
-    outputs[PHASE_OUTPUT].setVoltage(monoDiv.phase);
+    divBase.process(inputs[PHASE_INPUT].getVoltage(), args.sampleTime);
   }
 
-  // Manage fraction display
-  float multiplier = monoDiv.ratio;
-  if (multiplier == 1.f) {
-    fractionDisplay = 1;
-    fractionDisplayPolarity = 0;
-  } else if (multiplier > 1.f) {
-    fractionDisplay = std::round(multiplier);
-    fractionDisplayPolarity = 1;
-  } else {
-    fractionDisplay = std::round(clamp(1.f / multiplier, 1.f, 199.f));
-    fractionDisplayPolarity = -1;
-  }
-
+  outputs[PHASE_OUTPUT].setVoltage(divBase.phaseOutput);
+  outputs[CLOCK_OUTPUT].setVoltage(divBase.clockOutput);
 }
 
 struct DivWidget : ModuleWidget {
@@ -126,8 +169,8 @@ DivWidget::DivWidget(Div *module) {
   display->box.size = Vec(33, 21);
   display->textGhost = "188";
   if (module) {
-    display->value = &module->fractionDisplay;
-    display->polarity = &module->fractionDisplayPolarity;
+    display->value = &module->divBase.fractionDisplay;
+    display->polarity = &module->divBase.fractionDisplayPolarity;
   }
   addChild(display);
 
@@ -145,10 +188,10 @@ DivWidget::DivWidget(Div *module) {
 struct DivGateModeItem : MenuItem {
   Div *div;
   void onAction(const event::Action &e) override {
-    div->gateMode ^= true;
+    div->divBase.gateMode ^= true;
   }
   void step() override {
-    rightText = CHECKMARK(div->gateMode);
+    rightText = CHECKMARK(div->divBase.gateMode);
   }
 };
 
