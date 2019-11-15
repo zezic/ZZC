@@ -70,7 +70,7 @@ void Div::process(const ProcessArgs &args) {
       float cvVoltage = inputs[CV_INPUT].getVoltage();
 
       // Not sure how to make it output 2 when cvVoltage is 1
-      float cvMultiplier = dsp::approxExp2_taylor5(cvVoltage);
+      float cvMultiplier = dsp::approxExp2_taylor5(cvVoltage + 20) / 1048576;
       // float cvMultiplier = std::pow(2.f, cvVoltage);
       combinedMultiplier *= cvMultiplier;
     }
