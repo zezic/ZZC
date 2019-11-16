@@ -32,6 +32,18 @@ struct Polygate : Module {
   }
   void process(const ProcessArgs &args) override;
 
+  void onReset() override {
+    for (int i = 0; i < NUM_CHANNELS; i++) {
+      gates[i] = false;
+    }
+  }
+
+  void onRandomize() override {
+    for (int i = 0; i < NUM_CHANNELS; i++) {
+      gates[i] = random::normal() > 0.5 ? true : false;
+    }
+  }
+
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
     json_t *gatesArray = json_array();
@@ -67,7 +79,7 @@ void Polygate::process(const ProcessArgs &args) {
       outputs[GATE_OUTPUT].setVoltage(gates[c] ? range : 0.f, c);
     }
     if (gates[c]) {
-    lights[GATE_LED + c].value = 1.1f;
+      lights[GATE_LED + c].value = 1.1f;
     }
   }
   std::copy(std::begin(gates), std::end(gates), std::begin(lastGates));
