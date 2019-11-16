@@ -19,8 +19,9 @@ struct Polygate : Module {
     NUM_LIGHTS
   };
 
-  dsp::SchmittTrigger triggers[NUM_CHANNELS];
+  dsp::BooleanTrigger triggers[NUM_CHANNELS];
   bool gates[NUM_CHANNELS] = { false };
+  bool lastGates[NUM_CHANNELS] = { false };
   float range = 5.f;
 
   Polygate() {
@@ -62,11 +63,14 @@ void Polygate::process(const ProcessArgs &args) {
     if (triggers[c].process(params[GATE_PARAM + c].getValue())) {
       gates[c] ^= true;
     }
-    if (gates[c]) {
-      lights[GATE_LED + c].value = 1.1f;
+    if (gates[c] != lastGates[c]) {
+      outputs[GATE_OUTPUT].setVoltage(gates[c] ? range : 0.f, c);
     }
-    outputs[GATE_OUTPUT].setVoltage(gates[c] ? range : 0.f, c);
+    if (gates[c]) {
+    lights[GATE_LED + c].value = 1.1f;
+    }
   }
+  std::copy(std::begin(gates), std::end(gates), std::begin(lastGates));
 }
 
 struct PolygateWidget : ModuleWidget {
