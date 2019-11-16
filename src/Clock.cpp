@@ -1,272 +1,167 @@
 #include "ZZC.hpp"
+#include "Clock.hpp"
 
-struct Clock : Module {
-  enum ParamIds {
-    BPM_PARAM,
-    SWING_8THS_PARAM,
-    SWING_16THS_PARAM,
-    RUN_SWITCH_PARAM,
-    RESET_SWITCH_PARAM,
-    REVERSE_SWITCH_PARAM,
-    NUM_PARAMS
-  };
-  enum InputIds {
-    VBPS_INPUT,
-    EXT_RUN_INPUT,
-    EXT_RESET_INPUT,
-    CLOCK_INPUT,
-    PHASE_INPUT,
-    SWING_8THS_INPUT,
-    SWING_16THS_INPUT,
-    NUM_INPUTS
-  };
-  enum OutputIds {
-    CLOCK_OUTPUT,
-    PHASE_OUTPUT,
-    CLOCK_8THS_OUTPUT,
-    CLOCK_16THS_OUTPUT,
-    VBPS_OUTPUT,
-    VSPB_OUTPUT,
-    RUN_OUTPUT,
-    RESET_OUTPUT,
-    NUM_OUTPUTS
-  };
-  enum LightIds {
-    CLOCK_LED,
-    RUN_LED,
-    RESET_LED,
-    REVERSE_LED,
-    INTERNAL_MODE_LED,
-    EXT_VBPS_MODE_LED,
-    EXT_CLOCK_MODE_LED,
-    EXT_PHASE_MODE_LED,
-    NUM_LIGHTS
-  };
-  enum Modes {
-    INTERNAL_MODE,
-    EXT_VBPS_MODE,
-    EXT_CLOCK_MODE,
-    EXT_PHASE_MODE,
-    EXT_CLOCK_AND_PHASE_MODE,
-    NUM_MODES
-  };
-
-  ClockTracker clockTracker;
-  LowFrequencyOscillator oscillator;
-
-  enum Modes mode;
-  enum Modes lastMode;
-
-  float lastExtPhase = 0.0f;
-
-  bool running = true;
-  bool reverse = false;
-  float bpm = 120.0f;
-
-  float swing8thsFinal = 50.0f;
-  float swing16thsFinal = 50.0f;
-
-  float swinged8thsPhase = 0.5f;
-  float swinged16thsFirstPhase = 0.25f;
-  float swinged16thsSecondPhase = 0.75f;
-
-  dsp::PulseGenerator clockPulseGenerator;
-  dsp::PulseGenerator clock8thsPulseGenerator;
-  dsp::PulseGenerator clock16thsPulseGenerator;
-  dsp::PulseGenerator runPulseGenerator;
-  dsp::PulseGenerator resetPulseGenerator;
-  bool clockPulse = false;
-  bool clock8thsPulse = false;
-  bool clock16thsPulse = false;
-  bool runPulse = false;
-  bool resetPulse = false;
-  bool resetWasHit = false;
-
-  float clockLight = 0.0f;
-  float resetLight = 0.0f;
-  float reverseLight = 0.0f;
-
-  dsp::SchmittTrigger runButtonTrigger;
-  dsp::SchmittTrigger externalRunTrigger;
-  dsp::SchmittTrigger resetButtonTrigger;
-  dsp::SchmittTrigger externalResetTrigger;
-  dsp::SchmittTrigger reverseButtonTrigger;
-  dsp::SchmittTrigger externalClockTrigger;
-
-  /* Settings */
-  bool baseClockGateMode = false;
-  bool x2ClockGateMode = false;
-  bool x4ClockGateMode = false;
-  bool resetOnStart = false;
-  bool resetOnStop = false;
-  bool runInputIsGate = false;
-  bool runOutputIsGate = false;
-  int externalClockPPQN = 1;
-
-  void toggle() {
-    running = !running;
-    if (running) {
-      if (resetOnStart) {
-        resetWasHit = true;
-        resetPulseGenerator.trigger(1e-3f);
-      }
-    } else {
-      if (resetOnStop) {
-        resetWasHit = true;
-        resetPulseGenerator.trigger(1e-3f);
-      }
-    }
-    runPulseGenerator.trigger(1e-3f);
-  }
-
-  inline void processButtons() {
-    if (runInputIsGate && inputs[EXT_RUN_INPUT].isConnected()) {
-      if (inputs[EXT_RUN_INPUT].getVoltage() > 1.0f) {
-        if (!running) {
-          toggle();
-        }
-      } else {
-        if (running) {
-          toggle();
-        }
-      }
-    } else {
-      if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].getValue()) ||
-          (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].getVoltage()))) {
-        toggle();
-      }
-    }
-
-    if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].getValue()) ||
-        (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].getVoltage()))) {
+void Clock::toggle() {
+  running = !running;
+  if (running) {
+    if (resetOnStart) {
       resetWasHit = true;
       resetPulseGenerator.trigger(1e-3f);
     }
-
-    if (reverseButtonTrigger.process(params[REVERSE_SWITCH_PARAM].getValue())) {
-      reverse ^= true;
+  } else {
+    if (resetOnStop) {
+      resetWasHit = true;
+      resetPulseGenerator.trigger(1e-3f);
     }
   }
+  runPulseGenerator.trigger(1e-3f);
+}
 
-  inline void processSwingInputs() {
-    swing8thsFinal = params[SWING_8THS_PARAM].getValue();
-    if (inputs[SWING_8THS_INPUT].isConnected()) {
-      float swing8thsInput = clamp(inputs[SWING_8THS_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
-      if (swing8thsInput < 0.0f) {
-        swing8thsFinal += (swing8thsFinal - 1.0f) * swing8thsInput;
-      } else if (swing8thsInput > 0.0f) {
-        swing8thsFinal += (99.0f - swing8thsFinal) * swing8thsInput;
+inline void Clock::processButtons() {
+  if (runInputIsGate && inputs[EXT_RUN_INPUT].isConnected()) {
+    if (inputs[EXT_RUN_INPUT].getVoltage() > 1.0f) {
+      if (!running) {
+        toggle();
       }
-    }
-    swing16thsFinal = params[SWING_16THS_PARAM].getValue();
-    if (inputs[SWING_16THS_INPUT].isConnected()) {
-      float swing16thsInput = clamp(inputs[SWING_16THS_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
-      if (swing16thsInput < 0.0f) {
-        swing16thsFinal += (swing16thsFinal - 1.0f) * swing16thsInput;
-      } else if (swing16thsInput > 0.0f) {
-        swing16thsFinal += (99.0f - swing16thsFinal) * swing16thsInput;
-      }
-    }
-  }
-
-  inline void triggerThsByPhase(float phase, float lastPhase) {
-    float trigger8thsAtPhase = swing8thsFinal / 100.0f;
-    float triggerSecond16thAtPhase = trigger8thsAtPhase * swing16thsFinal / 100.0f;
-    float triggerFourth16thAtPhase = trigger8thsAtPhase + (1.0f - trigger8thsAtPhase) * swing16thsFinal / 100.0f;
-    if (!x2ClockGateMode || !x4ClockGateMode) {
-      if ((lastPhase < trigger8thsAtPhase && trigger8thsAtPhase <= phase) ||
-          (lastPhase > trigger8thsAtPhase && trigger8thsAtPhase >= phase)) {
-        clock8thsPulseGenerator.trigger(1e-3f);
-        clock16thsPulseGenerator.trigger(1e-3f);
-      }
-    }
-    if (x2ClockGateMode) {
-      clock8thsPulse = (
-        (phase < triggerSecond16thAtPhase) ||
-        (phase >= trigger8thsAtPhase && phase < triggerFourth16thAtPhase)
-      );
-    }
-    if (x4ClockGateMode) {
-      clock16thsPulse = (
-        (phase < triggerSecond16thAtPhase / 2.0f) ||
-        (phase >= triggerSecond16thAtPhase && phase < (trigger8thsAtPhase - (trigger8thsAtPhase - triggerSecond16thAtPhase) / 2.0f)) ||
-        (phase >= trigger8thsAtPhase && phase < (triggerFourth16thAtPhase - ((triggerFourth16thAtPhase - trigger8thsAtPhase) / 2.0f))) ||
-        (phase >= triggerFourth16thAtPhase && phase < (1.0f - (1.0f - triggerFourth16thAtPhase) / 2.0f))
-      );
     } else {
-      if ((lastPhase < triggerSecond16thAtPhase && triggerSecond16thAtPhase <= phase) ||
-          (lastPhase > triggerSecond16thAtPhase && triggerSecond16thAtPhase >= phase) ||
-          (lastPhase < triggerFourth16thAtPhase && triggerFourth16thAtPhase <= phase) ||
-          (lastPhase > triggerFourth16thAtPhase && triggerFourth16thAtPhase >= phase)) {
-        clock16thsPulseGenerator.trigger(1e-3f);
+      if (running) {
+        toggle();
       }
     }
-  }
-
-  inline enum Modes detectMode() {
-    if (inputs[CLOCK_INPUT].isConnected() && inputs[PHASE_INPUT].isConnected()) {
-      return EXT_CLOCK_AND_PHASE_MODE;
-    } else if (inputs[CLOCK_INPUT].isConnected()) {
-      return EXT_CLOCK_MODE;
-    } else if (inputs[PHASE_INPUT].isConnected()) {
-      return EXT_PHASE_MODE;
-    } else if (inputs[VBPS_INPUT].isConnected()) {
-      return EXT_VBPS_MODE;
+  } else {
+    if (runButtonTrigger.process(params[RUN_SWITCH_PARAM].getValue()) ||
+        (inputs[EXT_RUN_INPUT].isConnected() && externalRunTrigger.process(inputs[EXT_RUN_INPUT].getVoltage()))) {
+      toggle();
     }
-    return INTERNAL_MODE;
   }
 
-  Clock() {
-    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(REVERSE_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Reverse");
-    configParam(BPM_PARAM, 0.0f, 240.0f, 120.0f, "BPM");
-    configParam(SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f, "x2 Swing");
-    configParam(SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f, "x4 Swing");
-    configParam(RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Run");
-    configParam(RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
-    clockTracker.init();
-  }
-  void process(const ProcessArgs &args) override;
-
-  json_t *dataToJson() override {
-    json_t *rootJ = json_object();
-    json_object_set_new(rootJ, "running", json_integer((int) running));
-    json_object_set_new(rootJ, "reverse", json_integer((int) reverse));
-    json_object_set_new(rootJ, "baseClockGateMode", json_boolean(baseClockGateMode));
-    json_object_set_new(rootJ, "x2ClockGateMode", json_boolean(x2ClockGateMode));
-    json_object_set_new(rootJ, "x4ClockGateMode", json_boolean(x4ClockGateMode));
-    json_object_set_new(rootJ, "resetOnStart", json_boolean(resetOnStart));
-    json_object_set_new(rootJ, "resetOnStop", json_boolean(resetOnStop));
-    json_object_set_new(rootJ, "runInputIsGate", json_boolean(runInputIsGate));
-    json_object_set_new(rootJ, "runOutputIsGate", json_boolean(runOutputIsGate));
-    json_object_set_new(rootJ, "externalClockPPQN", json_integer(externalClockPPQN));
-    return rootJ;
+  if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].getValue()) ||
+      (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].getVoltage()))) {
+    resetWasHit = true;
+    resetPulseGenerator.trigger(1e-3f);
   }
 
-  void dataFromJson(json_t *rootJ) override {
-    json_t *runningJ = json_object_get(rootJ, "running");
-    json_t *reverseJ = json_object_get(rootJ, "reverse");
-    json_t *baseClockGateModeJ = json_object_get(rootJ, "baseClockGateMode");
-    json_t *x2ClockGateModeJ = json_object_get(rootJ, "x2ClockGateMode");
-    json_t *x4ClockGateModeJ = json_object_get(rootJ, "x4ClockGateMode");
-    json_t *resetOnStartJ = json_object_get(rootJ, "resetOnStart");
-    json_t *resetOnStopJ = json_object_get(rootJ, "resetOnStop");
-    json_t *runInputIsGateJ = json_object_get(rootJ, "runInputIsGate");
-    json_t *runOutputIsGateJ = json_object_get(rootJ, "runOutputIsGate");
-    json_t *externalClockPPQNJ = json_object_get(rootJ, "externalClockPPQN");
-    if (runningJ) { running = json_integer_value(runningJ); }
-    if (reverseJ) { reverse = json_integer_value(reverseJ); }
-    if (baseClockGateModeJ) { baseClockGateMode = json_boolean_value(baseClockGateModeJ); }
-    if (x2ClockGateModeJ) { x2ClockGateMode = json_boolean_value(x2ClockGateModeJ); }
-    if (x4ClockGateModeJ) { x4ClockGateMode = json_boolean_value(x4ClockGateModeJ); }
-    if (resetOnStartJ) { resetOnStart = json_boolean_value(resetOnStartJ); }
-    if (resetOnStopJ) { resetOnStop = json_boolean_value(resetOnStopJ); }
-    if (runInputIsGateJ) { runInputIsGate = json_boolean_value(runInputIsGateJ); }
-    if (runOutputIsGateJ) { runOutputIsGate = json_boolean_value(runOutputIsGateJ); }
-    if (externalClockPPQNJ) { externalClockPPQN = json_integer_value(externalClockPPQNJ); }
+  if (reverseButtonTrigger.process(params[REVERSE_SWITCH_PARAM].getValue())) {
+    reverse ^= true;
   }
-};
+}
 
+inline void Clock::processSwingInputs() {
+  swing8thsFinal = params[SWING_8THS_PARAM].getValue();
+  if (inputs[SWING_8THS_INPUT].isConnected()) {
+    float swing8thsInput = clamp(inputs[SWING_8THS_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
+    if (swing8thsInput < 0.0f) {
+      swing8thsFinal += (swing8thsFinal - 1.0f) * swing8thsInput;
+    } else if (swing8thsInput > 0.0f) {
+      swing8thsFinal += (99.0f - swing8thsFinal) * swing8thsInput;
+    }
+  }
+  swing16thsFinal = params[SWING_16THS_PARAM].getValue();
+  if (inputs[SWING_16THS_INPUT].isConnected()) {
+    float swing16thsInput = clamp(inputs[SWING_16THS_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
+    if (swing16thsInput < 0.0f) {
+      swing16thsFinal += (swing16thsFinal - 1.0f) * swing16thsInput;
+    } else if (swing16thsInput > 0.0f) {
+      swing16thsFinal += (99.0f - swing16thsFinal) * swing16thsInput;
+    }
+  }
+}
+
+inline void Clock::triggerThsByPhase(float phase, float lastPhase) {
+  float trigger8thsAtPhase = swing8thsFinal / 100.0f;
+  float triggerSecond16thAtPhase = trigger8thsAtPhase * swing16thsFinal / 100.0f;
+  float triggerFourth16thAtPhase = trigger8thsAtPhase + (1.0f - trigger8thsAtPhase) * swing16thsFinal / 100.0f;
+  if (!x2ClockGateMode || !x4ClockGateMode) {
+    if ((lastPhase < trigger8thsAtPhase && trigger8thsAtPhase <= phase) ||
+        (lastPhase > trigger8thsAtPhase && trigger8thsAtPhase >= phase)) {
+      clock8thsPulseGenerator.trigger(1e-3f);
+      clock16thsPulseGenerator.trigger(1e-3f);
+    }
+  }
+  if (x2ClockGateMode) {
+    clock8thsPulse = (
+      (phase < triggerSecond16thAtPhase) ||
+      (phase >= trigger8thsAtPhase && phase < triggerFourth16thAtPhase)
+    );
+  }
+  if (x4ClockGateMode) {
+    clock16thsPulse = (
+      (phase < triggerSecond16thAtPhase / 2.0f) ||
+      (phase >= triggerSecond16thAtPhase && phase < (trigger8thsAtPhase - (trigger8thsAtPhase - triggerSecond16thAtPhase) / 2.0f)) ||
+      (phase >= trigger8thsAtPhase && phase < (triggerFourth16thAtPhase - ((triggerFourth16thAtPhase - trigger8thsAtPhase) / 2.0f))) ||
+      (phase >= triggerFourth16thAtPhase && phase < (1.0f - (1.0f - triggerFourth16thAtPhase) / 2.0f))
+    );
+  } else {
+    if ((lastPhase < triggerSecond16thAtPhase && triggerSecond16thAtPhase <= phase) ||
+        (lastPhase > triggerSecond16thAtPhase && triggerSecond16thAtPhase >= phase) ||
+        (lastPhase < triggerFourth16thAtPhase && triggerFourth16thAtPhase <= phase) ||
+        (lastPhase > triggerFourth16thAtPhase && triggerFourth16thAtPhase >= phase)) {
+      clock16thsPulseGenerator.trigger(1e-3f);
+    }
+  }
+}
+
+inline enum Clock::Modes Clock::detectMode() {
+  if (inputs[CLOCK_INPUT].isConnected() && inputs[PHASE_INPUT].isConnected()) {
+    return EXT_CLOCK_AND_PHASE_MODE;
+  } else if (inputs[CLOCK_INPUT].isConnected()) {
+    return EXT_CLOCK_MODE;
+  } else if (inputs[PHASE_INPUT].isConnected()) {
+    return EXT_PHASE_MODE;
+  } else if (inputs[VBPS_INPUT].isConnected()) {
+    return EXT_VBPS_MODE;
+  }
+  return INTERNAL_MODE;
+}
+
+Clock::Clock() {
+  config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+  configParam(REVERSE_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Reverse");
+  configParam(BPM_PARAM, 0.0f, 240.0f, 120.0f, "BPM");
+  configParam(SWING_8THS_PARAM, 1.0f, 99.0f, 50.0f, "x2 Swing");
+  configParam(SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f, "x4 Swing");
+  configParam(RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+  configParam(RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
+  clockTracker.init();
+}
+
+json_t *Clock::dataToJson() {
+  json_t *rootJ = json_object();
+  json_object_set_new(rootJ, "running", json_integer((int) running));
+  json_object_set_new(rootJ, "reverse", json_integer((int) reverse));
+  json_object_set_new(rootJ, "baseClockGateMode", json_boolean(baseClockGateMode));
+  json_object_set_new(rootJ, "x2ClockGateMode", json_boolean(x2ClockGateMode));
+  json_object_set_new(rootJ, "x4ClockGateMode", json_boolean(x4ClockGateMode));
+  json_object_set_new(rootJ, "resetOnStart", json_boolean(resetOnStart));
+  json_object_set_new(rootJ, "resetOnStop", json_boolean(resetOnStop));
+  json_object_set_new(rootJ, "runInputIsGate", json_boolean(runInputIsGate));
+  json_object_set_new(rootJ, "runOutputIsGate", json_boolean(runOutputIsGate));
+  json_object_set_new(rootJ, "externalClockPPQN", json_integer(externalClockPPQN));
+  return rootJ;
+}
+
+void Clock::dataFromJson(json_t *rootJ) {
+  json_t *runningJ = json_object_get(rootJ, "running");
+  json_t *reverseJ = json_object_get(rootJ, "reverse");
+  json_t *baseClockGateModeJ = json_object_get(rootJ, "baseClockGateMode");
+  json_t *x2ClockGateModeJ = json_object_get(rootJ, "x2ClockGateMode");
+  json_t *x4ClockGateModeJ = json_object_get(rootJ, "x4ClockGateMode");
+  json_t *resetOnStartJ = json_object_get(rootJ, "resetOnStart");
+  json_t *resetOnStopJ = json_object_get(rootJ, "resetOnStop");
+  json_t *runInputIsGateJ = json_object_get(rootJ, "runInputIsGate");
+  json_t *runOutputIsGateJ = json_object_get(rootJ, "runOutputIsGate");
+  json_t *externalClockPPQNJ = json_object_get(rootJ, "externalClockPPQN");
+  if (runningJ) { running = json_integer_value(runningJ); }
+  if (reverseJ) { reverse = json_integer_value(reverseJ); }
+  if (baseClockGateModeJ) { baseClockGateMode = json_boolean_value(baseClockGateModeJ); }
+  if (x2ClockGateModeJ) { x2ClockGateMode = json_boolean_value(x2ClockGateModeJ); }
+  if (x4ClockGateModeJ) { x4ClockGateMode = json_boolean_value(x4ClockGateModeJ); }
+  if (resetOnStartJ) { resetOnStart = json_boolean_value(resetOnStartJ); }
+  if (resetOnStopJ) { resetOnStop = json_boolean_value(resetOnStopJ); }
+  if (runInputIsGateJ) { runInputIsGate = json_boolean_value(runInputIsGateJ); }
+  if (runOutputIsGateJ) { runOutputIsGate = json_boolean_value(runOutputIsGateJ); }
+  if (externalClockPPQNJ) { externalClockPPQN = json_integer_value(externalClockPPQNJ); }
+}
 
 void Clock::process(const ProcessArgs &args) {
   lastMode = mode;

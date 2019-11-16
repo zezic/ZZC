@@ -17,3 +17,5 @@ extern Model *modelSCVCA;
 extern Model *modelSH8;
 extern Model *modelSRC;
 extern Model *modelDiv;
+extern Model *modelDivExp;
+extern Model *modelPolygate;

@@ -240,10 +240,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="22.4"
-     inkscape:cx="8.3670857"
+     inkscape:cx="-0.3829143"
      inkscape:cy="9.8049679"
      inkscape:document-units="px"
-     inkscape:current-layer="g258244"
+     inkscape:current-layer="g8885"
      showgrid="true"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -251,8 +251,8 @@
      fit-margin-bottom="0"
      inkscape:window-width="2188"
      inkscape:window-height="1277"
-     inkscape:window-x="1072"
-     inkscape:window-y="646"
+     inkscape:window-x="603"
+     inkscape:window-y="678"
      inkscape:window-maximized="0"
      units="px">
     <inkscape:grid
@@ -267,7 +267,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -312,7 +312,7 @@
            rx="0.40514731"
            ry="0.34726739" />
         <rect
-           style="opacity:1;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.10583334;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+           style="opacity:1;fill:#e7e7cf;fill-opacity:1;stroke:none;stroke-width:0.10583334;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
            id="rect8629"
            width="3.4396713"
            height="2.6458857"
@@ -322,7 +322,7 @@
            rx="0.2645832"
            ry="0.2645832" />
         <rect
-           style="opacity:1;fill:#595959;fill-opacity:1;stroke:none;stroke-width:0.10583334;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+           style="opacity:1;fill:#53534a;fill-opacity:1;stroke:none;stroke-width:0.10583334;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
            id="rect8633"
            width="0.52923316"
            height="3.4396408"

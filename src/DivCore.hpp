@@ -75,3 +75,41 @@ struct MonoDivCore {
     return flipped;
   }
 };
+
+struct DivBase {
+  float clockOutput = 0.f;
+  float phaseOutput = 0.f;
+
+  float combinedMultiplier = 1.f;
+  bool combinedMultiplierDirty = false;
+  float roundedMultiplier = 1.f;
+
+  float paramMultiplier = 1.f;
+  float cvMultiplier = 1.f;
+
+  float lastParamMultiplier = 1.f;
+  float lastCVMultiplier = 1.f;
+
+  float lastFractionParam = 1.f;
+  float lastCVVoltage = 0.f;
+
+  MonoDivCore monoDivCore;
+  PulseGenerator pulseGenerator;
+
+  int fractionDisplay = 1;
+  int fractionDisplayPolarity = 0;
+
+  /* Settings */
+  bool gateMode = false;
+  bool sync = false;
+
+  void reset() {
+    this->monoDivCore.reset();
+  }
+
+  void process(float phaseIn, float sampleTime);
+
+  void handleFractionParam(float value);
+  void handleCV(float cvVoltage);
+  void combineMultipliers();
+};

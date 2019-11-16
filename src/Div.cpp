@@ -1,122 +1,15 @@
 #include "ZZC.hpp"
+#include "Clock.hpp"
 #include "DivCore.hpp"
 
-struct DivBase {
-  float clockOutput = 0.f;
-  float phaseOutput = 0.f;
-
-  float combinedMultiplier = 1.f;
-  bool combinedMultiplierDirty = false;
-  float roundedMultiplier = 1.f;
-
-  float paramMultiplier = 1.f;
-  float cvMultiplier = 1.f;
-
-  float lastParamMultiplier = 1.f;
-  float lastCVMultiplier = 1.f;
-
-  float lastFractionParam = 1.f;
-  float lastCVVoltage = 0.f;
-
-  MonoDivCore monoDivCore;
-  PulseGenerator pulseGenerator;
-
-  int fractionDisplay = 1;
-  int fractionDisplayPolarity = 0;
-
-  /* Settings */
-  bool gateMode = false;
-
-  void reset() {
-    this->monoDivCore.reset();
-  }
-
-  void process(float phaseIn, float sampleTime) {
-    monoDivCore.ratio = roundedMultiplier;
-
-    bool flipped = monoDivCore.process(phaseIn);
-
-    if (this->gateMode) {
-      clockOutput = monoDivCore.phase < 5.0 ? 10.f : 0.f;
-    } else {
-      if (flipped) {
-        pulseGenerator.trigger(1e-3f);
-      }
-      clockOutput = pulseGenerator.process(sampleTime) ? 10.f : 0.f;
-    }
-    phaseOutput = monoDivCore.phase;
-  }
-
-  void handleFractionParam(float value) {
-    if (value == lastFractionParam) { return; }
-    float fractionParam = trunc(value);
-    float fractionAbs = std::max(1.f, abs(fractionParam));
-    this->paramMultiplier = fractionParam >= 0.f ? fractionAbs : 1.f / fractionAbs;
-    this->lastFractionParam = value;
-    this->combinedMultiplierDirty = true;
-  }
-
-  void handleCV(float cvVoltage) {
-    if (cvVoltage == lastCVVoltage) { return; }
-    this->cvMultiplier = dsp::approxExp2_taylor5(cvVoltage + 20) / 1048576;
-    this->lastCVVoltage = cvVoltage;
-    this->combinedMultiplierDirty = true;
-  }
-
-  void combineMultipliers() {
-    if (!this->combinedMultiplierDirty) { return; }
-    this->combinedMultiplier = paramMultiplier * cvMultiplier;
-
-    float combinedMultiplierLo = 1.f / roundf(1.f / this->combinedMultiplier);
-    float combinedMultiplierHi = roundf(this->combinedMultiplier);
-
-    this->roundedMultiplier = clamp(this->combinedMultiplier < 1.f ? combinedMultiplierLo : combinedMultiplierHi, 0.f, 199.f);
-    this->combinedMultiplierDirty = false;
-
-    // Manage fraction display
-    if (this->roundedMultiplier == 1.f) {
-      this->fractionDisplay = 1;
-      this->fractionDisplayPolarity = 0;
-    } else if (this->roundedMultiplier > 1.f) {
-      this->fractionDisplay = roundf(this->roundedMultiplier);
-      this->fractionDisplayPolarity = 1;
-    } else {
-      this->fractionDisplay = roundf(clamp(1.f / this->roundedMultiplier, 1.f, 199.f));
-      this->fractionDisplayPolarity = -1;
-    }
-  }
-};
-
-struct Div : Module {
-  enum ParamIds {
-    FRACTION_PARAM,
-    NUM_PARAMS
-  };
-  enum InputIds {
-    CV_INPUT,
-    PHASE_INPUT,
-    RESET_INPUT,
-    NUM_INPUTS
-  };
+struct DivModuleBase : Module {
   enum OutputIds {
     CLOCK_OUTPUT,
     PHASE_OUTPUT,
     NUM_OUTPUTS
   };
-  enum LightIds {
-    NUM_LIGHTS
-  };
 
   DivBase divBase;
-
-  SchmittTrigger schmittTrigger;
-
-  Div() {
-    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(FRACTION_PARAM, -199.0f, 199.0f, 0.0f, "Fraction");
-  }
-
-  void process(const ProcessArgs &args) override;
 
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
@@ -130,20 +23,45 @@ struct Div : Module {
   }
 };
 
+struct DivModuleBaseWidget : ModuleWidget {
+  void appendContextMenu(Menu *menu) override;
+};
+
+struct Div : DivModuleBase {
+  enum ParamIds {
+    FRACTION_PARAM,
+    NUM_PARAMS
+  };
+  enum InputIds {
+    CV_INPUT,
+    PHASE_INPUT,
+    RESET_INPUT,
+    NUM_INPUTS
+  };
+  enum LightIds {
+    NUM_LIGHTS
+  };
+
+  SchmittTrigger schmittTrigger;
+
+  Div() {
+    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+    configParam(FRACTION_PARAM, -199.0f, 199.0f, 0.0f, "Fraction");
+  }
+
+  void process(const ProcessArgs &args) override;
+};
+
 void Div::process(const ProcessArgs &args) {
   divBase.handleFractionParam(params[FRACTION_PARAM].getValue());
+  divBase.handleCV(inputs[CV_INPUT].getVoltage());
+  divBase.combineMultipliers();
 
   if (inputs[RESET_INPUT].isConnected()) {
     if (schmittTrigger.process(inputs[RESET_INPUT].getVoltage())) {
       divBase.reset();
     }
   }
-
-  if (inputs[CV_INPUT].isConnected()) {
-    divBase.handleCV(inputs[CV_INPUT].getVoltage());
-  }
-
-  divBase.combineMultipliers();
 
   if (inputs[PHASE_INPUT].isConnected()) {
     divBase.process(inputs[PHASE_INPUT].getVoltage(), args.sampleTime);
@@ -153,9 +71,8 @@ void Div::process(const ProcessArgs &args) {
   outputs[CLOCK_OUTPUT].setVoltage(divBase.clockOutput);
 }
 
-struct DivWidget : ModuleWidget {
+struct DivWidget : DivModuleBaseWidget {
   DivWidget(Div *module);
-  void appendContextMenu(Menu *menu) override;
 };
 
 DivWidget::DivWidget(Div *module) {
@@ -186,8 +103,97 @@ DivWidget::DivWidget(Div *module) {
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 }
 
+struct DivExp : DivModuleBase {
+  enum ParamIds {
+    FRACTION_PARAM,
+    SYNC_SWITCH_PARAM,
+    DIR_PARAM,
+    NUM_PARAMS
+  };
+  enum InputIds {
+    CV_INPUT,
+    PHASE_INPUT,
+    RESET_INPUT,
+    NUM_INPUTS
+  };
+  enum LightIds {
+    SYNC_LED,
+    DIR_LEFT_LED,
+    DIR_RIGHT_LED,
+    NUM_LIGHTS
+  };
+
+  SchmittTrigger syncButtonTriger;
+
+  DivExp() {
+    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+    configParam(FRACTION_PARAM, -199.0f, 199.0f, 0.0f, "Fraction");
+    configParam(SYNC_SWITCH_PARAM, 0.f, 1.f, 0.f, "Sync Fraction Changes");
+    configParam(DIR_PARAM, 0.f, 1.f, 0.f, "Phase Source Search Direction");
+  }
+
+  void process(const ProcessArgs &args) override;
+};
+
+void DivExp::process(const ProcessArgs &args) {
+  // if (leftExpander.module && leftExpander.module->model == modelClock) {
+  //   Clock *clock = reinterpret_cast<Clock*>(leftExpander.module);
+  // }
+
+  if (syncButtonTriger.process(params[SYNC_SWITCH_PARAM].getValue())) {
+    this->divBase.sync ^= true;
+  }
+  if (this->divBase.sync) {
+    lights[SYNC_LED].value = 1.1f;
+  }
+  divBase.handleFractionParam(params[FRACTION_PARAM].getValue());
+  divBase.handleCV(inputs[CV_INPUT].getVoltage());
+  divBase.combineMultipliers();
+
+  outputs[PHASE_OUTPUT].setVoltage(divBase.phaseOutput);
+  outputs[CLOCK_OUTPUT].setVoltage(divBase.clockOutput);
+}
+
+struct DivExpWidget : DivModuleBaseWidget {
+  DivExpWidget(DivExp *module);
+};
+
+DivExpWidget::DivExpWidget(DivExp *module) {
+  setModule(module);
+  setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/DivExp.svg")));
+
+  addParam(createParam<ZZC_Knob27Blind>(Vec(9, 58), module, Div::FRACTION_PARAM));
+
+  IntDisplayWidget *display = new IntDisplayWidget();
+
+  display->box.pos = Vec(6, 94);
+  display->box.size = Vec(33, 21);
+  display->textGhost = "188";
+  if (module) {
+    display->value = &module->divBase.fractionDisplay;
+    display->polarity = &module->divBase.fractionDisplayPolarity;
+  }
+  addChild(display);
+
+  addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 124), module, DivExp::CV_INPUT));
+
+  addParam(createParam<ZZC_LEDBezelDark>(Vec(11.3f, 172.0f), module, DivExp::SYNC_SWITCH_PARAM));
+  addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(13.1f, 173.7f), module, DivExp::SYNC_LED));
+
+  addParam(createParam<ZZC_Switch2>(Vec(12.f, 204.f), module, DivExp::DIR_PARAM));
+
+  addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(12.25f, 236.5f), module, DivExp::DIR_LEFT_LED));
+  addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(26.5f, 236.5f), module, DivExp::DIR_RIGHT_LED));
+
+  addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 272), module, DivExp::CLOCK_OUTPUT));
+  addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 320), module, DivExp::PHASE_OUTPUT));
+
+  addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
+  addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+}
+
 struct DivGateModeItem : MenuItem {
-  Div *div;
+  DivModuleBase *div;
   void onAction(const event::Action &e) override {
     div->divBase.gateMode ^= true;
   }
@@ -196,10 +202,10 @@ struct DivGateModeItem : MenuItem {
   }
 };
 
-void DivWidget::appendContextMenu(Menu *menu) {
+void DivModuleBaseWidget::appendContextMenu(Menu *menu) {
   menu->addChild(new MenuSeparator());
 
-  Div *div = dynamic_cast<Div*>(module);
+  DivModuleBase *div = dynamic_cast<DivModuleBase*>(module);
   assert(div);
 
   DivGateModeItem *gateModeItem = createMenuItem<DivGateModeItem>("Gate Mode");
@@ -208,3 +214,4 @@ void DivWidget::appendContextMenu(Menu *menu) {
 }
 
 Model *modelDiv = createModel<Div, DivWidget>("Div");
+Model *modelDivExp = createModel<DivExp, DivExpWidget>("DivExp");

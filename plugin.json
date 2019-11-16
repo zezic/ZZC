@@ -72,6 +72,22 @@
       "tags": [
         "Clock modulator"
       ]
+    },
+    {
+      "slug": "DivExp",
+      "name": "Div (Expander)",
+      "description": "Phase Clock Divider (Expander)",
+      "tags": [
+        "Clock modulator"
+      ]
+    },
+    {
+      "slug": "Polygate",
+      "name": "Polygate",
+      "description": "Polyphonic Gate Bank",
+      "tags": [
+        "Controller", "Polyphonic", "Switch", "Utility"
+      ]
     }
   ]
 }

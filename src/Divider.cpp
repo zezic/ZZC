@@ -1,107 +1,55 @@
 #include "ZZC.hpp"
+#include "Divider.hpp"
 #include <cmath>
 
-struct Divider : Module {
-  enum ParamIds {
-    IN_RATIO_PARAM,
-    OUT_RATIO_PARAM,
-    SWING_PARAM,
-    NUM_PARAMS
-  };
-  enum InputIds {
-    IN_RATIO_INPUT,
-    OUT_RATIO_INPUT,
-    SWING_INPUT,
-    PHASE_INPUT,
-    RESET_INPUT,
-    NUM_INPUTS
-  };
-  enum OutputIds {
-    CLOCK_OUTPUT,
-    PHASE_OUTPUT,
-    NUM_OUTPUTS
-  };
-  enum LightIds {
-    EXT_PHASE_MODE_LED,
-    NUM_LIGHTS
-  };
+inline void Divider::processRatioInputs() {
+  if (inputs[IN_RATIO_INPUT].isConnected()) {
+    from = std::roundf(clamp(inputs[IN_RATIO_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f * (params[IN_RATIO_PARAM].getValue() - 1) + 1);
+  } else {
+    from = params[IN_RATIO_PARAM].getValue();
+  }
+  if (inputs[OUT_RATIO_INPUT].isConnected()) {
+    to = std::roundf(clamp(inputs[OUT_RATIO_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f * (params[OUT_RATIO_PARAM].getValue() - 1) + 1);
+  } else {
+    to = params[OUT_RATIO_PARAM].getValue();
+  }
+  ratio = to / from;
+}
 
-  float from = 1.0f;
-  float to = 1.0f;
-  float ratio = 1.0f;
-  float swing = 50.0f;
-
-  float phaseIn = 0.0f;
-  float lastPhaseIn = 0.0f;
-  float lastPhaseInDelta = 0.0f;
-  bool lastPhaseInState = false;
-
-  double halfPhaseOut = 0.0;
-  double lastHalfPhaseOut = 0.0;
-  float phaseOut = 0.0f;
-
-  dsp::PulseGenerator clockPulseGenerator;
-  dsp::PulseGenerator resetPulseGenerator;
-  bool clockPulse = false;
-  bool resetPulse = false;
-
-  /* Settings */
-  bool gateMode = false;
-  bool tickOnStart = false;
-
-  dsp::SchmittTrigger clockTrigger;
-  dsp::SchmittTrigger resetTrigger;
-
-  inline void processRatioInputs() {
-    if (inputs[IN_RATIO_INPUT].isConnected()) {
-      from = std::roundf(clamp(inputs[IN_RATIO_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f * (params[IN_RATIO_PARAM].getValue() - 1) + 1);
-    } else {
-      from = params[IN_RATIO_PARAM].getValue();
+inline void Divider::processSwingInput() {
+  if (inputs[SWING_INPUT].isConnected()) {
+    float swingParam = params[SWING_PARAM].getValue();
+    float swingInput = clamp(inputs[SWING_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
+    if (swingInput < 0.0f) {
+      swing = swingParam + (swingParam - 1.0f) * swingInput;
+    } else if (swingInput >= 0.0f) {
+      swing = swingParam + (99.0f - swingParam) * swingInput;
     }
-    if (inputs[OUT_RATIO_INPUT].isConnected()) {
-      to = std::roundf(clamp(inputs[OUT_RATIO_INPUT].getVoltage(), 0.0f, 10.0f) / 10.0f * (params[OUT_RATIO_PARAM].getValue() - 1) + 1);
-    } else {
-      to = params[OUT_RATIO_PARAM].getValue();
-    }
-    ratio = to / from;
+  } else {
+    swing = params[SWING_PARAM].getValue();
   }
+}
 
-  inline void processSwingInput() {
-    if (inputs[SWING_INPUT].isConnected()) {
-      float swingParam = params[SWING_PARAM].getValue();
-      float swingInput = clamp(inputs[SWING_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
-      if (swingInput < 0.0f) {
-        swing = swingParam + (swingParam - 1.0f) * swingInput;
-      } else if (swingInput >= 0.0f) {
-        swing = swingParam + (99.0f - swingParam) * swingInput;
-      }
-    } else {
-      swing = params[SWING_PARAM].getValue();
-    }
-  }
+Divider::Divider() {
+  config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+  configParam(IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f, "Ratio Numerator");
+  configParam(OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f, "Ratio Denominator");
+  configParam(SWING_PARAM, 1.0f, 99.0f, 50.0f, "Swing");
+}
 
-  Divider() {
-    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f, "Ratio Numerator");
-    configParam(OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f, "Ratio Denominator");
-    configParam(SWING_PARAM, 1.0f, 99.0f, 50.0f, "Swing");
-  }
-  void process(const ProcessArgs &args) override;
+json_t *Divider::dataToJson() {
+  json_t *rootJ = json_object();
+  json_object_set_new(rootJ, "gateMode", json_boolean(gateMode));
+  json_object_set_new(rootJ, "tickOnStart", json_boolean(tickOnStart));
+  return rootJ;
+}
 
-  json_t *dataToJson() override {
-    json_t *rootJ = json_object();
-    json_object_set_new(rootJ, "gateMode", json_boolean(gateMode));
-    json_object_set_new(rootJ, "tickOnStart", json_boolean(tickOnStart));
-    return rootJ;
-  }
-
-  void dataFromJson(json_t *rootJ) override {
-    json_t *gateModeJ = json_object_get(rootJ, "gateMode");
-    json_t *tickOnStartJ = json_object_get(rootJ, "tickOnStart");
-    if (gateModeJ) { gateMode = json_boolean_value(gateModeJ); }
-    if (tickOnStartJ) { tickOnStart = json_boolean_value(tickOnStartJ); }
-  }
-};
+void Divider::dataFromJson(json_t *rootJ) {
+  json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+  json_t *tickOnStartJ = json_object_get(rootJ, "tickOnStart");
+  if (gateModeJ) { gateMode = json_boolean_value(gateModeJ); }
+  if (tickOnStartJ) { tickOnStart = json_boolean_value(tickOnStartJ); }
+}
 
 
 void Divider::process(const ProcessArgs &args) {
