@@ -6,11 +6,13 @@ void Clock::toggle() {
   if (running) {
     if (resetOnStart) {
       resetWasHit = true;
+      resetWasHitForMessage = true;
       resetPulseGenerator.trigger(1e-3f);
     }
   } else {
     if (resetOnStop) {
       resetWasHit = true;
+      resetWasHitForMessage = true;
       resetPulseGenerator.trigger(1e-3f);
     }
   }
@@ -38,6 +40,7 @@ inline void Clock::processButtons() {
   if (resetButtonTrigger.process(params[RESET_SWITCH_PARAM].getValue()) ||
       (inputs[EXT_RESET_INPUT].isConnected() && externalResetTrigger.process(inputs[EXT_RESET_INPUT].getVoltage()))) {
     resetWasHit = true;
+    resetWasHitForMessage = true;
     resetPulseGenerator.trigger(1e-3f);
   }
 
@@ -123,6 +126,11 @@ Clock::Clock() {
   configParam(RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Run");
   configParam(RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
   clockTracker.init();
+  rightExpander.producerMessage = &rightMessages[0];
+  rightExpander.consumerMessage = &rightMessages[1];
+  leftExpander.producerMessage = &leftMessages[0];
+  leftExpander.consumerMessage = &leftMessages[1];
+  cleanMessage.hasClock = true;
 }
 
 json_t *Clock::dataToJson() {
@@ -312,6 +320,30 @@ void Clock::process(const ProcessArgs &args) {
   if (bpm < 0.0f) {
     lights[REVERSE_LED].value = 1.1f;
   }
+
+  if (rightExpander.module &&
+      (rightExpander.module->model == modelDivider ||
+       rightExpander.module->model == modelDiv ||
+       rightExpander.module->model == modelDivExp)) {
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) rightExpander.module->leftExpander.producerMessage;
+    std::memcpy(message, &cleanMessage, sizeof(ZZC_TransportMessage));
+    message->clockPhase = outputs[PHASE_OUTPUT].getVoltage();
+    message->clockReset = resetWasHitForMessage;
+    rightExpander.module->leftExpander.messageFlipRequested = true;
+  }
+
+  if (leftExpander.module &&
+      (leftExpander.module->model == modelDivider ||
+       leftExpander.module->model == modelDiv ||
+       leftExpander.module->model == modelDivExp)) {
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.module->rightExpander.producerMessage;
+    std::memcpy(message, &cleanMessage, sizeof(ZZC_TransportMessage));
+    message->clockPhase = outputs[PHASE_OUTPUT].getVoltage();
+    message->clockReset = resetWasHitForMessage;
+    leftExpander.module->rightExpander.messageFlipRequested = true;
+  }
+
+  resetWasHitForMessage = false;
 }
 
 

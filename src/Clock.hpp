@@ -1,5 +1,27 @@
 #include "ZZC.hpp"
 
+struct ZZC_TransportMessage {
+  bool hasClock = false;
+  float clockPhase = 0.f;
+  bool clockReset = false;
+  bool clockFlip = false;
+
+  bool hasDivider = false;
+  float dividerPhase = 0.f;
+  bool dividerReset = false;
+  bool dividerFlip = false;
+
+  bool hasDiv = false;
+  float divPhase = 0.f;
+  bool divReset = false;
+  bool divFlip = false;
+
+  bool hasDivExp = false;
+  float divExpPhase = 0.f;
+  bool divExpReset = false;
+  bool divExpFlip = false;
+};
+
 struct Clock : Module {
   enum ParamIds {
     BPM_PARAM,
@@ -81,6 +103,7 @@ struct Clock : Module {
   bool runPulse = false;
   bool resetPulse = false;
   bool resetWasHit = false;
+  bool resetWasHitForMessage = false;
 
   float clockLight = 0.0f;
   float resetLight = 0.0f;
@@ -92,6 +115,11 @@ struct Clock : Module {
   dsp::SchmittTrigger externalResetTrigger;
   dsp::SchmittTrigger reverseButtonTrigger;
   dsp::SchmittTrigger externalClockTrigger;
+
+  /* Expander stuff */
+  ZZC_TransportMessage leftMessages[2];
+  ZZC_TransportMessage rightMessages[2];
+  ZZC_TransportMessage cleanMessage;
 
   /* Settings */
   bool baseClockGateMode = false;

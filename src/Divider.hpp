@@ -1,4 +1,5 @@
 #include "ZZC.hpp"
+#include "Clock.hpp"
 
 struct Divider : Module {
   enum ParamIds {
@@ -43,6 +44,11 @@ struct Divider : Module {
   dsp::PulseGenerator resetPulseGenerator;
   bool clockPulse = false;
   bool resetPulse = false;
+
+  /* Expander stuff */
+  ZZC_TransportMessage leftMessages[2];
+  ZZC_TransportMessage rightMessages[2];
+  ZZC_TransportMessage cleanMessage;
 
   /* Settings */
   bool gateMode = false;

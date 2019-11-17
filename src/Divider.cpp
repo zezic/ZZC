@@ -35,6 +35,11 @@ Divider::Divider() {
   configParam(IN_RATIO_PARAM, 1.0f, 99.0f, 1.0f, "Ratio Numerator");
   configParam(OUT_RATIO_PARAM, 1.0f, 99.0f, 1.0f, "Ratio Denominator");
   configParam(SWING_PARAM, 1.0f, 99.0f, 50.0f, "Swing");
+  rightExpander.producerMessage = &rightMessages[0];
+  rightExpander.consumerMessage = &rightMessages[1];
+  leftExpander.producerMessage = &leftMessages[0];
+  leftExpander.consumerMessage = &leftMessages[1];
+  cleanMessage.hasDivider = true;
 }
 
 json_t *Divider::dataToJson() {
@@ -56,7 +61,10 @@ void Divider::process(const ProcessArgs &args) {
   processRatioInputs();
   processSwingInput();
 
+  bool resetWasHitForMessage = false;
+
   if (resetTrigger.process(inputs[RESET_INPUT].getVoltage())) {
+    resetWasHitForMessage = true;
     phaseOut = 0.0f;
     halfPhaseOut = 0.0;
     lastHalfPhaseOut = 0.0f;
@@ -116,6 +124,31 @@ void Divider::process(const ProcessArgs &args) {
   }
 
   lights[EXT_PHASE_MODE_LED].value = inputs[PHASE_INPUT].isConnected() ? 0.5f : 0.0f;
+
+  if (rightExpander.module &&
+      (rightExpander.module->model == modelDivider ||
+       rightExpander.module->model == modelDiv ||
+       rightExpander.module->model == modelDivExp)) {
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.consumerMessage;
+    message->hasDivider = true;
+    message->dividerPhase = outputs[PHASE_OUTPUT].getVoltage();
+    message->dividerReset = resetWasHitForMessage;
+    rightExpander.module->leftExpander.producerMessage = message;
+    rightExpander.module->leftExpander.messageFlipRequested = true;
+  }
+
+  if (leftExpander.module &&
+      (leftExpander.module->model == modelDivider ||
+       leftExpander.module->model == modelDiv ||
+       leftExpander.module->model == modelDivExp)) {
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) rightExpander.consumerMessage;
+    message->hasDivider = true;
+    message->dividerPhase = outputs[PHASE_OUTPUT].getVoltage();
+    message->dividerReset = resetWasHitForMessage;
+    leftExpander.module->rightExpander.producerMessage = message;
+    leftExpander.module->rightExpander.messageFlipRequested = true;
+  }
+
 }
 
 

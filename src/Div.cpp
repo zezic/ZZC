@@ -11,6 +11,10 @@ struct DivModuleBase : Module {
 
   DivBase divBase;
 
+  ZZC_TransportMessage leftMessages[2];
+  ZZC_TransportMessage rightMessages[2];
+  ZZC_TransportMessage cleanMessage;
+
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
     json_object_set_new(rootJ, "gateMode", json_boolean(divBase.gateMode));
@@ -47,12 +51,19 @@ struct Div : DivModuleBase {
   Div() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
     configParam(FRACTION_PARAM, -199.0f, 199.0f, 0.0f, "Fraction");
+    rightExpander.producerMessage = &rightMessages[0];
+    rightExpander.consumerMessage = &rightMessages[1];
+    leftExpander.producerMessage = &leftMessages[0];
+    leftExpander.consumerMessage = &leftMessages[1];
+    cleanMessage.hasDiv = true;
   }
 
   void process(const ProcessArgs &args) override;
 };
 
 void Div::process(const ProcessArgs &args) {
+  bool resetWasHitForMessage = false;
+
   divBase.handleFractionParam(params[FRACTION_PARAM].getValue());
   divBase.handleCV(inputs[CV_INPUT].getVoltage());
   divBase.combineMultipliers();
@@ -60,6 +71,7 @@ void Div::process(const ProcessArgs &args) {
   if (inputs[RESET_INPUT].isConnected()) {
     if (schmittTrigger.process(inputs[RESET_INPUT].getVoltage())) {
       divBase.reset();
+      resetWasHitForMessage = true;
     }
   }
 
@@ -69,6 +81,30 @@ void Div::process(const ProcessArgs &args) {
 
   outputs[PHASE_OUTPUT].setVoltage(divBase.phaseOutput);
   outputs[CLOCK_OUTPUT].setVoltage(divBase.clockOutput);
+
+  if (rightExpander.module &&
+      (rightExpander.module->model == modelDivider ||
+       rightExpander.module->model == modelDiv ||
+       rightExpander.module->model == modelDivExp)) {
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.consumerMessage;
+    message->hasDiv = true;
+    message->divPhase = outputs[PHASE_OUTPUT].getVoltage();
+    message->divReset = resetWasHitForMessage;
+    rightExpander.module->leftExpander.producerMessage = message;
+    rightExpander.module->leftExpander.messageFlipRequested = true;
+  }
+
+  if (leftExpander.module &&
+      (leftExpander.module->model == modelDivider ||
+       leftExpander.module->model == modelDiv ||
+       leftExpander.module->model == modelDivExp)) {
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) rightExpander.consumerMessage;
+    message->hasDiv = true;
+    message->divPhase = outputs[PHASE_OUTPUT].getVoltage();
+    message->divReset = resetWasHitForMessage;
+    leftExpander.module->rightExpander.producerMessage = message;
+    leftExpander.module->rightExpander.messageFlipRequested = true;
+  }
 }
 
 struct DivWidget : DivModuleBaseWidget {
@@ -130,6 +166,11 @@ struct DivExp : DivModuleBase {
     configParam(FRACTION_PARAM, -199.0f, 199.0f, 0.0f, "Fraction");
     configParam(SYNC_SWITCH_PARAM, 0.f, 1.f, 0.f, "Sync Fraction Changes");
     configParam(DIR_PARAM, 0.f, 1.f, 0.f, "Phase Source Search Direction");
+    rightExpander.producerMessage = &rightMessages[0];
+    rightExpander.consumerMessage = &rightMessages[1];
+    leftExpander.producerMessage = &leftMessages[0];
+    leftExpander.consumerMessage = &leftMessages[1];
+    cleanMessage.hasDivExp = true;
   }
 
   void process(const ProcessArgs &args) override;
@@ -139,7 +180,6 @@ void DivExp::process(const ProcessArgs &args) {
   // if (leftExpander.module && leftExpander.module->model == modelClock) {
   //   Clock *clock = reinterpret_cast<Clock*>(leftExpander.module);
   // }
-
   if (syncButtonTriger.process(params[SYNC_SWITCH_PARAM].getValue())) {
     this->divBase.sync ^= true;
   }
@@ -149,6 +189,17 @@ void DivExp::process(const ProcessArgs &args) {
   divBase.handleFractionParam(params[FRACTION_PARAM].getValue());
   divBase.handleCV(inputs[CV_INPUT].getVoltage());
   divBase.combineMultipliers();
+
+  if (leftExpander.module &&
+      (leftExpander.module->model == modelClock ||
+       leftExpander.module->model == modelDivider ||
+       leftExpander.module->model == modelDiv)) {
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.consumerMessage;
+    if (message->clockReset) {
+      divBase.reset();
+    }
+    divBase.process(message->clockPhase, args.sampleTime);
+  }
 
   outputs[PHASE_OUTPUT].setVoltage(divBase.phaseOutput);
   outputs[CLOCK_OUTPUT].setVoltage(divBase.clockOutput);
