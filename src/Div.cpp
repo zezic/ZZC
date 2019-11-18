@@ -94,11 +94,11 @@ void Div::process(const ProcessArgs &args) {
       (rightExpander.module->model == modelDivider ||
        rightExpander.module->model == modelDiv ||
        rightExpander.module->model == modelDivExp)) {
-    ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.consumerMessage;
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) rightExpander.module->leftExpander.producerMessage;
+    std::memcpy(message, leftExpander.consumerMessage, sizeof(ZZC_TransportMessage));
     message->hasDiv = true;
     message->divPhase = outputs[PHASE_OUTPUT].getVoltage();
     message->divReset = resetWasHitForMessage;
-    rightExpander.module->leftExpander.producerMessage = message;
     rightExpander.module->leftExpander.messageFlipRequested = true;
   }
 
@@ -106,11 +106,11 @@ void Div::process(const ProcessArgs &args) {
       (leftExpander.module->model == modelDivider ||
        leftExpander.module->model == modelDiv ||
        leftExpander.module->model == modelDivExp)) {
-    ZZC_TransportMessage *message = (ZZC_TransportMessage*) rightExpander.consumerMessage;
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.module->rightExpander.producerMessage;
+    std::memcpy(message, rightExpander.consumerMessage, sizeof(ZZC_TransportMessage));
     message->hasDiv = true;
     message->divPhase = outputs[PHASE_OUTPUT].getVoltage();
     message->divReset = resetWasHitForMessage;
-    leftExpander.module->rightExpander.producerMessage = message;
     leftExpander.module->rightExpander.messageFlipRequested = true;
   }
 }
@@ -253,10 +253,11 @@ void DivExp::process(const ProcessArgs &args) {
         (rightExpander.module->model == modelDivider ||
          rightExpander.module->model == modelDiv ||
          rightExpander.module->model == modelDivExp)) {
+      message = (ZZC_TransportMessage*) rightExpander.module->leftExpander.producerMessage;
+      std::memcpy(message, leftExpander.consumerMessage, sizeof(ZZC_TransportMessage));
       message->hasDivExp = true;
       message->divExpPhase = divBase.phaseOutput;
       message->divExpReset = resetWasHitForMessage;
-      rightExpander.module->leftExpander.producerMessage = message;
       rightExpander.module->leftExpander.messageFlipRequested = true;
     }
   }
@@ -274,10 +275,11 @@ void DivExp::process(const ProcessArgs &args) {
         (leftExpander.module->model == modelDivider ||
          leftExpander.module->model == modelDiv ||
          leftExpander.module->model == modelDivExp)) {
+      ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.module->rightExpander.producerMessage;
+      std::memcpy(message, rightExpander.consumerMessage, sizeof(ZZC_TransportMessage));
       message->hasDivExp = true;
       message->divExpPhase = divBase.phaseOutput;
       message->divExpReset = resetWasHitForMessage;
-      leftExpander.module->rightExpander.producerMessage = message;
       leftExpander.module->rightExpander.messageFlipRequested = true;
     }
   }
