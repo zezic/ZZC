@@ -2,7 +2,11 @@
 #include "DivCore.hpp"
 
 void DivBase::process(float phaseIn, float sampleTime) {
-  monoDivCore.ratio = roundedMultiplier;
+  if (this->sync && !firstCall) {
+    monoDivCore.requestRatio(roundedMultiplier);
+  } else {
+    monoDivCore.setRatio(roundedMultiplier);
+  }
 
   bool flipped = monoDivCore.process(phaseIn);
 
@@ -15,6 +19,7 @@ void DivBase::process(float phaseIn, float sampleTime) {
     clockOutput = pulseGenerator.process(sampleTime) ? 10.f : 0.f;
   }
   phaseOutput = monoDivCore.phase;
+  firstCall = false;
 }
 
 void DivBase::handleFractionParam(float value) {

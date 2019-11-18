@@ -170,6 +170,7 @@ struct DivExp : DivModuleBase {
   SchmittTrigger syncButtonTriger;
   bool resetWasHitForMessage = false;
   TransportSources transportSource = TS_CLOCK;
+  bool syncEnabled = true;
 
   DivExp() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -186,13 +187,16 @@ struct DivExp : DivModuleBase {
   json_t *dataToJson() override {
     json_t *rootJ = DivModuleBase::dataToJson();
     json_object_set_new(rootJ, "transportSource", json_integer(transportSource));
+    json_object_set_new(rootJ, "sync", json_boolean(divBase.sync));
     return rootJ;
   }
 
   void dataFromJson(json_t *rootJ) override {
     DivModuleBase::dataFromJson(rootJ);
     json_t *transportSourceJ = json_object_get(rootJ, "transportSource");
+    json_t *syncJ = json_object_get(rootJ, "sync");
     if (transportSourceJ) { transportSource = TransportSources(json_integer_value(transportSourceJ)); }
+    if (syncJ) { divBase.sync = json_boolean_value(syncJ); }
   }
 
   void process(const ProcessArgs &args) override;
@@ -302,6 +306,7 @@ DivExpWidget::DivExpWidget(DivExp *module) {
   if (module) {
     display->value = &module->divBase.fractionDisplay;
     display->polarity = &module->divBase.fractionDisplayPolarity;
+    display->blinking = &module->divBase.monoDivCore.ratioIsRequested;
   }
   addChild(display);
 

@@ -124,13 +124,19 @@ struct IntDisplayWidget : BaseDisplayWidget {
   int *value = nullptr;
   int *polarity = nullptr;
   bool *isPoly = nullptr;
+  bool *blinking = nullptr;
+  int blinkingPhase = 0;
   std::string textGhost = "88";
   std::shared_ptr<Font> font;
   NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
   NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+  NVGcolor lcdTextColorBlink = nvgRGB(0x8a, 0x72, 0x17);
   NVGcolor negColor = nvgRGB(0xe7, 0x34, 0x2d);
+  NVGcolor negColorBlink = nvgRGB(0x8a, 0x1f, 0x1b);
   NVGcolor posColor = nvgRGB(0x9c, 0xd7, 0x43);
+  NVGcolor posColorBlink = nvgRGB(0x51, 0x70, 0x23);
   NVGcolor polyColor = nvgRGB(0x76, 0xdc, 0xfa);
+  NVGcolor polyColorBlink = nvgRGB(0x43, 0x7e, 0x8f);
 
   IntDisplayWidget() {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
@@ -149,18 +155,25 @@ struct IntDisplayWidget : BaseDisplayWidget {
 
     Vec textPos = Vec(box.size.x - 5.0f, 16.0f);
 
+    bool isBlinking = blinking && *blinking;
+    if (isBlinking) {
+      blinkingPhase = (blinkingPhase + 1) % 24;
+    }
+    bool blink = isBlinking && blinkingPhase < 12;
+
     nvgFillColor(args.vg, lcdGhostColor);
     nvgText(args.vg, textPos.x, textPos.y, textGhost.c_str(), NULL);
     if (isPoly && *isPoly) {
-      nvgFillColor(args.vg, polyColor);
+      nvgFillColor(args.vg, blink ? polyColorBlink : polyColor);
     } else {
       if (polarity) {
         if (*polarity == 0) {
-          nvgFillColor(args.vg, lcdTextColor);
+          nvgFillColor(args.vg, blink ? lcdTextColorBlink : lcdTextColor);
         } else {
-          nvgFillColor(args.vg, *polarity > 0 ? posColor : negColor);
+          nvgFillColor(args.vg, *polarity > 0 ? (blink ? posColorBlink : posColor) : (blink ? negColorBlink : negColor));
         }
       } else {
+        nvgFillColor(args.vg, blink ? lcdTextColorBlink : lcdTextColor);
       }
     }
     nvgText(args.vg, textPos.x, textPos.y, integerString, NULL);

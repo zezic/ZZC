@@ -43,6 +43,8 @@ struct PolyDivCore {
 
 struct MonoDivCore {
   float ratio = 1.f;
+  float requestedRatio = 1.f;
+  bool ratioIsRequested = false;
   float lastPhaseIn = 0.f;
   float lastPhaseInDelta = 0.f;
   double phase = 0.0;
@@ -55,24 +57,49 @@ struct MonoDivCore {
     lastPhaseInDelta = 0.f;
   }
 
+  void requestRatio(float newRatio) {
+    if (newRatio == ratio) {
+      this->ratioIsRequested = false;
+      return;
+    }
+    this->requestedRatio = newRatio;
+    this->ratioIsRequested = true;
+  }
+
+  void setRatio(float newRatio) {
+    this->ratio = newRatio;
+    this->ratioIsRequested = false;
+  }
+
   bool process(float phaseIn) {
     phaseIn = fmod(phaseIn, 10.f);
     float phaseInDelta = phaseIn - lastPhaseIn;
-    if (std::abs(phaseInDelta) > 0.1f && (sgn(phaseInDelta) != sgn(lastPhaseInDelta))) {
+    bool masterFlipped = std::abs(phaseInDelta) > 0.1f && (sgn(phaseInDelta) != sgn(lastPhaseInDelta));
+    if (masterFlipped) {
       phaseInDelta = lastPhaseInDelta;
     }
     lastPhaseInDelta = phaseInDelta;
-    phase += phaseInDelta * ratio;
-    while (phase >= 10.0) {
-      phase -= 10.0;
+    double newPhase = phase + phaseInDelta * ratio;
+    while (newPhase >= 10.0) {
+      newPhase -= 10.0;
     }
-    while (phase < 0.0) {
-      phase += 10.0;
+    while (newPhase < 0.0) {
+      newPhase += 10.0;
     }
-    bool flipped = abs(lastPhase - phase) > 9.0;
-    lastPhase = phase;
+    bool slaveFlipped = abs(lastPhase - newPhase) > 9.0;
+    if (ratioIsRequested &&
+        ((masterFlipped && (this->ratio >= 1.f)) ||
+         (slaveFlipped && (this->ratio < 1.f)))) {
+      this->ratioIsRequested = false;
+      this->ratio = this->requestedRatio;
+      bool goingReverse = phaseIn > 9.f;
+      this->phase = goingReverse ? 10.0 - (10.0 - phaseIn) * this->ratio : phaseIn * this->ratio;
+    } else {
+      this->phase = newPhase;
+    }
+    lastPhase = this->phase;
     lastPhaseIn = phaseIn;
-    return flipped;
+    return slaveFlipped;
   }
 };
 
@@ -102,6 +129,9 @@ struct DivBase {
   /* Settings */
   bool gateMode = false;
   bool sync = false;
+
+  /* State */
+  bool firstCall = true;
 
   void reset() {
     this->monoDivCore.reset();
