@@ -2,6 +2,14 @@
 #include "Clock.hpp"
 #include "DivCore.hpp"
 
+enum TransportSources {
+  TS_CLOCK,
+  TS_DIVIDER,
+  TS_DIV,
+  TS_DIVEXP,
+  NUM_TRANSPORT_SOURCES
+};
+
 struct DivModuleBase : Module {
   enum OutputIds {
     CLOCK_OUTPUT,
@@ -161,6 +169,7 @@ struct DivExp : DivModuleBase {
 
   SchmittTrigger syncButtonTriger;
   bool resetWasHitForMessage = false;
+  TransportSources transportSource = TS_CLOCK;
 
   DivExp() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -174,13 +183,45 @@ struct DivExp : DivModuleBase {
     cleanMessage.hasDivExp = true;
   }
 
+  json_t *dataToJson() override {
+    json_t *rootJ = DivModuleBase::dataToJson();
+    json_object_set_new(rootJ, "transportSource", json_integer(transportSource));
+    return rootJ;
+  }
+
+  void dataFromJson(json_t *rootJ) override {
+    DivModuleBase::dataFromJson(rootJ);
+    json_t *transportSourceJ = json_object_get(rootJ, "transportSource");
+    if (transportSourceJ) { transportSource = TransportSources(json_integer_value(transportSourceJ)); }
+  }
+
   void process(const ProcessArgs &args) override;
-  void processMessageData(float phase, bool reset, float sampleTime) {
+  void processMessageData(ZZC_TransportMessage *message , float sampleTime) {
+    float phase = 0.f;
+    bool reset = false;
+    if (transportSource == TS_CLOCK) {
+      if (!message->hasClock) { return; }
+      phase = message->clockPhase;
+      reset = message->clockReset;
+    } else if (transportSource == TS_DIVIDER) {
+      if (!message->hasDivider) { return; }
+      phase = message->dividerPhase;
+      reset = message->dividerReset;
+    } else if (transportSource == TS_DIV) {
+      if (!message->hasDiv) { return; }
+      phase = message->divPhase;
+      reset = message->divReset;
+    } else {
+      if (!message->hasDivExp) { return; }
+      phase = message->divExpPhase;
+      reset = message->divExpReset;
+    }
     if (reset) {
       divBase.reset();
       resetWasHitForMessage = true;
     }
     divBase.process(phase, sampleTime);
+    lights[DIR_LEFT_LED + params[DIR_PARAM].getValue()].value = 1.1f;
   }
 };
 
@@ -202,8 +243,7 @@ void DivExp::process(const ProcessArgs &args) {
        leftExpander.module->model == modelDivExp)) {
     ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.consumerMessage;
     if (params[DIR_PARAM].getValue() == 0.f) {
-      processMessageData(message->clockPhase, message->clockReset, args.sampleTime);
-      lights[DIR_LEFT_LED].value = 1.1f;
+      processMessageData(message, args.sampleTime);
     }
     if (rightExpander.module &&
         (rightExpander.module->model == modelDivider ||
@@ -224,8 +264,7 @@ void DivExp::process(const ProcessArgs &args) {
        rightExpander.module->model == modelDivExp)) {
     ZZC_TransportMessage *message = (ZZC_TransportMessage*) rightExpander.consumerMessage;
     if (params[DIR_PARAM].getValue() == 1.f) {
-      processMessageData(message->clockPhase, message->clockReset, args.sampleTime);
-      lights[DIR_RIGHT_LED].value = 1.1f;
+      processMessageData(message, args.sampleTime);
     }
     if (leftExpander.module &&
         (leftExpander.module->model == modelDivider ||
@@ -246,6 +285,7 @@ void DivExp::process(const ProcessArgs &args) {
 
 struct DivExpWidget : DivModuleBaseWidget {
   DivExpWidget(DivExp *module);
+  void appendContextMenu(Menu *menu) override;
 };
 
 DivExpWidget::DivExpWidget(DivExp *module) {
@@ -301,6 +341,39 @@ void DivModuleBaseWidget::appendContextMenu(Menu *menu) {
   DivGateModeItem *gateModeItem = createMenuItem<DivGateModeItem>("Gate Mode");
   gateModeItem->div = div;
   menu->addChild(gateModeItem);
+}
+
+struct TransportSourceOptionItem : MenuItem {
+  DivExp *module;
+  TransportSources transportSource;
+  void onAction(const event::Action &e) override {
+    module->transportSource = this->transportSource;
+  }
+};
+
+void DivExpWidget::appendContextMenu(Menu *menu) {
+  DivModuleBaseWidget::appendContextMenu(menu);
+  menu->addChild(new MenuSeparator());
+
+  DivExp *divExp = dynamic_cast<DivExp*>(module);
+  assert(divExp);
+
+  std::vector<std::string> transportSourceNames = {
+    "Clock",
+    "Divider",
+    "Div",
+    "Div (Expander)"
+  };
+
+  menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Target transport source"));
+  for (int i = 0; i < NUM_TRANSPORT_SOURCES; i++) {
+    TransportSourceOptionItem * item = new TransportSourceOptionItem;
+    item->text = transportSourceNames.at(i);
+    item->transportSource = TransportSources(i);
+    item->rightText = CHECKMARK(divExp->transportSource == item->transportSource);
+    item->module = divExp;
+    menu->addChild(item);
+  }
 }
 
 Model *modelDiv = createModel<Div, DivWidget>("Div");
