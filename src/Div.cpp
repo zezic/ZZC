@@ -160,6 +160,7 @@ struct DivExp : DivModuleBase {
   };
 
   SchmittTrigger syncButtonTriger;
+  bool resetWasHitForMessage = false;
 
   DivExp() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -174,12 +175,16 @@ struct DivExp : DivModuleBase {
   }
 
   void process(const ProcessArgs &args) override;
+  void processMessageData(float phase, bool reset, float sampleTime) {
+    if (reset) {
+      divBase.reset();
+      resetWasHitForMessage = true;
+    }
+    divBase.process(phase, sampleTime);
+  }
 };
 
 void DivExp::process(const ProcessArgs &args) {
-  // if (leftExpander.module && leftExpander.module->model == modelClock) {
-  //   Clock *clock = reinterpret_cast<Clock*>(leftExpander.module);
-  // }
   if (syncButtonTriger.process(params[SYNC_SWITCH_PARAM].getValue())) {
     this->divBase.sync ^= true;
   }
@@ -193,16 +198,50 @@ void DivExp::process(const ProcessArgs &args) {
   if (leftExpander.module &&
       (leftExpander.module->model == modelClock ||
        leftExpander.module->model == modelDivider ||
-       leftExpander.module->model == modelDiv)) {
+       leftExpander.module->model == modelDiv ||
+       leftExpander.module->model == modelDivExp)) {
     ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.consumerMessage;
-    if (message->clockReset) {
-      divBase.reset();
+    if (params[DIR_PARAM].getValue() == 0.f) {
+      processMessageData(message->clockPhase, message->clockReset, args.sampleTime);
+      lights[DIR_LEFT_LED].value = 1.1f;
     }
-    divBase.process(message->clockPhase, args.sampleTime);
+    if (rightExpander.module &&
+        (rightExpander.module->model == modelDivider ||
+         rightExpander.module->model == modelDiv ||
+         rightExpander.module->model == modelDivExp)) {
+      message->hasDivExp = true;
+      message->divExpPhase = divBase.phaseOutput;
+      message->divExpReset = resetWasHitForMessage;
+      rightExpander.module->leftExpander.producerMessage = message;
+      rightExpander.module->leftExpander.messageFlipRequested = true;
+    }
+  }
+
+  if (rightExpander.module &&
+      (rightExpander.module->model == modelClock ||
+       rightExpander.module->model == modelDivider ||
+       rightExpander.module->model == modelDiv ||
+       rightExpander.module->model == modelDivExp)) {
+    ZZC_TransportMessage *message = (ZZC_TransportMessage*) rightExpander.consumerMessage;
+    if (params[DIR_PARAM].getValue() == 1.f) {
+      processMessageData(message->clockPhase, message->clockReset, args.sampleTime);
+      lights[DIR_RIGHT_LED].value = 1.1f;
+    }
+    if (leftExpander.module &&
+        (leftExpander.module->model == modelDivider ||
+         leftExpander.module->model == modelDiv ||
+         leftExpander.module->model == modelDivExp)) {
+      message->hasDivExp = true;
+      message->divExpPhase = divBase.phaseOutput;
+      message->divExpReset = resetWasHitForMessage;
+      leftExpander.module->rightExpander.producerMessage = message;
+      leftExpander.module->rightExpander.messageFlipRequested = true;
+    }
   }
 
   outputs[PHASE_OUTPUT].setVoltage(divBase.phaseOutput);
   outputs[CLOCK_OUTPUT].setVoltage(divBase.clockOutput);
+  resetWasHitForMessage = false;
 }
 
 struct DivExpWidget : DivModuleBaseWidget {
