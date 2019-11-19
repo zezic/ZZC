@@ -18,7 +18,7 @@ struct SmartTrigger {
       }
       this->holdTime += sampleTime;
     } else {
-      if (this->holdTime > 0.35f) {
+      if (this->holdTime > 0.00136f) { // ~ 0.35s / 256
         this->state ^= true;
       }
       this->holdTime = 0.f;
@@ -50,6 +50,7 @@ struct Polygate : Module {
   };
 
   SmartTrigger triggers[NUM_CHANNELS];
+  dsp::ClockDivider paramDivider;
 
   /* Settings */
   float range = 5.f;
@@ -62,6 +63,7 @@ struct Polygate : Module {
     for (int i = 0; i < NUM_CHANNELS; i++) {
       configParam(GATE_PARAM + i, 0.0f, 1.0f, 0.0f, "Channel " + std::to_string(i + 1));
     }
+    paramDivider.setDivision(256);
   }
   void process(const ProcessArgs &args) override;
 
@@ -113,25 +115,31 @@ struct Polygate : Module {
 void Polygate::process(const ProcessArgs &args) {
   outputs[GATE_OUTPUT].setChannels(NUM_CHANNELS);
 
+  bool processParams = paramDivider.process();
   if (this->mode == SMART_MODE) {
     if (this->lastMode == MOMENTARY_MODE) {
       for (int c = 0; c < NUM_CHANNELS; c++) {
         triggers[c].init();
       }
     }
-    for (int c = 0; c < NUM_CHANNELS; c++) {
-      triggers[c].process(params[GATE_PARAM + c].getValue(), args.sampleTime);
-      outputs[GATE_OUTPUT].setVoltage(triggers[c].state ^ this->invertOutput ? range : 0.f, c);
-      if (triggers[c].state) {
-        lights[GATE_LED + c].value = 1.1f;
+    if (processParams) {
+      for (int c = 0; c < NUM_CHANNELS; c++) {
+          triggers[c].process(params[GATE_PARAM + c].getValue(), args.sampleTime);
+        bool state = triggers[c].state;
+        outputs[GATE_OUTPUT].setVoltage(state ^ this->invertOutput ? range : 0.f, c);
+        if (state) {
+          lights[GATE_LED + c].value = 1.1f;
+        }
       }
     }
   } else if (this->mode == MOMENTARY_MODE) {
     for (int c = 0; c < NUM_CHANNELS; c++) {
-      bool pressed = params[GATE_PARAM + c].getValue() > 0.5f;
-      outputs[GATE_OUTPUT].setVoltage(pressed ^ this->invertOutput ? range : 0.f, c);
-      if (pressed) {
-        lights[GATE_LED + c].value = 1.1f;
+      if (processParams) {
+        bool pressed = params[GATE_PARAM + c].getValue() > 0.5f;
+        outputs[GATE_OUTPUT].setVoltage(pressed ^ this->invertOutput ? range : 0.f, c);
+        if (pressed) {
+          lights[GATE_LED + c].value = 1.1f;
+        }
       }
     }
   } else {
