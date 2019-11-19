@@ -4,7 +4,7 @@ using namespace rack;
 
 extern Plugin *pluginInstance;
 
-struct ZZC_SmallSlider : SVGSlider {
+struct ZZC_SmallSlider : SvgSlider {
   ZZC_SmallSlider() {
     Vec margin = Vec(3.5, 3.5);
     maxHandlePos = Vec(2, 2).plus(margin);

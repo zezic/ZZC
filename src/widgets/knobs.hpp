@@ -192,7 +192,7 @@ struct ZZC_SteppedKnob : ZZC_BaseKnob {
   }
 };
 
-struct ZZC_EncoderKnob : SVGKnob {
+struct ZZC_EncoderKnob : SvgKnob {
   float lastValue = 0.0f;
   float targetValue = 0.0f;
 

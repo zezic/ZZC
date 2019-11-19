@@ -4,19 +4,19 @@ using namespace rack;
 
 extern Plugin *pluginInstance;
 
-struct ZZC_PJ_In_Port : SVGPort {
+struct ZZC_PJ_In_Port : SvgPort {
   ZZC_PJ_In_Port() {
     setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/sockets/ZZC-PJ-In.svg")));
   }
 };
 
-struct ZZC_PJ_Out_Port : SVGPort {
+struct ZZC_PJ_Out_Port : SvgPort {
   ZZC_PJ_Out_Port() {
     setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/sockets/ZZC-PJ-Out.svg")));
   }
 };
 
-struct ZZC_PJ_Port : SVGPort {
+struct ZZC_PJ_Port : SvgPort {
   ZZC_PJ_Port() {
     setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/sockets/ZZC-PJ.svg")));
     shadow->box.size = Vec(29, 29);
