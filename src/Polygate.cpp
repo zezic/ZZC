@@ -21,8 +21,10 @@ struct Polygate : Module {
 
   dsp::BooleanTrigger triggers[NUM_CHANNELS];
   bool gates[NUM_CHANNELS] = { false };
-  bool lastGates[NUM_CHANNELS] = { false };
+
+  /* Settings */
   float range = 5.f;
+  bool invertOutput = false;
 
   Polygate() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -75,14 +77,11 @@ void Polygate::process(const ProcessArgs &args) {
     if (triggers[c].process(params[GATE_PARAM + c].getValue())) {
       gates[c] ^= true;
     }
-    if (gates[c] != lastGates[c]) {
-      outputs[GATE_OUTPUT].setVoltage(gates[c] ? range : 0.f, c);
-    }
+    outputs[GATE_OUTPUT].setVoltage(gates[c] ^ this->invertOutput ? range : 0.f, c);
     if (gates[c]) {
       lights[GATE_LED + c].value = 1.1f;
     }
   }
-  std::copy(std::begin(gates), std::end(gates), std::begin(lastGates));
 }
 
 struct PolygateWidget : ModuleWidget {
@@ -108,6 +107,53 @@ struct PolygateWidget : ModuleWidget {
     addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
     addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
   }
+  void appendContextMenu(Menu *menu) override;
 };
+
+struct PolygateInvertOutputItem : MenuItem {
+  Polygate *polygate;
+  void onAction(const event::Action &e) override {
+    polygate->invertOutput ^= true;
+  }
+  void step() override {
+    rightText = CHECKMARK(polygate->invertOutput);
+  }
+};
+
+struct PolygateRangeItem : MenuItem {
+  Polygate *polygate;
+  float target;
+  void onAction(const event::Action &e) override {
+    polygate->range = this->target;
+  }
+  void step() override {
+    rightText = CHECKMARK(polygate->range == this->target);
+  }
+};
+
+void PolygateWidget::appendContextMenu(Menu *menu) {
+  menu->addChild(new MenuSeparator());
+
+  Polygate *polygate = dynamic_cast<Polygate*>(module);
+  assert(polygate);
+
+  PolygateInvertOutputItem *invertOutputItem = createMenuItem<PolygateInvertOutputItem>("Invert Output");
+  invertOutputItem->polygate = polygate;
+  menu->addChild(invertOutputItem);
+  menu->addChild(new MenuSeparator());
+
+  menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Range"));
+  std::vector<float> polygateRanges = {
+    5.f,
+    10.f
+  };
+  for (float range : polygateRanges) {
+    PolygateRangeItem *item = new PolygateRangeItem;
+    item->text = "+" + std::to_string((int) range) + "V";
+    item->target = range;
+    item->polygate = polygate;
+    menu->addChild(item);
+  }
+}
 
 Model *modelPolygate = createModel<Polygate, PolygateWidget>("Polygate");
