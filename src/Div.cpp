@@ -1,45 +1,109 @@
 #include "ZZC.hpp"
 #include "Clock.hpp"
-#include "DivCore.hpp"
+#include "PhaseDivider.hpp"
 
 enum TransportSources {
   TS_CLOCK,
   TS_DIVIDER,
   TS_DIV,
   TS_DIVEXP,
+  TS_NONE,
   NUM_TRANSPORT_SOURCES
 };
 
-struct DivModuleBase : Module {
+struct DivBase : Module {
   enum OutputIds {
     CLOCK_OUTPUT,
     PHASE_OUTPUT,
     NUM_OUTPUTS
   };
 
-  DivBase divBase;
+  PhaseDivider phaseDivider;
+  PulseGenerator pulseGenerator;
+
+  float combinedMultiplier = 1.f;
+  bool combinedMultiplierDirty = false;
+  float roundedMultiplier = 1.f;
+
+  float paramMultiplier = 1.f;
+  float cvMultiplier = 1.f;
+
+  float lastParamMultiplier = 1.f;
+  float lastCVMultiplier = 1.f;
+
+  float lastFractionParam = 1.f;
+  float lastCVVoltage = 0.f;
+
+  int fractionDisplay = 1;
+  int fractionDisplayPolarity = 0;
 
   ZZC_TransportMessage leftMessages[2];
   ZZC_TransportMessage rightMessages[2];
   ZZC_TransportMessage cleanMessage;
 
+  /* Settings */
+  bool gateMode = true;
+
   json_t *dataToJson() override {
     json_t *rootJ = json_object();
-    json_object_set_new(rootJ, "gateMode", json_boolean(divBase.gateMode));
+    json_object_set_new(rootJ, "gateMode", json_boolean(this->gateMode));
     return rootJ;
   }
 
   void dataFromJson(json_t *rootJ) override {
     json_t *gateModeJ = json_object_get(rootJ, "gateMode");
-    if (gateModeJ) { divBase.gateMode = json_boolean_value(gateModeJ); }
+    if (gateModeJ) { this->gateMode = json_boolean_value(gateModeJ); }
   }
+
+  void handleFractionParam(float value);
+  void handleCV(float cvVoltage);
+  void combineMultipliers();
 };
+
+void DivBase::handleFractionParam(float value) {
+  if (value == lastFractionParam) { return; }
+  float fractionParam = trunc(value);
+  float fractionAbs = std::max(1.f, abs(fractionParam));
+  this->paramMultiplier = fractionParam >= 0.f ? fractionAbs : 1.f / fractionAbs;
+  this->lastFractionParam = value;
+  this->combinedMultiplierDirty = true;
+}
+
+void DivBase::handleCV(float cvVoltage) {
+  if (cvVoltage == lastCVVoltage) { return; }
+  this->cvMultiplier = dsp::approxExp2_taylor5(cvVoltage + 20) / 1048576;
+  this->lastCVVoltage = cvVoltage;
+  this->combinedMultiplierDirty = true;
+}
+
+void DivBase::combineMultipliers() {
+  if (!this->combinedMultiplierDirty) { return; }
+  this->combinedMultiplier = paramMultiplier * cvMultiplier;
+
+  float combinedMultiplierLo = 1.f / roundf(1.f / this->combinedMultiplier);
+  float combinedMultiplierHi = roundf(this->combinedMultiplier);
+
+  this->roundedMultiplier = clamp(this->combinedMultiplier < 1.f ? combinedMultiplierLo : combinedMultiplierHi, 0.f, 199.f);
+  this->combinedMultiplierDirty = false;
+
+  // Manage fraction display
+  if (this->roundedMultiplier == 1.f) {
+    this->fractionDisplay = 1;
+    this->fractionDisplayPolarity = 0;
+  } else if (this->roundedMultiplier > 1.f) {
+    this->fractionDisplay = roundf(this->roundedMultiplier);
+    this->fractionDisplayPolarity = 1;
+  } else {
+    this->fractionDisplay = roundf(clamp(1.f / this->roundedMultiplier, 1.f, 199.f));
+    this->fractionDisplayPolarity = -1;
+  }
+}
 
 struct DivModuleBaseWidget : ModuleWidget {
   void appendContextMenu(Menu *menu) override;
 };
 
-struct Div : DivModuleBase {
+struct Div : DivBase {
   enum ParamIds {
     FRACTION_PARAM,
     NUM_PARAMS
@@ -72,23 +136,29 @@ struct Div : DivModuleBase {
 void Div::process(const ProcessArgs &args) {
   bool resetWasHitForMessage = false;
 
-  divBase.handleFractionParam(params[FRACTION_PARAM].getValue());
-  divBase.handleCV(inputs[CV_INPUT].getVoltage());
-  divBase.combineMultipliers();
+  this->handleFractionParam(params[FRACTION_PARAM].getValue());
+  this->handleCV(inputs[CV_INPUT].getVoltage());
+  this->combineMultipliers();
+  this->phaseDivider.setRatio(this->roundedMultiplier);
 
   if (inputs[RESET_INPUT].isConnected()) {
     if (schmittTrigger.process(inputs[RESET_INPUT].getVoltage())) {
-      divBase.reset();
+      this->phaseDivider.reset();
       resetWasHitForMessage = true;
     }
   }
 
   if (inputs[PHASE_INPUT].isConnected()) {
-    divBase.process(inputs[PHASE_INPUT].getVoltage(), args.sampleTime);
+    bool flipped = this->phaseDivider.process(inputs[PHASE_INPUT].getVoltage());
+    if (flipped && !this->gateMode) {
+      this->pulseGenerator.trigger(1e-3f);
+    }
   }
 
-  outputs[PHASE_OUTPUT].setVoltage(divBase.phaseOutput);
-  outputs[CLOCK_OUTPUT].setVoltage(divBase.clockOutput);
+  outputs[PHASE_OUTPUT].setVoltage(this->phaseDivider.phase);
+  outputs[CLOCK_OUTPUT].setVoltage(
+    this->gateMode ? this->phaseDivider.phase < 5.0 : this->pulseGenerator.process(args.sampleTime)
+  );
 
   if (rightExpander.module &&
       (rightExpander.module->model == modelDivider ||
@@ -131,8 +201,8 @@ DivWidget::DivWidget(Div *module) {
   display->box.size = Vec(33, 21);
   display->textGhost = "188";
   if (module) {
-    display->value = &module->divBase.fractionDisplay;
-    display->polarity = &module->divBase.fractionDisplayPolarity;
+    display->value = &module->fractionDisplay;
+    display->polarity = &module->fractionDisplayPolarity;
   }
   addChild(display);
 
@@ -147,7 +217,7 @@ DivWidget::DivWidget(Div *module) {
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 }
 
-struct DivExp : DivModuleBase {
+struct DivExp : DivBase {
   enum ParamIds {
     FRACTION_PARAM,
     SYNC_SWITCH_PARAM,
@@ -170,7 +240,13 @@ struct DivExp : DivModuleBase {
   SchmittTrigger syncButtonTriger;
   bool resetWasHitForMessage = false;
   TransportSources transportSource = TS_CLOCK;
-  bool syncEnabled = true;
+  TransportSources lastTimeDrivenBy = TS_NONE;
+  bool syncing = false;
+  bool firstCycle = true;
+  bool lastSyncState = false;
+
+  /* Settings */
+  bool sync = false;
 
   DivExp() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -185,60 +261,80 @@ struct DivExp : DivModuleBase {
   }
 
   json_t *dataToJson() override {
-    json_t *rootJ = DivModuleBase::dataToJson();
-    json_object_set_new(rootJ, "transportSource", json_integer(transportSource));
-    json_object_set_new(rootJ, "sync", json_boolean(divBase.sync));
+    json_t *rootJ = DivBase::dataToJson();
+    json_object_set_new(rootJ, "transportSource", json_integer(this->transportSource));
+    json_object_set_new(rootJ, "sync", json_boolean(this->sync));
     return rootJ;
   }
 
   void dataFromJson(json_t *rootJ) override {
-    DivModuleBase::dataFromJson(rootJ);
+    DivBase::dataFromJson(rootJ);
     json_t *transportSourceJ = json_object_get(rootJ, "transportSource");
     json_t *syncJ = json_object_get(rootJ, "sync");
-    if (transportSourceJ) { transportSource = TransportSources(json_integer_value(transportSourceJ)); }
-    if (syncJ) { divBase.sync = json_boolean_value(syncJ); }
+    if (transportSourceJ) { this->transportSource = TransportSources(json_integer_value(transportSourceJ)); }
+    if (syncJ) {
+      this->sync = json_boolean_value(syncJ);
+      this->lastSyncState = this->sync;
+    }
   }
 
   void process(const ProcessArgs &args) override;
-  void processMessageData(ZZC_TransportMessage *message , float sampleTime) {
-    float phase = 0.f;
-    bool reset = false;
-    if (transportSource == TS_CLOCK) {
-      if (!message->hasClock) { return; }
-      phase = message->clockPhase;
-      reset = message->clockReset;
-    } else if (transportSource == TS_DIVIDER) {
-      if (!message->hasDivider) { return; }
-      phase = message->dividerPhase;
-      reset = message->dividerReset;
-    } else if (transportSource == TS_DIV) {
-      if (!message->hasDiv) { return; }
-      phase = message->divPhase;
-      reset = message->divReset;
-    } else {
-      if (!message->hasDivExp) { return; }
-      phase = message->divExpPhase;
-      reset = message->divExpReset;
-    }
-    if (reset) {
-      divBase.reset();
-      resetWasHitForMessage = true;
-    }
-    divBase.process(phase, sampleTime);
-    lights[DIR_LEFT_LED + params[DIR_PARAM].getValue()].value = 1.1f;
-  }
+  bool processMessageData(ZZC_TransportMessage *message , float sampleTime);
 };
+
+bool DivExp::processMessageData(ZZC_TransportMessage *message , float sampleTime) {
+  float phase = 0.f;
+  bool reset = false;
+  if (transportSource == TS_CLOCK) {
+    if (!message->hasClock) { return false; }
+    phase = message->clockPhase;
+    reset = message->clockReset;
+  } else if (transportSource == TS_DIVIDER) {
+    if (!message->hasDivider) { return false; }
+    phase = message->dividerPhase;
+    reset = message->dividerReset;
+  } else if (transportSource == TS_DIV) {
+    if (!message->hasDiv) { return false; }
+    phase = message->divPhase;
+    reset = message->divReset;
+  } else {
+    if (!message->hasDivExp) { return false; }
+    phase = message->divExpPhase;
+    reset = message->divExpReset;
+  }
+  if (reset) {
+    this->phaseDivider.reset();
+    resetWasHitForMessage = true;
+  }
+  if ((this->transportSource != this->lastTimeDrivenBy) ||
+      (this->sync && !this->lastSyncState)){
+    this->phaseDivider.requestHardSync();
+  }
+  bool flipped = this->phaseDivider.process(phase);
+  if (flipped && !this->gateMode) {
+    this->pulseGenerator.trigger(1e-3f);
+  }
+  lights[DIR_LEFT_LED + params[DIR_PARAM].getValue()].value = 1.1f;
+  return true;
+}
 
 void DivExp::process(const ProcessArgs &args) {
   if (syncButtonTriger.process(params[SYNC_SWITCH_PARAM].getValue())) {
-    this->divBase.sync ^= true;
+    this->sync ^= true;
   }
-  if (this->divBase.sync) {
+  if (this->sync) {
     lights[SYNC_LED].value = 1.1f;
   }
-  divBase.handleFractionParam(params[FRACTION_PARAM].getValue());
-  divBase.handleCV(inputs[CV_INPUT].getVoltage());
-  divBase.combineMultipliers();
+  this->handleFractionParam(params[FRACTION_PARAM].getValue());
+  this->handleCV(inputs[CV_INPUT].getVoltage());
+  this->combineMultipliers();
+  if (this->sync && !this->firstCycle) {
+    this->phaseDivider.requestRatio(this->roundedMultiplier);
+  } else {
+    this->phaseDivider.setRatio(this->roundedMultiplier);
+  }
+
+  bool wasDrivenByMessage = false;
 
   if (leftExpander.module &&
       (leftExpander.module->model == modelClock ||
@@ -247,7 +343,9 @@ void DivExp::process(const ProcessArgs &args) {
        leftExpander.module->model == modelDivExp)) {
     ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.consumerMessage;
     if (params[DIR_PARAM].getValue() == 0.f) {
-      processMessageData(message, args.sampleTime);
+      if (processMessageData(message, args.sampleTime)) {
+        wasDrivenByMessage = true;
+      }
     }
     if (rightExpander.module &&
         (rightExpander.module->model == modelDivider ||
@@ -256,7 +354,7 @@ void DivExp::process(const ProcessArgs &args) {
       message = (ZZC_TransportMessage*) rightExpander.module->leftExpander.producerMessage;
       std::memcpy(message, leftExpander.consumerMessage, sizeof(ZZC_TransportMessage));
       message->hasDivExp = true;
-      message->divExpPhase = divBase.phaseOutput;
+      message->divExpPhase = this->phaseDivider.phase;
       message->divExpReset = resetWasHitForMessage;
       rightExpander.module->leftExpander.messageFlipRequested = true;
     }
@@ -269,7 +367,9 @@ void DivExp::process(const ProcessArgs &args) {
        rightExpander.module->model == modelDivExp)) {
     ZZC_TransportMessage *message = (ZZC_TransportMessage*) rightExpander.consumerMessage;
     if (params[DIR_PARAM].getValue() == 1.f) {
-      processMessageData(message, args.sampleTime);
+      if (processMessageData(message, args.sampleTime)) {
+        wasDrivenByMessage = true;
+      }
     }
     if (leftExpander.module &&
         (leftExpander.module->model == modelDivider ||
@@ -278,15 +378,27 @@ void DivExp::process(const ProcessArgs &args) {
       ZZC_TransportMessage *message = (ZZC_TransportMessage*) leftExpander.module->rightExpander.producerMessage;
       std::memcpy(message, rightExpander.consumerMessage, sizeof(ZZC_TransportMessage));
       message->hasDivExp = true;
-      message->divExpPhase = divBase.phaseOutput;
+      message->divExpPhase = this->phaseDivider.phase;
       message->divExpReset = resetWasHitForMessage;
       leftExpander.module->rightExpander.messageFlipRequested = true;
     }
   }
 
-  outputs[PHASE_OUTPUT].setVoltage(divBase.phaseOutput);
-  outputs[CLOCK_OUTPUT].setVoltage(divBase.clockOutput);
+  if (wasDrivenByMessage) {
+    this->lastTimeDrivenBy = this->transportSource;
+  } else {
+    this->lastTimeDrivenBy = TS_NONE;
+  }
+
+  this->syncing = this->phaseDivider.ratioIsRequested || this->phaseDivider.hardSyncIsRequested;
+
+  outputs[PHASE_OUTPUT].setVoltage(this->phaseDivider.phase);
+  outputs[CLOCK_OUTPUT].setVoltage(
+    this->gateMode ? this->phaseDivider.phase < 5.0 : this->pulseGenerator.process(args.sampleTime)
+  );
   resetWasHitForMessage = false;
+  this->firstCycle = false;
+  this->lastSyncState = this->sync;
 }
 
 struct DivExpWidget : DivModuleBaseWidget {
@@ -306,9 +418,9 @@ DivExpWidget::DivExpWidget(DivExp *module) {
   display->box.size = Vec(33, 21);
   display->textGhost = "188";
   if (module) {
-    display->value = &module->divBase.fractionDisplay;
-    display->polarity = &module->divBase.fractionDisplayPolarity;
-    display->blinking = &module->divBase.monoDivCore.ratioIsRequested;
+    display->value = &module->fractionDisplay;
+    display->polarity = &module->fractionDisplayPolarity;
+    display->blinking = &module->syncing;
   }
   addChild(display);
 
@@ -330,19 +442,19 @@ DivExpWidget::DivExpWidget(DivExp *module) {
 }
 
 struct DivGateModeItem : MenuItem {
-  DivModuleBase *div;
+  DivBase *div;
   void onAction(const event::Action &e) override {
-    div->divBase.gateMode ^= true;
+    div->gateMode ^= true;
   }
   void step() override {
-    rightText = CHECKMARK(div->divBase.gateMode);
+    rightText = CHECKMARK(div->gateMode);
   }
 };
 
 void DivModuleBaseWidget::appendContextMenu(Menu *menu) {
   menu->addChild(new MenuSeparator());
 
-  DivModuleBase *div = dynamic_cast<DivModuleBase*>(module);
+  DivBase *div = dynamic_cast<DivBase*>(module);
   assert(div);
 
   DivGateModeItem *gateModeItem = createMenuItem<DivGateModeItem>("Gate Mode");
@@ -373,7 +485,7 @@ void DivExpWidget::appendContextMenu(Menu *menu) {
   };
 
   menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Target transport source"));
-  for (int i = 0; i < NUM_TRANSPORT_SOURCES; i++) {
+  for (int i = 0; i < NUM_TRANSPORT_SOURCES - 1; i++) {
     TransportSourceOptionItem * item = new TransportSourceOptionItem;
     item->text = transportSourceNames.at(i);
     item->transportSource = TransportSources(i);
