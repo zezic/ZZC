@@ -54,12 +54,14 @@ struct Polygate : Module {
     }
     json_object_set_new(rootJ, "gates", gatesArray);
     json_object_set_new(rootJ, "range", json_real(range));
+    json_object_set_new(rootJ, "invertOutput", json_boolean(invertOutput));
     return rootJ;
   }
 
   void dataFromJson(json_t *rootJ) override {
     json_t *gatesArray = json_object_get(rootJ, "gates");
     json_t *rangeJ = json_object_get(rootJ, "range");
+    json_t *invertOutputJ = json_object_get(rootJ, "invertOutput");
     if (gatesArray) {
       size_t size = json_array_size(gatesArray);
       for (size_t i = 0; i < size; i++) {
@@ -67,6 +69,7 @@ struct Polygate : Module {
       }
     }
     if (rangeJ) { range = json_real_value(rangeJ); }
+    if (invertOutputJ) { invertOutput = json_boolean_value(invertOutputJ); }
   }
 };
 
