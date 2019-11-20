@@ -41,8 +41,17 @@ def build(target):
     overrides = OS_OVERRIDES.get(target, {})
     for key, value in overrides.items():
         os.environ[key] = value
-    do('make clean')
-    do('make -j{} dist'.format(os.cpu_count()))
+    if target == 'linux':
+        os.environ['WORKING_DIR'] = os.getcwd()
+        # vcv-plugin-builder.sh is a script which should cd to the
+        # vcv-plugin-builder-linux directory and run ./build.sh
+        # You can get it at https://github.com/cschol/vcv-plugin-builder-linux
+        # It's required to easily compile plugin for the old glibc (2.23)
+        # to make it compatible with old Linux distributions.
+        do('vcv-plugin-builder.sh')
+    else:
+        do('make clean')
+        do('make -j{} dist'.format(os.cpu_count()))
 
 
 with open('plugin.json', 'r') as fd:
