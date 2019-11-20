@@ -63,7 +63,7 @@ struct DivBase : Module {
 void DivBase::handleFractionParam(float value) {
   if (value == lastFractionParam) { return; }
   float fractionParam = trunc(value);
-  float fractionAbs = std::max(1.f, abs(fractionParam));
+  float fractionAbs = std::max(1.f, (float) abs(fractionParam));
   this->paramMultiplier = fractionParam >= 0.f ? fractionAbs : 1.f / fractionAbs;
   this->lastFractionParam = value;
   this->combinedMultiplierDirty = true;
