@@ -61,9 +61,10 @@ void Polygate::process(const ProcessArgs &args) {
   bool processParams = paramDivider.process();
   if (processParams) {
     for (int c = 0; c < NUM_CHANNELS; c++) {
-      bool state = (params[GATE_PARAM + c].getValue() > 0.5f) ^ this->invertOutput;
+      bool param = params[GATE_PARAM + c].getValue() > 0.5f;
+      bool state = param ^ this->invertOutput;
       outputs[GATE_OUTPUT].setVoltage(state ? range : 0.f, c);
-      if (state) {
+      if (param) {
         lights[GATE_LED + c].value = 1.1f;
       }
     }
