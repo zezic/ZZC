@@ -18,7 +18,7 @@ struct PhaseDivider {
   }
 
   void requestRatio(float newRatio) {
-    if (newRatio == ratio) {
+    if (newRatio == this->ratio) {
       this->ratioIsRequested = false;
       return;
     }
@@ -36,9 +36,9 @@ struct PhaseDivider {
   }
 
   bool process(float phaseIn) {
-    phaseIn = fmod(phaseIn, 10.f);
+    phaseIn = std::fmod(phaseIn, 10.f);
     float phaseInDelta = phaseIn - this->lastPhaseIn;
-    bool masterFlipped = std::abs(phaseInDelta) > 0.1f && (sgn(phaseInDelta) != sgn(this->lastPhaseInDelta));
+    bool masterFlipped = (std::abs(phaseInDelta) > 0.1f) && (math::sgn(phaseInDelta) != math::sgn(this->lastPhaseInDelta));
     if (masterFlipped) {
       phaseInDelta = lastPhaseInDelta;
     }
@@ -50,8 +50,8 @@ struct PhaseDivider {
     while (newPhase < 0.0) {
       newPhase += 10.0;
     }
-    bool slaveFlipped = abs(lastPhase - newPhase) > 9.0;
-    if ((ratioIsRequested || hardSyncIsRequested) &&
+    bool slaveFlipped = std::abs(this->lastPhase - newPhase) > 9.0;
+    if ((this->ratioIsRequested || this->hardSyncIsRequested) &&
         ((masterFlipped && (this->ratio >= 1.f)) ||
          (slaveFlipped && (this->ratio < 1.f)))) {
       if (this->ratioIsRequested) {

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import shutil
 import sys
 import timeit
 
@@ -79,7 +80,7 @@ for target in TARGETS:
         version,
         SHORTLANDS.get(target)
     )
-    os.rename(
+    shutil.copy(
         'dist/{}'.format(archive_name),
         '{}/{}'.format(destination, archive_name)
     )
