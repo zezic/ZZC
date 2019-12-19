@@ -281,10 +281,15 @@ void Clock::process(const ProcessArgs &args) {
   runPulse = runPulseGenerator.process(args.sampleTime);
   resetPulse = resetPulseGenerator.process(args.sampleTime);
 
-  if (baseClockGateMode) {
-    outputs[CLOCK_OUTPUT].setVoltage(running && oscillator.phase < 0.5f ? 10.0f : 0.0f);
+  if (running) {
+    if (baseClockGateMode) {
+      bool pulse = (mode == EXT_PHASE_MODE || mode == EXT_CLOCK_AND_PHASE_MODE) ? inputs[PHASE_INPUT].getVoltage() < 5.f : oscillator.phase < 0.5f;
+      outputs[CLOCK_OUTPUT].setVoltage(pulse ? 10.f : 0.f);
+    } else {
+      outputs[CLOCK_OUTPUT].setVoltage(clockPulse ? 10.f : 0.f);
+    }
   } else {
-    outputs[CLOCK_OUTPUT].setVoltage(clockPulse ? 10.0f : 0.0f);
+    outputs[CLOCK_OUTPUT].setVoltage(0.f);
   }
   outputs[CLOCK_8THS_OUTPUT].setVoltage(running && clock8thsPulse ? 10.0f : 0.0f);
   outputs[CLOCK_16THS_OUTPUT].setVoltage(running && clock16thsPulse ? 10.0f : 0.0f);
