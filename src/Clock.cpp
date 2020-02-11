@@ -144,6 +144,8 @@ json_t *Clock::dataToJson() {
   json_object_set_new(rootJ, "resetOnStop", json_boolean(resetOnStop));
   json_object_set_new(rootJ, "runInputIsGate", json_boolean(runInputIsGate));
   json_object_set_new(rootJ, "runOutputIsGate", json_boolean(runOutputIsGate));
+  json_object_set_new(rootJ, "useCompatibleBPMCV", json_boolean(useCompatibleBPMCV));
+  json_object_set_new(rootJ, "snapCV", json_boolean(snapCV));
   json_object_set_new(rootJ, "externalClockPPQN", json_integer(externalClockPPQN));
   return rootJ;
 }
@@ -158,6 +160,8 @@ void Clock::dataFromJson(json_t *rootJ) {
   json_t *resetOnStopJ = json_object_get(rootJ, "resetOnStop");
   json_t *runInputIsGateJ = json_object_get(rootJ, "runInputIsGate");
   json_t *runOutputIsGateJ = json_object_get(rootJ, "runOutputIsGate");
+  json_t *useCompatibleBPMCVJ = json_object_get(rootJ, "useCompatibleBPMCV");
+  json_t *snapCVJ = json_object_get(rootJ, "snapCV");
   json_t *externalClockPPQNJ = json_object_get(rootJ, "externalClockPPQN");
   if (runningJ) { running = json_integer_value(runningJ); }
   if (reverseJ) { reverse = json_integer_value(reverseJ); }
@@ -168,6 +172,12 @@ void Clock::dataFromJson(json_t *rootJ) {
   if (resetOnStopJ) { resetOnStop = json_boolean_value(resetOnStopJ); }
   if (runInputIsGateJ) { runInputIsGate = json_boolean_value(runInputIsGateJ); }
   if (runOutputIsGateJ) { runOutputIsGate = json_boolean_value(runOutputIsGateJ); }
+  if (useCompatibleBPMCVJ) {
+    useCompatibleBPMCV = json_boolean_value(useCompatibleBPMCVJ);
+  } else {
+    useCompatibleBPMCV = false; // Fallback to pre v1.1.3 default behavior
+  }
+  if (snapCVJ) { snapCV = json_boolean_value(snapCVJ); }
   if (externalClockPPQNJ) { externalClockPPQN = json_integer_value(externalClockPPQNJ); }
 }
 
@@ -192,7 +202,14 @@ void Clock::process(const ProcessArgs &args) {
         bpm = clockTracker.freq * 60.0f / externalClockPPQN;
       }
     } else if (mode == EXT_VBPS_MODE) {
-      bpm = params[BPM_PARAM].getValue() + inputs[VBPS_INPUT].getVoltage() * 60.0f;
+      if (this->useCompatibleBPMCV) {
+        bpm = params[BPM_PARAM].getValue() * dsp::approxExp2_taylor5(inputs[VBPS_INPUT].getVoltage() + 10.f) / 1024.f;
+      } else {
+        bpm = params[BPM_PARAM].getValue() + inputs[VBPS_INPUT].getVoltage() * 60.0f;
+      }
+      if (this->snapCV) {
+        bpm = std::round(bpm);
+      }
     } else {
       bpm = params[BPM_PARAM].getValue();
     }
@@ -580,6 +597,56 @@ struct ExternalClockPPQNItem : MenuItem {
   }
 };
 
+struct ExternalCVModeCompatibleOptionItem : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->useCompatibleBPMCV = true;
+  }
+};
+
+struct ExternalCVModeVBPSOptionItem : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->useCompatibleBPMCV = false;
+  }
+};
+
+struct SnapCVOptionItem : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->snapCV ^= true;
+  }
+};
+
+struct ExternalCVModeItem : MenuItem {
+  Clock *module;
+  Menu *createChildMenu() override {
+    Menu *menu = new Menu;
+
+    ExternalCVModeCompatibleOptionItem *item1 = new ExternalCVModeCompatibleOptionItem;
+    item1->text = "V/OCT";
+    item1->rightText = CHECKMARK(module->useCompatibleBPMCV);
+    item1->module = module;
+    menu->addChild(item1);
+
+    ExternalCVModeVBPSOptionItem *item2 = new ExternalCVModeVBPSOptionItem;
+    item2->text = "V/BPS";
+    item2->rightText = CHECKMARK(!module->useCompatibleBPMCV);
+    item2->module = module;
+    menu->addChild(item2);
+
+    menu->addChild(new MenuSeparator());
+
+    SnapCVOptionItem *item3 = new SnapCVOptionItem;
+    item3->text = "Snap CV";
+    item3->rightText = CHECKMARK(module->snapCV);
+    item3->module = module;
+    menu->addChild(item3);
+
+    return menu;
+  }
+};
+
 void ClockWidget::appendContextMenu(Menu *menu) {
 
   Clock *clock = dynamic_cast<Clock*>(module);
@@ -624,6 +691,12 @@ void ClockWidget::appendContextMenu(Menu *menu) {
   externalClockPPQNItem->rightText = RIGHT_ARROW;
   externalClockPPQNItem->module = clock;
   menu->addChild(externalClockPPQNItem);
+
+  ExternalCVModeItem *externalCVModeItem = new ExternalCVModeItem;
+  externalCVModeItem->text = "External CV Mode";
+  externalCVModeItem->rightText = RIGHT_ARROW;
+  externalCVModeItem->module = clock;
+  menu->addChild(externalCVModeItem);
 }
 
 void ClockWidget::onHoverKey(const event::HoverKey &e) {

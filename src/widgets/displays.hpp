@@ -35,7 +35,7 @@ struct Display32Widget : BaseDisplayWidget {
 
   void draw(const DrawArgs &args) override {
     drawBackground(args);
-    float valueToDraw = fabsf(value ? *value : 120.0f);
+    float valueToDraw = std::abs(value ? *value : 120.0f);
     NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
     NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
 

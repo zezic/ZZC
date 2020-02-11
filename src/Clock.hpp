@@ -129,6 +129,8 @@ struct Clock : Module {
   bool resetOnStop = false;
   bool runInputIsGate = false;
   bool runOutputIsGate = false;
+  bool useCompatibleBPMCV = true;
+  bool snapCV = false;
   int externalClockPPQN = 1;
 
   Clock();
