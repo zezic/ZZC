@@ -6,12 +6,12 @@ import sys
 import timeit
 
 OS_OVERRIDES = {
-    'macos': {
+    'macos': { # https://github.com/tpoechtrager/osxcross
         'CC': 'x86_64-apple-darwin19-clang',
         'CXX': 'x86_64-apple-darwin19-clang++-libc++',
         'STRIP': 'x86_64-apple-darwin19-strip'
     },
-    'windows': {
+    'windows': { # sudo apt install gcc-mingw-w64 g++-mingw-w64
         'CC': 'x86_64-w64-mingw32-gcc',
         'CXX': 'x86_64-w64-mingw32-g++',
         'STRIP': 'x86_64-w64-mingw32-strip'

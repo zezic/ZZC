@@ -144,6 +144,7 @@ json_t *Clock::dataToJson() {
   json_object_set_new(rootJ, "resetOnStop", json_boolean(resetOnStop));
   json_object_set_new(rootJ, "runInputIsGate", json_boolean(runInputIsGate));
   json_object_set_new(rootJ, "runOutputIsGate", json_boolean(runOutputIsGate));
+  json_object_set_new(rootJ, "phaseOutputOffset", json_real(phaseOutputOffset));
   json_object_set_new(rootJ, "useCompatibleBPMCV", json_boolean(useCompatibleBPMCV));
   json_object_set_new(rootJ, "snapCV", json_boolean(snapCV));
   json_object_set_new(rootJ, "externalClockPPQN", json_integer(externalClockPPQN));
@@ -160,6 +161,7 @@ void Clock::dataFromJson(json_t *rootJ) {
   json_t *resetOnStopJ = json_object_get(rootJ, "resetOnStop");
   json_t *runInputIsGateJ = json_object_get(rootJ, "runInputIsGate");
   json_t *runOutputIsGateJ = json_object_get(rootJ, "runOutputIsGate");
+  json_t *phaseOutputOffsetJ = json_object_get(rootJ, "phaseOutputOffset");
   json_t *useCompatibleBPMCVJ = json_object_get(rootJ, "useCompatibleBPMCV");
   json_t *snapCVJ = json_object_get(rootJ, "snapCV");
   json_t *externalClockPPQNJ = json_object_get(rootJ, "externalClockPPQN");
@@ -172,6 +174,7 @@ void Clock::dataFromJson(json_t *rootJ) {
   if (resetOnStopJ) { resetOnStop = json_boolean_value(resetOnStopJ); }
   if (runInputIsGateJ) { runInputIsGate = json_boolean_value(runInputIsGateJ); }
   if (runOutputIsGateJ) { runOutputIsGate = json_boolean_value(runOutputIsGateJ); }
+  if (phaseOutputOffsetJ) { phaseOutputOffset = json_real_value(phaseOutputOffsetJ); }
   if (useCompatibleBPMCVJ) {
     useCompatibleBPMCV = json_boolean_value(useCompatibleBPMCVJ);
   } else {
@@ -319,9 +322,9 @@ void Clock::process(const ProcessArgs &args) {
 
   // Output Voltages
   if (mode == EXT_PHASE_MODE || mode == EXT_CLOCK_AND_PHASE_MODE) {
-    outputs[PHASE_OUTPUT].setVoltage(inputs[PHASE_INPUT].getVoltage());
+    outputs[PHASE_OUTPUT].setVoltage(inputs[PHASE_INPUT].getVoltage() + this->phaseOutputOffset);
   } else {
-    outputs[PHASE_OUTPUT].setVoltage(oscillator.phase * 10.0f);
+    outputs[PHASE_OUTPUT].setVoltage(oscillator.phase * 10.0f + this->phaseOutputOffset);
   }
   outputs[VBPS_OUTPUT].setVoltage(bpm / 60.0f);
   outputs[VSPB_OUTPUT].setVoltage(bpm == 0.0f ? 10.0f : fminf(60.0f / fabsf(bpm), 10.0f));
@@ -528,6 +531,20 @@ struct RunOutputGateItem : MenuItem {
   }
 };
 
+struct PhaseOutputRange010Item : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->phaseOutputOffset = 0.0f;
+  }
+};
+
+struct PhaseOutputRange55Item : MenuItem {
+  Clock *module;
+  void onAction(const event::Action &e) override {
+    module->phaseOutputOffset = -5.0f;
+  }
+};
+
 struct RunInputModeItem : MenuItem {
   Clock *module;
   Menu *createChildMenu() override {
@@ -565,6 +582,27 @@ struct RunOutputModeItem : MenuItem {
     runOutputGateItem->rightText = CHECKMARK(module->runOutputIsGate);
     runOutputGateItem->module = module;
     menu->addChild(runOutputGateItem);
+
+    return menu;
+  }
+};
+
+struct PhaseOutputRangeItem : MenuItem {
+  Clock *module;
+  Menu *createChildMenu() override {
+    Menu *menu = new Menu;
+
+    PhaseOutputRange55Item *phaseOutputRange55Item = new PhaseOutputRange55Item;
+    phaseOutputRange55Item->text = "-5V to +5V";
+    phaseOutputRange55Item->rightText = CHECKMARK(module->phaseOutputOffset != 0.0f);
+    phaseOutputRange55Item->module = module;
+    menu->addChild(phaseOutputRange55Item);
+
+    PhaseOutputRange010Item *phaseOutputRange010Item = new PhaseOutputRange010Item;
+    phaseOutputRange010Item->text = "0V to +10V";
+    phaseOutputRange010Item->rightText = CHECKMARK(module->phaseOutputOffset == 0.0f);
+    phaseOutputRange010Item->module = module;
+    menu->addChild(phaseOutputRange010Item);
 
     return menu;
   }
@@ -683,6 +721,14 @@ void ClockWidget::appendContextMenu(Menu *menu) {
   runOutputModeItem->rightText = RIGHT_ARROW;
   runOutputModeItem->module = clock;
   menu->addChild(runOutputModeItem);
+
+  menu->addChild(new MenuSeparator());
+
+  PhaseOutputRangeItem *phaseOutputRangeItem = new PhaseOutputRangeItem;
+  phaseOutputRangeItem->text = "Phase Output Range";
+  phaseOutputRangeItem->rightText = RIGHT_ARROW;
+  phaseOutputRangeItem->module = clock;
+  menu->addChild(phaseOutputRangeItem);
 
   menu->addChild(new MenuSeparator());
 

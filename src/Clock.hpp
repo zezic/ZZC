@@ -132,6 +132,7 @@ struct Clock : Module {
   bool useCompatibleBPMCV = true;
   bool snapCV = false;
   int externalClockPPQN = 1;
+  float phaseOutputOffset = 0.0f;
 
   Clock();
   void toggle();
