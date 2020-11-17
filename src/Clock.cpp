@@ -47,6 +47,8 @@ inline void Clock::processButtons() {
   if (reverseButtonTrigger.process(params[REVERSE_SWITCH_PARAM].getValue())) {
     reverse ^= true;
   }
+
+  this->useCompatibleBPMCV = params[USE_COMPATIBLE_BPM_CV_PARAM].getValue() == 1.f;
 }
 
 inline void Clock::processSwingInputs() {
@@ -125,6 +127,7 @@ Clock::Clock() {
   configParam(SWING_16THS_PARAM, 1.0f, 99.0f, 50.0f, "x4 Swing");
   configParam(RUN_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Run");
   configParam(RESET_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
+  configParam(USE_COMPATIBLE_BPM_CV_PARAM, 0.0f, 1.0f, 1.0f, "External CV Mode");
   clockTracker.init();
   rightExpander.producerMessage = &rightMessages[0];
   rightExpander.consumerMessage = &rightMessages[1];
@@ -381,6 +384,8 @@ struct ClockWidget : ModuleWidget {
 ClockWidget::ClockWidget(Clock *module) {
   setModule(module);
   setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/Clock.svg")));
+
+  addParam(createParam<ZZC_VBPSVOCTSwitch>(Vec(10.8f, 41.f), module, Clock::USE_COMPATIBLE_BPM_CV_PARAM));
 
   addInput(createInput<ZZC_PJ_Port>(Vec(10.8f, 52), module, Clock::VBPS_INPUT));
   addChild(createLight<TinyLight<GreenLight>>(Vec(33, 52), module, Clock::EXT_VBPS_MODE_LED));
@@ -639,6 +644,7 @@ struct ExternalCVModeCompatibleOptionItem : MenuItem {
   Clock *module;
   void onAction(const event::Action &e) override {
     module->useCompatibleBPMCV = true;
+    module->params[Clock::USE_COMPATIBLE_BPM_CV_PARAM].setValue(1.f);
   }
 };
 
@@ -646,6 +652,7 @@ struct ExternalCVModeVBPSOptionItem : MenuItem {
   Clock *module;
   void onAction(const event::Action &e) override {
     module->useCompatibleBPMCV = false;
+    module->params[Clock::USE_COMPATIBLE_BPM_CV_PARAM].setValue(0.f);
   }
 };
 

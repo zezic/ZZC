@@ -30,6 +30,7 @@ struct Clock : Module {
     RUN_SWITCH_PARAM,
     RESET_SWITCH_PARAM,
     REVERSE_SWITCH_PARAM,
+    USE_COMPATIBLE_BPM_CV_PARAM,
     NUM_PARAMS
   };
   enum InputIds {

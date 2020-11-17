@@ -50,3 +50,11 @@ struct ZZC_LEDBezelDarkSwitch : ZZC_LEDBezelDark {
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/switches/ZZC-LED-Bezel-Dark.svg")));
   }
 };
+
+struct ZZC_VBPSVOCTSwitch : SvgSwitch {
+  ZZC_VBPSVOCTSwitch() {
+    addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-VBPSVOCT-Switch_0.svg")));
+    addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-VBPSVOCT-Switch_1.svg")));
+    shadow->opacity = 0.f;
+  }
+};
