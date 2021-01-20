@@ -10,3 +10,4 @@ compile_commands.json
 *.d
 .vscode/ipch
 .ccls-cache
+.clangd
