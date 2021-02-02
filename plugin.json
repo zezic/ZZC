@@ -89,6 +89,13 @@
       "tags": [
         "Controller", "Polyphonic", "Switch", "Utility"
       ]
+    },
+    {
+      "slug": "WavetablePlayer",
+      "name": "Wavetable Player",
+      "description": "Phase-driven Wavetable Player",
+      "tags": [
+      ]
     }
   ]
 }
