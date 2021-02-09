@@ -9,6 +9,7 @@ struct WavetablePlayer : Module {
     NUM_INPUTS
   };
   enum OutputIds {
+    WAVE_OUTPUT,
     NUM_OUTPUTS
   };
   enum LightIds {
@@ -16,6 +17,9 @@ struct WavetablePlayer : Module {
   };
 
   Wavetable* wt;
+  float phase = 0.f;
+  float wave = 0.f;
+  bool wtIsReady = false;
 
   WavetablePlayer();
   void process(const ProcessArgs &args) override;

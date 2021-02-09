@@ -13,45 +13,37 @@
 
 using namespace std;
 
+const float hrfilter[63] = {
+    -9.637663112e-008f, -2.216513622e-006f, -1.200509132e-006f, 1.79627641e-005f,
+    1.773084477e-005f,  -5.898886593e-005f, -8.980041457e-005f, 0.0001233910152f,
+    0.0002964516752f,   -0.0001573183545f,  -0.0007465034723f,  1.204636671e-018f,
+    0.001525280299f,    0.0006605535164f,   -0.002588451374f,   -0.002282966627f,
+    0.003618633142f,    0.005384810269f,    -0.003885820275f,   -0.01036664937f,
+    0.002154163085f,    0.0172905419f,      0.003383208299f,    -0.02569983155f,
+    -0.01536878385f,    0.03457865119f,     0.0387589559f,      -0.04251147807f,
+    -0.0895993337f,     0.04802387953f,     0.3125254214f,      0.4499996006f,
+    0.3125254214f,      0.04802387953f,     -0.0895993337f,     -0.04251147807f,
+    0.0387589559f,      0.03457865119f,     -0.01536878385f,    -0.02569983155f,
+    0.003383208299f,    0.0172905419f,      0.002154163085f,    -0.01036664937f,
+    -0.003885820275f,   0.005384810269f,    0.003618633142f,    -0.002282966627f,
+    -0.002588451374f,   0.0006605535164f,   0.001525280299f,    1.204636671e-018f,
+    -0.0007465034723f,  -0.0001573183545f,  0.0002964516752f,   0.0001233910152f,
+    -8.980041457e-005f, -5.898886593e-005f, 1.773084477e-005f,  1.79627641e-005f,
+    -1.200509132e-006f, -2.216513622e-006f, -9.637663112e-008};
+
+const int HRFilterI16[64] = {
+    1,   33,   -8,    -48,   31,   72,    -74,   -92,  143,   95,    -240, -66, 364,
+    -14, -505, 168,   642,   -416, -748,  779,   782,  -1279, -687,  1951, 375, -2874,
+    331, 4293, -1957, -7315, 7773, 31275, 31275, 7773, -7315, -1957, 4293, 331, -2874,
+    375, 1951, -687,  -1279, 782,  779,   -748,  -416, 642,   168,   -505, -14, 364,
+    -66, -240, 95,    143,   -92,  -74,   72,    31,   -48,   -8,    33,   1};
+
 const int FIRipolI16_N = 8;
 const int FIRoffsetI16 = FIRipolI16_N >> 1;
-
-#define vt_read_int32LE vt_write_int32LE
-#define vt_read_int32BE vt_write_int32BE
-#define vt_read_int16LE vt_write_int16LE
-#define vt_read_float32LE vt_write_float32LE
-
-inline int vt_write_int32LE(int t) { return t; }
-
-inline float vt_write_float32LE(float f) { return f; }
-
-inline int vt_write_int32BE(int t)
-{
-#if (ARCH_LIN || ARCH_MAC)
-    // this was `swap_endian`:
-    return ((t << 24) & 0xff000000) | ((t << 8) & 0x00ff0000) | ((t >> 8) & 0x0000ff00) |
-           ((t >> 24) & 0x000000ff);
-#else
-    // return _byteswap_ulong(t);
-    return __builtin_bswap32(t);
-#endif
-}
 
 unsigned int limit_range(unsigned int x, unsigned int l, unsigned int h)
 {
     return std::max(std::min(x, h), l);
-}
-
-inline short vt_write_int16LE(short t) { return t; }
-
-inline void vt_copyblock_W_LE(short *dst, const short *src, size_t count)
-{
-    memcpy(dst, src, count * sizeof(short));
-}
-
-inline void vt_copyblock_DW_LE(int *dst, const int *src, size_t count)
-{
-    memcpy(dst, src, count * sizeof(int));
 }
 
 void float2i15_block(float *f, short *s, int n)
@@ -173,7 +165,7 @@ bool Wavetable::BuildWT(void *wdata, wt_header &wh, bool AppendSilence)
         n_tables += 3; // this "3" should match the "3" in RequiredWTSize
     }
 
-#if WINDOWS
+#if ARCH_WIN
     unsigned long MSBpos;
     _BitScanReverse(&MSBpos, size);
 #else
@@ -258,5 +250,87 @@ bool Wavetable::BuildWT(void *wdata, wt_header &wh, bool AppendSilence)
                FIRoffsetI16 * sizeof(short));
     }
 
+    MipMapWT();
     return true;
+}
+
+void Wavetable::MipMapWT()
+{
+    int levels = 1;
+    while (((1 << levels) < size) & (levels < max_mipmap_levels))
+        levels++;
+    int ns = this->n_tables;
+
+    const int filter_size = 63;
+    const int filter_id_of = (filter_size - 1) >> 1;
+
+    /*FILE *F;
+    F = fopen("d:\\sdump.lala","wb");*/
+
+    // fwrite(this->TableI16WeakPointers[0][0],size*sizeof(short),1,F);
+    for (int l = 1; l < levels; l++)
+    {
+        int psize = size >> (l - 1);
+        int lsize = size >> l;
+
+        for (int s = 0; s < ns; s++)
+        {
+            this->TableF32WeakPointers[l][s] = TableF32Data + GetWTIndex(s, size, n_tables, l);
+            this->TableI16WeakPointers[l][s] =
+                TableI16Data + GetWTIndex(s, size, n_tables, l, FIRipolI16_N);
+
+            if (this->flags & wtf_is_sample)
+            {
+                for (int i = 0; i < lsize; i++)
+                {
+                    this->TableF32WeakPointers[l][s][i] = 0;
+                    for (int a = 0; a < filter_size; a++)
+                    {
+                        int srcindex = (i << 1) + a - filter_id_of;
+                        int srctable = max(0, s + (srcindex / psize));
+                        srcindex = srcindex & (psize - 1);
+                        if (srctable < ns)
+                            this->TableF32WeakPointers[l][s][i] +=
+                                hrfilter[a] * this->TableF32WeakPointers[l - 1][srctable][srcindex];
+                    }
+                    this->TableI16WeakPointers[l][s][i + FIRoffsetI16] =
+                        0; // not supported in int16 atm
+                }
+            }
+            else
+            {
+                for (int i = 0; i < lsize; i++)
+                {
+                    this->TableF32WeakPointers[l][s][i] = 0;
+                    for (int a = 0; a < filter_size; a++)
+                    {
+                        this->TableF32WeakPointers[l][s][i] +=
+                            hrfilter[a] * this->TableF32WeakPointers[l - 1][s][(
+                                              ((i << 1) + a - filter_id_of) & (psize - 1))];
+                    }
+                    int ival = 0;
+                    for (int a = 0; a < filter_size; a++)
+                    {
+                        ival += HRFilterI16[a] *
+                                this->TableI16WeakPointers[l - 1][s]
+                                                          [(((i << 1) + a - 31) & (psize - 1)) +
+                                                           FIRoffsetI16];
+                    }
+                    this->TableI16WeakPointers[l][s][i + FIRoffsetI16] = ival >> 16;
+                }
+            }
+            // float2i16_block(this->TableF32WeakPointers[l][s],this->TableI16WeakPointers[l][s],lsize);
+            memcpy(&this->TableI16WeakPointers[l][s][lsize + FIRoffsetI16],
+                   &this->TableI16WeakPointers[l][s][FIRoffsetI16], FIRoffsetI16 * sizeof(short));
+            memcpy(&this->TableI16WeakPointers[l][s][0], &this->TableI16WeakPointers[l][s][lsize],
+                   FIRoffsetI16 * sizeof(short));
+        }
+        // fwrite(this->TableI16WeakPointers[l][0],lsize*sizeof(short),1,F);
+    }
+    // fclose(F);
+
+    // TODO I16 mipmaps end up out of phase
+    // The click/knot/bug probably results from the fact that there is no padding in the beginning,
+    // so it becomes out of phase at mipmap switch - makes sense because as they were off by a whole
+    // sample at the mipmap switch, which can not be explained by the halfrate filter
 }

@@ -3,6 +3,7 @@
  */
 
 #pragma once
+#include <cstring>
 #include <string>
 const int max_wtable_size = 4096;
 const int max_subtables = 512;
@@ -12,6 +13,41 @@ const int max_mipmap_levels = 16;
 // CheckRequiredWTSize with ts and tc at 1024 and 512
 const int max_wtable_samples = 2097152;
 // const int max_wtable_samples =  268000; // delay pops 4 uses the most
+//
+
+#define vt_read_int32LE vt_write_int32LE
+#define vt_read_int32BE vt_write_int32BE
+#define vt_read_int16LE vt_write_int16LE
+#define vt_read_float32LE vt_write_float32LE
+
+inline int vt_write_int32LE(int t) { return t; }
+
+inline float vt_write_float32LE(float f) { return f; }
+
+inline int vt_write_int32BE(int t)
+{
+#if (ARCH_LIN || ARCH_MAC)
+    // this was `swap_endian`:
+    return ((t << 24) & 0xff000000) | ((t << 8) & 0x00ff0000) | ((t >> 8) & 0x0000ff00) |
+           ((t >> 24) & 0x000000ff);
+#else
+    // return _byteswap_ulong(t);
+    return __builtin_bswap32(t);
+#endif
+}
+
+inline short vt_write_int16LE(short t) { return t; }
+
+inline void vt_copyblock_W_LE(short *dst, const short *src, size_t count)
+{
+    memcpy(dst, src, count * sizeof(short));
+}
+
+inline void vt_copyblock_DW_LE(int *dst, const int *src, size_t count)
+{
+    memcpy(dst, src, count * sizeof(int));
+}
+
 
 #pragma pack(push, 1)
 struct wt_header
@@ -30,12 +66,13 @@ class Wavetable
     ~Wavetable();
     void Copy(Wavetable *wt);
     bool BuildWT(void *wdata, wt_header &wh, bool AppendSilence);
+    void MipMapWT();
 
     void allocPointers(size_t newSize);
 
   public:
     int size;
-    unsigned int n_tables;
+    int n_tables;
     int size_po2;
     int flags;
     float dt;

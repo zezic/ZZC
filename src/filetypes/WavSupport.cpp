@@ -51,6 +51,78 @@ bool four_chars(char *v, char a, char b, char c, char d)
     return v[0] == a && v[1] == b && v[2] == c && v[3] == d;
 }
 
+void SurgeStorage::load_wt(std::string filename, Wavetable *wt)
+{
+    wt->queue_filename[0] = 0;
+    std::string extension = filename.substr(filename.find_last_of('.'), filename.npos);
+    for (unsigned int i = 0; i < extension.length(); i++)
+        extension[i] = tolower(extension[i]);
+    bool loaded = false;
+    if (extension.compare(".wt") == 0)
+        loaded = load_wt_wt(filename, wt);
+    else if (extension.compare(".wav") == 0)
+        loaded = load_wt_wav_portable(filename, wt);
+    else
+    {
+        std::cout << "Unable to load file with extension " << extension
+            << "! Surge only supports .wav and .wt wavetable files!" << std::endl;
+    }
+}
+
+bool SurgeStorage::load_wt_wt(std::string filename, Wavetable *wt)
+{
+    FILE *f = fopen(filename.c_str(), "rb");
+    if (!f)
+        return false;
+    wt_header wh;
+    memset(&wh, 0, sizeof(wt_header));
+
+    size_t read = fread(&wh, sizeof(wt_header), 1, f);
+    // I'm not sure why this ever worked but it is checking the 4 bytes against vawt so...
+    // if (wh.tag != vt_read_int32BE('vawt'))
+    if (!(wh.tag[0] == 'v' && wh.tag[1] == 'a' && wh.tag[2] == 'w' && wh.tag[3] == 't'))
+    {
+        // SOME sort of error reporting is appropriate
+        fclose(f);
+        return false;
+    }
+
+    void *data;
+    size_t ds;
+    if (vt_read_int16LE(wh.flags) & wtf_int16)
+        ds = sizeof(short) * vt_read_int16LE(wh.n_tables) * vt_read_int32LE(wh.n_samples);
+    else
+        ds = sizeof(float) * vt_read_int16LE(wh.n_tables) * vt_read_int32LE(wh.n_samples);
+
+    data = malloc(ds);
+    read = fread(data, 1, ds, f);
+    // FIXME - error if read != ds
+
+    waveTableDataMutex.lock();
+    bool wasBuilt = wt->BuildWT(data, wh, false);
+    waveTableDataMutex.unlock();
+    free(data);
+
+    if (!wasBuilt)
+    {
+        std::cout << "Wavetable could not be built, which means it has too many samples or frames."
+            << " You provided " << wh.n_tables << " frames of " << wh.n_samples
+            << "samples, while limit is " << max_subtables << " frames and " << max_wtable_size
+            << " samples."
+            << " In some cases, Surge detects this situation inconsistently. Surge is now in a "
+               "potentially "
+            << " inconsistent state. It is recommended to restart Surge and not load the "
+               "problematic wavetable again."
+            << " If you would like, please attach the wavetable which caused this message to a new "
+               "GitHub issue at "
+            << " https://github.com/surge-synthesizer/surge/" << std::endl;
+        fclose(f);
+        return false;
+    }
+    fclose(f);
+    return true;
+}
+
 bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
 {
     std::string uitag = "Wavetable Import Error";
