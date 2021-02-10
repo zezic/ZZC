@@ -6,6 +6,8 @@
 WavetablePlayer::WavetablePlayer() {
   this->wt = new Wavetable();
   config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+  configParam(INDEX_PARAM, 0.f, 1.f, 0.f, "Wave Index");
+  configParam(INDEX_CV_ATT_PARAM, -1.f, 1.f, 0.f, "Wave Index CV Attenuverter");
 }
 
 json_t *WavetablePlayer::dataToJson() {
@@ -17,13 +19,15 @@ void WavetablePlayer::dataFromJson(json_t *rootJ) {
 }
 
 float getWTSample(Wavetable* wt, int wave, float phase) {
+  int targetWaveSize = wt->size;
+
   float intpart;
-  float fractpart = std::modf(phase * wt->size, &intpart);
+  float fractpart = std::modf(phase * targetWaveSize, &intpart);
 
   int index0 = intpart;
-  int index1 = math::eucMod(index0 + 1, wt->size);
+  int index1 = math::eucMod(index0 + 1, targetWaveSize);
 
-  int waveOffset = wt->size * wave;
+  int waveOffset = targetWaveSize * wave;
 
   float sample0 = wt->TableF32Data[waveOffset + index0];
   float sample1 = wt->TableF32Data[waveOffset + index1];
@@ -31,14 +35,42 @@ float getWTSample(Wavetable* wt, int wave, float phase) {
   return math::crossfade(sample0, sample1, fractpart);
 }
 
+float getWTMipmapSample(Wavetable* wt, int mipmapLevel, int wave, float phase) {
+  int targetWaveSize = wt->size >> mipmapLevel;
+
+  float intpart;
+  float fractpart = std::modf(phase * targetWaveSize, &intpart);
+
+  int index0 = intpart;
+  int index1 = math::eucMod(index0 + 1, targetWaveSize);
+
+  float sample0 = wt->TableF32WeakPointers[mipmapLevel][wave][index0];
+  float sample1 = wt->TableF32WeakPointers[mipmapLevel][wave][index1];
+
+  return math::crossfade(sample0, sample1, fractpart);
+}
+
 void WavetablePlayer::process(const ProcessArgs &args) {
   if (!this->wtIsReady) { return; }
 
+  float targetIndex = this->params[INDEX_PARAM].getValue();
+
+  if (this->inputs[INDEX_CV_INPUT].isConnected()) {
+    float indexModulation = this->inputs[INDEX_CV_INPUT].getVoltage() * 0.1f * this->params[INDEX_CV_ATT_PARAM].getValue();
+    targetIndex = math::clamp(targetIndex + indexModulation, 0.f, 1.f);
+  }
+
   float intpart;
-  float fractpart = std::modf(this->wave * this->wt->n_tables, &intpart);
+  float fractpart = std::modf(targetIndex * (this->wt->n_tables - 1), &intpart);
 
   int index0 = intpart;
   int index1 = math::eucMod(index0 + 1, this->wt->n_tables);
+
+  // int mipmapLevel = std::min(this->wt->size_po2 - 2, (int)(this->level * 10));
+
+  // if (mipmapLevel != this->lastMipmapLevel) {
+    // std::cout << "mipmapLevel: " << mipmapLevel << std::endl;
+  // }
 
   float wave0 = getWTSample(this->wt, index0, this->phase);
   float wave1 = getWTSample(this->wt, index1, this->phase);
@@ -46,10 +78,10 @@ void WavetablePlayer::process(const ProcessArgs &args) {
   float waveInterpolated = math::crossfade(wave0, wave1, fractpart);
 
   this->outputs[WAVE_OUTPUT].setVoltage(waveInterpolated * 10.f);
-  // this->outputs[WAVE_OUTPUT].setVoltage(getWTSample(this->wt, this->phase) * 10.f);
 
   this->phase = math::eucMod(this->phase + 0.001f, 1.f);
-  this->wave = math::eucMod(this->wave + 0.00001f, 1.f);
+  // this->wave = math::eucMod(this->wave + 0.00001f, 1.f);
+  // this->level = math::eucMod(this->level + 0.000003f, 1.f);
 }
 
 void WavetablePlayer::selectFolder() {
@@ -84,6 +116,10 @@ WavetablePlayerWidget::WavetablePlayerWidget(WavetablePlayer *module) {
   setModule(module);
   setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/WavetablePlayer.svg")));
 
+  addParam(createParam<ZZC_CrossKnob45>(Vec(30.5f, 182.366f), module, WavetablePlayer::INDEX_PARAM));
+  addParam(createParam<ZZC_KnobWithDot19>(Vec(50.5f, 245.965f), module, WavetablePlayer::INDEX_CV_ATT_PARAM));
+
+  addInput(createInput<ZZC_PJ_Port>(Vec(47.5f, 275.f), module, WavetablePlayer::INDEX_CV_INPUT));
   addOutput(createOutput<ZZC_PJ_Port>(Vec(47.5f, 320.f), module, WavetablePlayer::WAVE_OUTPUT));
 
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));

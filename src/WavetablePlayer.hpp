@@ -3,9 +3,12 @@
 
 struct WavetablePlayer : Module {
   enum ParamIds {
+    INDEX_PARAM,
+    INDEX_CV_ATT_PARAM,
     NUM_PARAMS
   };
   enum InputIds {
+    INDEX_CV_INPUT,
     NUM_INPUTS
   };
   enum OutputIds {
@@ -19,6 +22,8 @@ struct WavetablePlayer : Module {
   Wavetable* wt;
   float phase = 0.f;
   float wave = 0.f;
+  float level = 0.f;
+  int lastMipmapLevel = 0;
   bool wtIsReady = false;
 
   WavetablePlayer();
