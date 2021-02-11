@@ -78,6 +78,7 @@ void WavetablePlayer::process(const ProcessArgs &args) {
   float fractpart = std::modf(targetIndex * (wt->n_tables - 1), &intpart);
 
   int index0 = intpart;
+  this->indexIntpart = index0;
   int index1 = math::eucMod(index0 + 1, wt->n_tables);
 
   // int mipmapLevel = std::min(wt->size_po2 - 2, (int)(this->level * 10));
@@ -88,8 +89,10 @@ void WavetablePlayer::process(const ProcessArgs &args) {
   float wave1 = getWTSample(wt, index1, phase);
 
   float waveInterpolated = math::crossfade(wave0, wave1, fractpart);
+  this->interpolation = fractpart;
 
   this->outputs[WAVE_OUTPUT].setVoltage(waveInterpolated * 5.f);
+  this->index = targetIndex;
 }
 
 bool WavetablePlayer::tryToLoadWT(std::string path) {
@@ -132,16 +135,17 @@ void drawWave(
   const Widget::DrawArgs &args,
   Vec pos, Vec size, float skew,
   int reso, int dataSize,
-  float* data
+  float* data, bool interpolate, float interpolation = 0.f
 ) {
-  float smpl = data[0];
+  float smpl = interpolate ? math::crossfade(data[0], data[dataSize], interpolation) : data[0];
   int stepSize = dataSize / reso;
 
   nvgBeginPath(args.vg);
   nvgMoveTo(args.vg, pos.x, pos.y + smpl * size.y);
 
   for (int step = 1; step < reso + 1; step++) {
-    float smpl = data[std::min(dataSize - 1, step * stepSize)];
+    int smplIdx = std::min(dataSize - 1, step * stepSize);
+    float smpl = interpolate ? math::crossfade(data[smplIdx], data[smplIdx + dataSize], interpolation) : data[smplIdx];
     float smplPhase = (float)step / (float)reso;
     float smplX = smplPhase * size.x;
     float smplSkew = smplPhase * skew;
@@ -170,7 +174,7 @@ struct WavetableWidget : TransparentWidget {
 
     for (int waveIdx = 0; waveIdx < wt->n_tables; waveIdx++) {
       Vec pos = this->wd.pos.plus(this->wd.depth.mult((float)waveIdx / (float)(wt->n_tables - 1)));
-      drawWave(args, pos, this->wd.waveSize, this->wd.skew, this->waveReso, wt->size, wt->TableF32Data + waveIdx * wt->size);
+      drawWave(args, pos, this->wd.waveSize, this->wd.skew, this->waveReso, wt->size, wt->TableF32Data + waveIdx * wt->size, false);
     }
   }
 };
@@ -178,14 +182,22 @@ struct WavetableWidget : TransparentWidget {
 struct WaveformWidget : TransparentWidget {
   std::shared_ptr<Wavetable> wtPtr;
   float* index = nullptr;
+  int* indexIntpart = nullptr;
+  float* interpolation = nullptr;
   bool* inter = nullptr;
   int waveReso = 256;
   WaveformDimensions wd;
+  NVGcolor graphColor = nvgRGB(0xff, 0xd4, 0x2a);
 
   void draw(const DrawArgs &args) override {
     if (!this->wtPtr) { return; }
 
-    // Wavetable* wt = this->wtPtr.get();
+    Wavetable* wt = this->wtPtr.get();
+
+    nvgStrokeColor(args.vg, this->graphColor);
+
+    Vec pos = this->wd.pos.plus(this->wd.depth.mult(*this->index));
+    drawWave(args, pos, this->wd.waveSize, this->wd.skew, this->waveReso, wt->size, wt->TableF32Data + *this->indexIntpart * wt->size, true, *this->interpolation);
   }
 };
 
@@ -212,7 +224,8 @@ struct WavetableDisplayWidget : TransparentWidget {
 
   NVGcolor calcColor(float step, float lineWidth) {
     float potentialOverlap = std::max(0.f, lineWidth - step);
-    float alphaMultiplier = std::max(0.2f, 1.f - potentialOverlap);
+    float alphaMultiplier = std::pow(std::max(0.2f, 1.f - potentialOverlap), 2);
+    std::cout << "alphaMultiplier: " << alphaMultiplier << std::endl;
     return nvgRGBA(
       0xfe, 0xc3, 0x00,
       (int)((float)0x40 * alphaMultiplier)
@@ -273,7 +286,10 @@ WavetablePlayerWidget::WavetablePlayerWidget(WavetablePlayer *module) {
   if (module) {
     display->wtPtr = module->wtPtr;
     display->wtw->wtPtr = module->wtPtr;
+    display->wfw->wtPtr = module->wtPtr;
     display->wfw->index = &module->index;
+    display->wfw->indexIntpart = &module->indexIntpart;
+    display->wfw->interpolation = &module->interpolation;
     display->wfw->inter = &module->indexInter;
   }
   addChild(display);

@@ -32,6 +32,8 @@ struct WavetablePlayer : Module {
   bool wtIsReady = false;
 
   float index = 0.f;
+  int indexIntpart = 0;
+  float interpolation = 0.f;
   bool indexInter = true;
 
   std::string filename = "";
