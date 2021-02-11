@@ -112,6 +112,7 @@ int GetWTIndex(int WaveIdx, int WaveSize, int NumWaves, int MipMap, int Padding 
 
 Wavetable::Wavetable()
 {
+    std::cout << "Wavetable() <" << this << ">" << std::endl;
     n_tables = 0;
     dataSizes = 35000;
     TableF32Data = (float *)malloc(dataSizes * sizeof(float));
@@ -127,6 +128,7 @@ Wavetable::Wavetable()
 
 Wavetable::~Wavetable()
 {
+    std::cout << "~Wavetable() <" << this << ">" << std::endl;
     free(TableF32Data);
     free(TableI16Data);
 }
@@ -252,6 +254,7 @@ bool Wavetable::BuildWT(void *wdata, wt_header &wh, bool AppendSilence)
     }
 
     MipMapWT();
+    this->refresh_display = true;
     return true;
 }
 

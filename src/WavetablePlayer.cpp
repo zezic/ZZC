@@ -4,8 +4,7 @@
 #include "filetypes/WavSupport.hpp"
 
 WavetablePlayer::WavetablePlayer() {
-  this->wt = new Wavetable();
-  this->wtPtr = std::shared_ptr<Wavetable>(this->wt);
+  this->wtPtr = std::make_shared<Wavetable>();
   config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
   configParam(INDEX_PARAM, 0.f, 1.f, 0.f, "Wave Index");
   configParam(INDEX_CV_ATT_PARAM, -1.f, 1.f, 0.f, "Wave Index CV Attenuverter");
@@ -66,6 +65,8 @@ float getWTMipmapSample(Wavetable* wt, int mipmapLevel, int wave, float phase) {
 void WavetablePlayer::process(const ProcessArgs &args) {
   if (!this->wtIsReady) { return; }
 
+  Wavetable* wt = this->wtPtr.get();
+
   float targetIndex = this->params[INDEX_PARAM].getValue();
 
   if (this->inputs[INDEX_CV_INPUT].isConnected()) {
@@ -74,17 +75,17 @@ void WavetablePlayer::process(const ProcessArgs &args) {
   }
 
   float intpart;
-  float fractpart = std::modf(targetIndex * (this->wt->n_tables - 1), &intpart);
+  float fractpart = std::modf(targetIndex * (wt->n_tables - 1), &intpart);
 
   int index0 = intpart;
-  int index1 = math::eucMod(index0 + 1, this->wt->n_tables);
+  int index1 = math::eucMod(index0 + 1, wt->n_tables);
 
-  // int mipmapLevel = std::min(this->wt->size_po2 - 2, (int)(this->level * 10));
+  // int mipmapLevel = std::min(wt->size_po2 - 2, (int)(this->level * 10));
 
   float phase = math::eucMod(this->inputs[PHASE_INPUT].getVoltage() * 0.1f, 1.f);
 
-  float wave0 = getWTSample(this->wt, index0, phase);
-  float wave1 = getWTSample(this->wt, index1, phase);
+  float wave0 = getWTSample(wt, index0, phase);
+  float wave1 = getWTSample(wt, index1, phase);
 
   float waveInterpolated = math::crossfade(wave0, wave1, fractpart);
 
@@ -94,7 +95,7 @@ void WavetablePlayer::process(const ProcessArgs &args) {
 bool WavetablePlayer::tryToLoadWT(std::string path) {
   this->wtIsReady = false;
   SurgeStorage* ss = new SurgeStorage();
-  bool loaded = ss->load_wt(path, this->wt);
+  bool loaded = ss->load_wt(path, this->wtPtr.get());
   free(ss);
   this->wtIsReady = true;
   return loaded;
@@ -120,61 +121,139 @@ void WavetablePlayer::selectFile() {
   free(path);
 }
 
-struct WavetableDisplayWidget : BaseDisplayWidget {
+struct WaveformDimensions {
+  Vec pos;
+  Vec waveSize;
+  Vec depth;
+  float skew;
+};
+
+void drawWave(
+  const Widget::DrawArgs &args,
+  Vec pos, Vec size, float skew,
+  int reso, int dataSize,
+  float* data
+) {
+  float smpl = data[0];
+  int stepSize = dataSize / reso;
+
+  nvgBeginPath(args.vg);
+  nvgMoveTo(args.vg, pos.x, pos.y + smpl * size.y);
+
+  for (int step = 1; step < reso + 1; step++) {
+    float smpl = data[std::min(dataSize - 1, step * stepSize)];
+    float smplPhase = (float)step / (float)reso;
+    float smplX = smplPhase * size.x;
+    float smplSkew = smplPhase * skew;
+    nvgLineTo(args.vg, pos.x + smplX, pos.y - smpl * size.y + smplSkew);
+  }
+
+  nvgLineJoin(args.vg, NVG_ROUND);
+  nvgLineCap(args.vg, NVG_ROUND);
+  nvgMiterLimit(args.vg, 2.f);
+  nvgStrokeWidth(args.vg, 0.72f);
+  nvgStroke(args.vg);
+}
+
+struct WavetableWidget : TransparentWidget {
   std::shared_ptr<Wavetable> wtPtr;
-  NVGcolor monoColor = nvgRGB(0xff, 0xd4, 0x2a);
-  NVGcolor polyColor = nvgRGB(0x29, 0xb2, 0xef);
+  float lineWidth = 0.72f;
+  int waveReso = 256;
+  NVGcolor graphColor = nvgRGBA(0xfe, 0xc3, 0x00, 0x40);
+  WaveformDimensions wd;
 
   void draw(const DrawArgs &args) override {
     if (!this->wtPtr) { return; }
     Wavetable* wt = this->wtPtr.get();
 
-    int waveReso = 128;
-    int sampleStep = wt->size / waveReso;
-
-    float lineWidth = 0.72f;
-    float verticalDepth = this->box.size.y * 0.25f;
-    float verticalStep = verticalDepth / (wt->n_tables - 1);
-    float potentialOverlap = std::min(0.75f, std::max(0.f, (wt->n_tables * lineWidth - verticalDepth) / verticalDepth));
-
-    NVGcolor graphColor = nvgRGBA(0xfe, 0xc3, 0x00, (int)((float)0x40 * (1.f - potentialOverlap)));
-
-    float diagramWidth = this->box.size.y * 0.8f;
-    float diagramTiltX = diagramWidth * 0.25f;
-    float diagramTiltY = diagramWidth * 0.1f;
-    float waveWidth = diagramWidth - diagramTiltX;
-    float waveHeightMultiplier = waveWidth * 0.2;
-    float horizontalOffset = (this->box.size.y - diagramWidth) * 0.5f;
-
-    float verticalOffset = this->box.size.y * 0.5f + verticalDepth * 0.5f - diagramTiltY * 0.5f;
-
-    nvgStrokeColor(args.vg, graphColor);
+    nvgStrokeColor(args.vg, this->graphColor);
 
     for (int waveIdx = 0; waveIdx < wt->n_tables; waveIdx++) {
-      float waveOffsetY = verticalOffset - verticalStep * waveIdx;
-      nvgBeginPath(args.vg);
-
-
-      float smpl = wt->TableF32Data[waveIdx * wt->size];
-      float tiltOffsetX = (float)waveIdx / (float)(std::max(1, wt->n_tables - 1)) * diagramTiltX;
-      nvgMoveTo(args.vg, horizontalOffset + tiltOffsetX, waveOffsetY - smpl * waveHeightMultiplier);
-
-      for (int wavePos = 1; wavePos < waveReso + 1; wavePos++) {
-
-        float tiltOffsetY = (float)wavePos / (float)(waveReso) * diagramTiltY;
-
-        float smpl = wt->TableF32Data[waveIdx * wt->size + std::min(wt->size - 1, wavePos * sampleStep)];
-        float waveX = (float)wavePos / (float)waveReso * waveWidth;
-        nvgLineTo(args.vg, horizontalOffset + tiltOffsetX + waveX, waveOffsetY + tiltOffsetY - smpl * waveHeightMultiplier);
-      }
-
-      nvgLineJoin(args.vg, NVG_ROUND);
-      nvgLineCap(args.vg, NVG_ROUND);
-      nvgMiterLimit(args.vg, 2.f);
-      nvgStrokeWidth(args.vg, 0.72f);
-      // nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
-      nvgStroke(args.vg);
+      Vec pos = this->wd.pos.plus(this->wd.depth.mult((float)waveIdx / (float)(wt->n_tables - 1)));
+      drawWave(args, pos, this->wd.waveSize, this->wd.skew, this->waveReso, wt->size, wt->TableF32Data + waveIdx * wt->size);
     }
+  }
+};
+
+struct WaveformWidget : TransparentWidget {
+  std::shared_ptr<Wavetable> wtPtr;
+  float* index = nullptr;
+  bool* inter = nullptr;
+  int waveReso = 256;
+  WaveformDimensions wd;
+
+  void draw(const DrawArgs &args) override {
+    if (!this->wtPtr) { return; }
+
+    // Wavetable* wt = this->wtPtr.get();
+  }
+};
+
+struct WavetableDisplayWidget : TransparentWidget {
+  std::shared_ptr<Wavetable> wtPtr;
+  NVGcolor monoColor = nvgRGB(0xff, 0xd4, 0x2a);
+  NVGcolor polyColor = nvgRGB(0x29, 0xb2, 0xef);
+
+  widget::FramebufferWidget* fbw;
+  WavetableWidget *wtw;
+  WaveformWidget *wfw;
+  WaveformDimensions wd;
+
+  WavetableDisplayWidget() {
+    this->fbw = new widget::FramebufferWidget;
+    this->addChild(this->fbw);
+
+    this->wtw = new WavetableWidget;
+    this->fbw->addChild(this->wtw);
+
+    this->wfw = new WaveformWidget;
+    this->addChild(this->wfw);
+  }
+
+  NVGcolor calcColor(float step, float lineWidth) {
+    float potentialOverlap = std::max(0.f, lineWidth - step);
+    float alphaMultiplier = std::max(0.2f, 1.f - potentialOverlap);
+    return nvgRGBA(
+      0xfe, 0xc3, 0x00,
+      (int)((float)0x40 * alphaMultiplier)
+    );
+  }
+
+  void setupSizes() {
+    this->wtw->setSize(this->box.size);
+    this->fbw->setSize(this->box.size);
+
+    float tableWidth = this->box.size.y * 0.8f;
+    Vec depth(tableWidth * 0.25f, this->box.size.y * -0.25f);
+    float skew = tableWidth * 0.1f;
+    float waveWidth = tableWidth - depth.x;
+    float waveHeight = waveWidth * 0.2;
+    Vec waveSize(waveWidth, waveHeight);
+    Vec pos(
+      (this->box.size.y - tableWidth) * 0.5f,
+      this->box.size.y * 0.5f - depth.y * 0.5f - skew * 0.5f
+    );
+
+    this->wd.depth = depth;
+    this->wd.pos = pos;
+    this->wd.skew = skew;
+    this->wd.waveSize = waveSize;
+
+    this->wtw->wd = this->wd;
+    this->wfw->wd = this->wd;
+  }
+
+  void step() override {
+    if (this->wtPtr) {
+      Wavetable* wt = this->wtPtr.get();
+      if (wt->refresh_display) {
+        wt->refresh_display = false;
+        float verticalStep = (-this->wd.depth.y) / (wt->n_tables - 1);
+        this->wtw->graphColor = calcColor(verticalStep, this->wtw->lineWidth);
+        this->fbw->dirty = true;
+      }
+    }
+    TransparentWidget::step();
   }
 };
 
@@ -190,8 +269,12 @@ WavetablePlayerWidget::WavetablePlayerWidget(WavetablePlayer *module) {
   WavetableDisplayWidget *display = new WavetableDisplayWidget();
   display->box.pos = Vec(0.f, 40.f);
   display->box.size = Vec(this->box.size.x, this->box.size.x);
+  display->setupSizes();
   if (module) {
-    display->wtPtr = std::shared_ptr<Wavetable>(module->wt);
+    display->wtPtr = module->wtPtr;
+    display->wtw->wtPtr = module->wtPtr;
+    display->wfw->index = &module->index;
+    display->wfw->inter = &module->indexInter;
   }
   addChild(display);
 

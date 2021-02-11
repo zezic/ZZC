@@ -25,12 +25,14 @@ struct WavetablePlayer : Module {
     NUM_LIGHTS
   };
 
-  Wavetable* wt;
-  std::shared_ptr<Wavetable> wtPtr;
+  std::shared_ptr<Wavetable> wtPtr = std::shared_ptr<Wavetable>(nullptr);
   float wave = 0.f;
   float level = 0.f;
   int lastMipmapLevel = 0;
   bool wtIsReady = false;
+
+  float index = 0.f;
+  bool indexInter = true;
 
   std::string filename = "";
 
