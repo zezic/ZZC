@@ -2,8 +2,6 @@
  * Adopted from https://github.com/surge-synthesizer/surge
  */
 
-#pragma once
-
 /*
 ** Portable (using standard fread and so on) support for .wav files generating
 ** wavetables.
@@ -51,7 +49,7 @@ bool four_chars(char *v, char a, char b, char c, char d)
     return v[0] == a && v[1] == b && v[2] == c && v[3] == d;
 }
 
-void SurgeStorage::load_wt(std::string filename, Wavetable *wt)
+bool SurgeStorage::load_wt(std::string filename, Wavetable *wt)
 {
     wt->queue_filename[0] = 0;
     std::string extension = filename.substr(filename.find_last_of('.'), filename.npos);
@@ -67,6 +65,7 @@ void SurgeStorage::load_wt(std::string filename, Wavetable *wt)
         std::cout << "Unable to load file with extension " << extension
             << "! Surge only supports .wav and .wt wavetable files!" << std::endl;
     }
+    return loaded;
 }
 
 bool SurgeStorage::load_wt_wt(std::string filename, Wavetable *wt)

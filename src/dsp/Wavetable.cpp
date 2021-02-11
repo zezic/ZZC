@@ -112,6 +112,7 @@ int GetWTIndex(int WaveIdx, int WaveSize, int NumWaves, int MipMap, int Padding 
 
 Wavetable::Wavetable()
 {
+    n_tables = 0;
     dataSizes = 35000;
     TableF32Data = (float *)malloc(dataSizes * sizeof(float));
     TableI16Data = (short *)malloc(dataSizes * sizeof(short));

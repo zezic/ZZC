@@ -36,7 +36,7 @@ struct FcloseGuard
 struct SurgeStorage {
     std::mutex waveTableDataMutex;
 
-    void load_wt(std::string filename, Wavetable *wt);
+    bool load_wt(std::string filename, Wavetable *wt);
     bool load_wt_wt(std::string filename, Wavetable *wt);
     bool load_wt_wav_portable(std::string fn, Wavetable *wt);
 };

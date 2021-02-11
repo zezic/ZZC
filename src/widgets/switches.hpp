@@ -11,6 +11,13 @@ struct ZZC_Switch2 : SvgSwitch {
   }
 };
 
+struct ZZC_Switch2Vertical : SvgSwitch {
+  ZZC_Switch2Vertical() {
+    addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-Switch-2-Vertical_0.svg")));
+    addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-Switch-2-Vertical_1.svg")));
+  }
+};
+
 struct ZZC_Switch3 : SvgSwitch {
   ZZC_Switch3() {
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-Switch-3_0.svg")));
