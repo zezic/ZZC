@@ -163,8 +163,16 @@ struct WavetableWidget : TransparentWidget {
   std::shared_ptr<Wavetable> wtPtr;
   float lineWidth = 0.72f;
   int waveReso = 256;
+  NVGcolor dimmedColor = nvgRGBA(0xfe, 0xc3, 0x00, 0x40);
+  NVGcolor brightColor = nvgRGB(0xff, 0xd4, 0x2a);
   NVGcolor graphColor = nvgRGBA(0xfe, 0xc3, 0x00, 0x40);
   WaveformDimensions wd;
+  std::shared_ptr<Font> font;
+  std::string* filename = nullptr;
+
+  WavetableWidget() {
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/SKODANext/SKODANext-Regular.ttf"));
+  }
 
   void draw(const DrawArgs &args) override {
     if (!this->wtPtr) { return; }
@@ -176,6 +184,19 @@ struct WavetableWidget : TransparentWidget {
       Vec pos = this->wd.pos.plus(this->wd.depth.mult((float)waveIdx / (float)(wt->n_tables - 1)));
       drawWave(args, pos, this->wd.waveSize, this->wd.skew, this->waveReso, wt->size, wt->TableF32Data + waveIdx * wt->size, false);
     }
+
+    nvgFontSize(args.vg, 8.5f);
+    nvgFontFaceId(args.vg, font->handle);
+    nvgTextLetterSpacing(args.vg, 0.1f);
+    nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
+    Vec textPos = Vec(box.size.x / 2.f, box.size.y * 0.13f);
+    nvgFillColor(args.vg, dimmedColor);
+    nvgText(args.vg, textPos.x, textPos.y, string::f("%d x %d", wt->size, wt->n_tables).c_str(), NULL);
+
+    textPos = Vec(box.size.x / 2.f, box.size.y * 0.89f);
+    nvgFillColor(args.vg, brightColor);
+    nvgText(args.vg, textPos.x, textPos.y, string::filenameBase(string::filename(*this->filename)).c_str(), NULL);
+    // nvgText(args.vg, textPos.x, textPos.y, "Filename", NULL);
   }
 };
 
@@ -237,7 +258,7 @@ struct WavetableDisplayWidget : TransparentWidget {
     this->fbw->setSize(this->box.size);
 
     float tableWidth = this->box.size.y * 0.8f;
-    Vec depth(tableWidth * 0.25f, this->box.size.y * -0.25f);
+    Vec depth(tableWidth * 0.2f, this->box.size.y * -0.25f);
     float skew = tableWidth * 0.1f;
     float waveWidth = tableWidth - depth.x;
     float waveHeight = waveWidth * 0.2;
@@ -285,7 +306,10 @@ WavetablePlayerWidget::WavetablePlayerWidget(WavetablePlayer *module) {
   display->setupSizes();
   if (module) {
     display->wtPtr = module->wtPtr;
+
     display->wtw->wtPtr = module->wtPtr;
+    display->wtw->filename = &module->filename;
+
     display->wfw->wtPtr = module->wtPtr;
     display->wfw->index = &module->index;
     display->wfw->indexIntpart = &module->indexIntpart;
