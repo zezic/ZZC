@@ -24,8 +24,7 @@ void WavetablePlayer::dataFromJson(json_t *rootJ) {
   if (filenameJ) {
     std::string newFilename = json_string_value(filenameJ);
     if (newFilename != this->filename) {
-      this->filename = newFilename;
-      this->tryToLoadWT(this->filename);
+      this->tryToLoadWT(newFilename);
     }
   }
 }
@@ -96,11 +95,15 @@ void WavetablePlayer::process(const ProcessArgs &args) {
 }
 
 bool WavetablePlayer::tryToLoadWT(std::string path) {
+  if (!system::isFile(path)) { return false; }
   this->wtIsReady = false;
   SurgeStorage* ss = new SurgeStorage();
   bool loaded = ss->load_wt(path, this->wtPtr.get());
   free(ss);
   this->wtIsReady = true;
+  if (loaded) {
+    this->filename = path;
+  }
   return loaded;
 }
 
@@ -116,12 +119,32 @@ void WavetablePlayer::selectFile() {
 
   char *path = osdialog_file(OSDIALOG_OPEN, dir.c_str(), NULL, NULL);
   if (path) {
-    bool loaded = this->tryToLoadWT(path);
-    if (loaded) {
-      this->filename = path;
-    }
+    this->tryToLoadWT(std::string(path));
   }
   free(path);
+}
+
+void WavetablePlayer::switchFile(int delta) {
+  if (this->filename == "") { return; }
+
+  std::string dir = string::directory(this->filename);
+  std::vector<std::string> entries = {};
+
+  for (std::string wtPath : system::getEntries(dir)) {
+    if (!system::isFile(wtPath)) { continue; }
+    entries.push_back(wtPath);
+  }
+
+  std::vector<std::string>::iterator it = std::find(entries.begin(), entries.end(), this->filename);
+
+  if (it != entries.end()) {
+    int currentIdx = std::distance(entries.begin(), it);
+    int targetIdx = math::eucMod(currentIdx + delta, entries.size());
+    std::string targetPath = entries.at(targetIdx);
+    this->tryToLoadWT(targetPath);
+  } else if (entries.size() > 0) {
+    this->tryToLoadWT(entries.front());
+  }
 }
 
 struct WaveformDimensions {
@@ -195,7 +218,29 @@ struct WavetableWidget : TransparentWidget {
 
     textPos = Vec(box.size.x / 2.f, box.size.y * 0.89f);
     nvgFillColor(args.vg, brightColor);
-    nvgText(args.vg, textPos.x, textPos.y, string::filenameBase(string::filename(*this->filename)).c_str(), NULL);
+
+    std::string fullFilename = string::filenameBase(string::filename(*this->filename));
+    std::string finalFilename = fullFilename;
+
+    size_t maxLength = 16;
+    if (fullFilename.length() > maxLength) {
+      if (fullFilename.find('-') != std::string::npos) {
+        // Has delimiter, let's split first part
+        finalFilename = string::ellipsize(
+          string::trim(
+            fullFilename.substr(
+              fullFilename.find('-') + 1,
+              fullFilename.length() - fullFilename.find('-') - 1
+            )
+          ),
+          maxLength
+        );
+      } else {
+        finalFilename = string::ellipsize(fullFilename, maxLength);
+      }
+    }
+
+    nvgText(args.vg, textPos.x, textPos.y, finalFilename.c_str(), NULL);
     // nvgText(args.vg, textPos.x, textPos.y, "Filename", NULL);
   }
 };
@@ -222,7 +267,52 @@ struct WaveformWidget : TransparentWidget {
   }
 };
 
-struct WavetableDisplayWidget : TransparentWidget {
+struct WavetableOpenButtonWidget : SvgButton {
+  Module* module = nullptr;
+
+  WavetableOpenButtonWidget() {
+    this->addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/switches/ZZC-Open-Button.svg")));
+    this->shadow->opacity = 0.f;
+  }
+
+  void onAction(const event::Action& e) override {
+    if (!this->module) { return; }
+    WavetablePlayer* wtPlayer = static_cast<WavetablePlayer*>(this->module);
+    wtPlayer->selectFile();
+  }
+};
+
+struct WavetablePrevButtonWidget : SvgButton {
+  Module* module = nullptr;
+
+  WavetablePrevButtonWidget() {
+    this->addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/switches/ZZC-Prev-Button.svg")));
+    this->shadow->opacity = 0.f;
+  }
+
+  void onAction(const event::Action& e) override {
+    if (!this->module) { return; }
+    WavetablePlayer* wtPlayer = static_cast<WavetablePlayer*>(this->module);
+    wtPlayer->switchFile(-1);
+  }
+};
+
+struct WavetableNextButtonWidget : SvgButton {
+  Module* module = nullptr;
+
+  WavetableNextButtonWidget() {
+    this->addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/switches/ZZC-Next-Button.svg")));
+    this->shadow->opacity = 0.f;
+  }
+
+  void onAction(const event::Action& e) override {
+    if (!this->module) { return; }
+    WavetablePlayer* wtPlayer = static_cast<WavetablePlayer*>(this->module);
+    wtPlayer->switchFile(1);
+  }
+};
+
+struct WavetableDisplayWidget : Widget {
   std::shared_ptr<Wavetable> wtPtr;
   NVGcolor monoColor = nvgRGB(0xff, 0xd4, 0x2a);
   NVGcolor polyColor = nvgRGB(0x29, 0xb2, 0xef);
@@ -231,6 +321,9 @@ struct WavetableDisplayWidget : TransparentWidget {
   WavetableWidget *wtw;
   WaveformWidget *wfw;
   WaveformDimensions wd;
+  WavetableOpenButtonWidget *obw;
+  WavetablePrevButtonWidget *pbw;
+  WavetableNextButtonWidget *nbw;
 
   WavetableDisplayWidget() {
     this->fbw = new widget::FramebufferWidget;
@@ -241,6 +334,15 @@ struct WavetableDisplayWidget : TransparentWidget {
 
     this->wfw = new WaveformWidget;
     this->addChild(this->wfw);
+
+    this->obw = new WavetableOpenButtonWidget;
+    this->addChild(this->obw);
+
+    this->pbw = new WavetablePrevButtonWidget;
+    this->addChild(this->pbw);
+
+    this->nbw = new WavetableNextButtonWidget;
+    this->addChild(this->nbw);
   }
 
   NVGcolor calcColor(float step, float lineWidth) {
@@ -275,6 +377,14 @@ struct WavetableDisplayWidget : TransparentWidget {
 
     this->wtw->wd = this->wd;
     this->wfw->wd = this->wd;
+
+    this->obw->box.pos.y = this->box.size.y - this->obw->box.size.y;
+
+    this->nbw->box.pos.x = this->box.size.x - this->nbw->box.size.x;
+    this->nbw->box.pos.y = this->box.size.y - this->nbw->box.size.y;
+
+    this->pbw->box.pos.x = this->nbw->box.pos.x - this->pbw->box.size.x;
+    this->pbw->box.pos.y = this->box.size.y - this->pbw->box.size.y;
   }
 
   void step() override {
@@ -287,7 +397,7 @@ struct WavetableDisplayWidget : TransparentWidget {
         this->fbw->dirty = true;
       }
     }
-    TransparentWidget::step();
+    Widget::step();
   }
 };
 
@@ -315,6 +425,10 @@ WavetablePlayerWidget::WavetablePlayerWidget(WavetablePlayer *module) {
     display->wfw->indexIntpart = &module->indexIntpart;
     display->wfw->interpolation = &module->interpolation;
     display->wfw->inter = &module->indexInter;
+
+    display->obw->module = module;
+    display->pbw->module = module;
+    display->nbw->module = module;
   }
   addChild(display);
 

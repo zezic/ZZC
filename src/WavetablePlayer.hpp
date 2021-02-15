@@ -44,5 +44,6 @@ struct WavetablePlayer : Module {
   void dataFromJson(json_t *rootJ) override;
 
   void selectFile();
+  void switchFile(int delta);
   bool tryToLoadWT(std::string path);
 };
