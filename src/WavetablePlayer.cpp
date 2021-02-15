@@ -346,8 +346,8 @@ struct WavetableDisplayWidget : Widget {
   }
 
   NVGcolor calcColor(float step, float lineWidth) {
-    float potentialOverlap = std::max(0.f, lineWidth - step);
-    float alphaMultiplier = std::pow(std::max(0.2f, 1.f - potentialOverlap), 2);
+    float potentialOverlap = std::max(0.f, lineWidth * 1.5f - step);
+    float alphaMultiplier = std::max(0.05f, 1.f - potentialOverlap);
     std::cout << "alphaMultiplier: " << alphaMultiplier << std::endl;
     return nvgRGBA(
       0xfe, 0xc3, 0x00,
