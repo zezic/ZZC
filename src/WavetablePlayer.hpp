@@ -13,6 +13,7 @@ struct WavetablePlayer : Module {
   enum InputIds {
     PHASE_INPUT,
     INDEX_CV_INPUT,
+    MIPMAP_INPUT,
     NUM_INPUTS
   };
   enum OutputIds {
@@ -35,6 +36,9 @@ struct WavetablePlayer : Module {
   int indexIntpart = 0;
   float interpolation = 0.f;
   bool indexInter = true;
+
+  float lastPhase = 0.f;
+  dsp::ClockDivider debugDivider;
 
   std::string filename = "";
 

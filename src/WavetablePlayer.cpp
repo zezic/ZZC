@@ -5,6 +5,8 @@
 
 WavetablePlayer::WavetablePlayer() {
   this->wtPtr = std::make_shared<Wavetable>();
+  // this->debugDivider = dsp::ClockDivider();
+  this->debugDivider.setDivision(1000);
   config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
   configParam(INDEX_PARAM, 0.f, 1.f, 0.f, "Wave Index");
   configParam(INDEX_CV_ATT_PARAM, -1.f, 1.f, 0.f, "Wave Index CV Attenuverter");
@@ -73,6 +75,7 @@ void WavetablePlayer::process(const ProcessArgs &args) {
     targetIndex = math::clamp(targetIndex + indexModulation, 0.f, 1.f);
   }
 
+
   float intpart;
   float fractpart = std::modf(targetIndex * (wt->n_tables - 1), &intpart);
 
@@ -84,14 +87,54 @@ void WavetablePlayer::process(const ProcessArgs &args) {
 
   float phase = math::eucMod(this->inputs[PHASE_INPUT].getVoltage() * 0.1f, 1.f);
 
-  float wave0 = getWTSample(wt, index0, phase);
-  float wave1 = getWTSample(wt, index1, phase);
+  // int targetMipmapLevel = this->inputs[MIPMAP_INPUT].isConnected() ? std::max(0, (int)std::floor(this->inputs[MIPMAP_INPUT].getVoltage())) : 0;
+
+  float junk;
+  float phaseDelta = std::modf((phase + 1.f) - lastPhase, &junk);
+
+  int targetMipmapLevel = -1;
+  float mipmapInterpol = 0.f;
+
+  if (this->params[MIPMAP_PARAM].getValue() > 0.f) {
+    if (phaseDelta > 0.f) {
+      float samplesPerCycle = 1.f / phaseDelta;
+      float idealSizePo2 = std::log2f(samplesPerCycle);
+      float brightnessModifier = 0.0f;
+      float possibleSizePo2 = math::clamp(idealSizePo2 + brightnessModifier, 3.f, (float)wt->size_po2);
+
+      float referenceMipmapLevel = (float)wt->size_po2 - possibleSizePo2;
+
+      float targetMipmapLevelFloat;
+      mipmapInterpol = std::modf(referenceMipmapLevel, &targetMipmapLevelFloat);
+      targetMipmapLevel = targetMipmapLevelFloat;
+      // mipmapInterpol = mipmapInterpol * mipmapInterpol;
+
+      // targetMipmapLevel = wt->size_po2 - (int)nearestSizePo2Int;
+
+      // if (this->debugDivider.process()) {
+      //   std::cout << targetMipmapLevel << std::endl;
+      // }
+    }
+  }
+
+  float wave0 = targetMipmapLevel >= 0 ? math::crossfade(
+    getWTMipmapSample(wt, targetMipmapLevel, index0, phase),
+    getWTMipmapSample(wt, targetMipmapLevel + 1, index0, phase),
+    mipmapInterpol
+  ) : getWTSample(wt, index0, phase);
+  float wave1 = targetMipmapLevel >= 0 ? math::crossfade(
+    getWTMipmapSample(wt, targetMipmapLevel, index1, phase),
+    getWTMipmapSample(wt, targetMipmapLevel + 1, index1, phase),
+    mipmapInterpol
+  ) : getWTSample(wt, index1, phase);
 
   float waveInterpolated = math::crossfade(wave0, wave1, fractpart);
   this->interpolation = fractpart;
 
   this->outputs[WAVE_OUTPUT].setVoltage(waveInterpolated * 5.f);
   this->index = targetIndex;
+
+  this->lastPhase = phase;
 }
 
 bool WavetablePlayer::tryToLoadWT(std::string path) {
@@ -439,6 +482,7 @@ WavetablePlayerWidget::WavetablePlayerWidget(WavetablePlayer *module) {
   addParam(createParam<ZZC_Switch2Vertical>(Vec(12.f, 200.f), module, WavetablePlayer::MIPMAP_PARAM));
   addParam(createParam<ZZC_Switch2Vertical>(Vec(93.f, 200.f), module, WavetablePlayer::INDEX_INTER_PARAM));
 
+  addInput(createInput<ZZC_PJ_Port>(Vec(11.914f, 230.f), module, WavetablePlayer::MIPMAP_INPUT));
   addInput(createInput<ZZC_PJ_Port>(Vec(11.914f, 275.f), module, WavetablePlayer::PHASE_INPUT));
   addInput(createInput<ZZC_PJ_Port>(Vec(47.5f, 275.f), module, WavetablePlayer::INDEX_CV_INPUT));
   addOutput(createOutput<ZZC_PJ_Port>(Vec(11.914f, 320.f), module, WavetablePlayer::INTER_OUTPUT));
