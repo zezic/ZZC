@@ -9,10 +9,11 @@
             "intelliSenseMode": "clang-x64",
             "includePath": [
                 "${default}",
-                "/home/zezic/Documents/Soft/Audio/Rack-SDK/include",
-                "/home/zezic/Documents/Soft/Audio/Rack-SDK/dep/include"
+                "/home/zezic/Soft/Audio/Rack-SDK/include",
+                "/home/zezic/Soft/Audio/Rack-SDK/dep/include"
             ],
-            "compileCommands": "${workspaceFolder}/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/compile_commands.json",
+            "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],
     "version": 4

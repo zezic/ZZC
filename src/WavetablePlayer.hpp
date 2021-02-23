@@ -5,21 +5,20 @@ struct WavetablePlayer : Module {
   enum ParamIds {
     INDEX_PARAM,
     INDEX_CV_ATT_PARAM,
-    XTRA_PARAM,
     MIPMAP_PARAM,
     INDEX_INTER_PARAM,
+    // XTRA_PARAM,
     NUM_PARAMS
   };
   enum InputIds {
     PHASE_INPUT,
     INDEX_CV_INPUT,
-    MIPMAP_INPUT,
     NUM_INPUTS
   };
   enum OutputIds {
-    INTER_OUTPUT,
     WAVE_OUTPUT,
-    XTRA_OUTPUT,
+    // INTER_OUTPUT,
+    // XTRA_OUTPUT,
     NUM_OUTPUTS
   };
   enum LightIds {

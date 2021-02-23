@@ -5,12 +5,11 @@
 
 WavetablePlayer::WavetablePlayer() {
   this->wtPtr = std::make_shared<Wavetable>();
-  // this->debugDivider = dsp::ClockDivider();
   this->debugDivider.setDivision(1000);
   config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
   configParam(INDEX_PARAM, 0.f, 1.f, 0.f, "Wave Index");
   configParam(INDEX_CV_ATT_PARAM, -1.f, 1.f, 0.f, "Wave Index CV Attenuverter");
-  configParam(XTRA_PARAM, 0.f, 10.f, 5.0f, "Extrapolation");
+  // configParam(XTRA_PARAM, 0.f, 10.f, 5.0f, "Extrapolation");
   configParam(MIPMAP_PARAM, 0.f, 1.f, 1.0f, "MIP-mapping");
   configParam(INDEX_INTER_PARAM, 0.f, 1.f, 1.0f, "Index Interpolation");
 }
@@ -107,7 +106,7 @@ void WavetablePlayer::process(const ProcessArgs &args) {
       float targetMipmapLevelFloat;
       mipmapInterpol = std::modf(referenceMipmapLevel, &targetMipmapLevelFloat);
       targetMipmapLevel = targetMipmapLevelFloat;
-      // mipmapInterpol = mipmapInterpol * mipmapInterpol;
+      mipmapInterpol = mipmapInterpol * mipmapInterpol;
 
       // targetMipmapLevel = wt->size_po2 - (int)nearestSizePo2Int;
 
@@ -477,17 +476,16 @@ WavetablePlayerWidget::WavetablePlayerWidget(WavetablePlayer *module) {
 
   addParam(createParam<ZZC_CrossKnob45>(Vec(30.5f, 182.366f), module, WavetablePlayer::INDEX_PARAM));
   addParam(createParam<ZZC_KnobWithDot19>(Vec(50.5f, 245.965f), module, WavetablePlayer::INDEX_CV_ATT_PARAM));
-  addParam(createParam<ZZC_Knob25>(Vec(83.084f, 274.03f), module, WavetablePlayer::XTRA_PARAM));
+  // addParam(createParam<ZZC_Knob25>(Vec(83.084f, 274.03f), module, WavetablePlayer::XTRA_PARAM));
 
   addParam(createParam<ZZC_Switch2Vertical>(Vec(12.f, 200.f), module, WavetablePlayer::MIPMAP_PARAM));
   addParam(createParam<ZZC_Switch2Vertical>(Vec(93.f, 200.f), module, WavetablePlayer::INDEX_INTER_PARAM));
 
-  addInput(createInput<ZZC_PJ_Port>(Vec(11.914f, 230.f), module, WavetablePlayer::MIPMAP_INPUT));
   addInput(createInput<ZZC_PJ_Port>(Vec(11.914f, 275.f), module, WavetablePlayer::PHASE_INPUT));
   addInput(createInput<ZZC_PJ_Port>(Vec(47.5f, 275.f), module, WavetablePlayer::INDEX_CV_INPUT));
-  addOutput(createOutput<ZZC_PJ_Port>(Vec(11.914f, 320.f), module, WavetablePlayer::INTER_OUTPUT));
+  // addOutput(createOutput<ZZC_PJ_Port>(Vec(11.914f, 320.f), module, WavetablePlayer::INTER_OUTPUT));
   addOutput(createOutput<ZZC_PJ_Port>(Vec(47.5f, 320.f), module, WavetablePlayer::WAVE_OUTPUT));
-  addOutput(createOutput<ZZC_PJ_Port>(Vec(83.086f, 320.f), module, WavetablePlayer::XTRA_OUTPUT));
+  // addOutput(createOutput<ZZC_PJ_Port>(Vec(83.086f, 320.f), module, WavetablePlayer::XTRA_OUTPUT));
 
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
   addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
