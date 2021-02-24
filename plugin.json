@@ -96,6 +96,14 @@
       "description": "Phase-driven Wavetable Player",
       "tags": [
       ]
+    },
+    {
+      "slug": "Phasor",
+      "name": "Phasor",
+      "description": "Phase signal generator",
+      "tags": [
+        "Oscillator"
+      ]
     }
   ]
 }

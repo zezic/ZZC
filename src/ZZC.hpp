@@ -20,3 +20,4 @@ extern Model *modelDiv;
 extern Model *modelDivExp;
 extern Model *modelPolygate;
 extern Model *modelWavetablePlayer;
+extern Model *modelPhasor;
