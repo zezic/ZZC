@@ -163,12 +163,22 @@ struct ZZC_CrossKnob : ZZC_BaseKnob {
   }
 };
 
+struct ZZC_CrossKnob29 : ZZC_BaseKnob {
+  ZZC_CrossKnob29() {
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Cross-Knob-29.svg")) );
+    shadow->box.size = Vec(31, 31);
+    shadow->box.pos = Vec(5, 10);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
+  }
+};
+
 struct ZZC_CrossKnob45 : ZZC_BaseKnob {
   ZZC_CrossKnob45() {
     setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Cross-Knob-45.svg")) );
-    shadow->box.size = Vec(45, 45);
-    shadow->box.pos = Vec(7, 8);
-    shadow->blurRadius = 15.0f;
+    shadow->box.size = Vec(49, 49);
+    shadow->box.pos = Vec(5, 12);
+    shadow->blurRadius = 21.0f;
     shadow->opacity = 1.0f;
   }
 };
