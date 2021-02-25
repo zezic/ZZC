@@ -1266,8 +1266,8 @@
      showguides="false"
      inkscape:snap-global="true"
      inkscape:window-maximized="0"
-     inkscape:window-y="158"
-     inkscape:window-x="431"
+     inkscape:window-y="400"
+     inkscape:window-x="226"
      inkscape:window-height="1378"
      inkscape:window-width="2325"
      guideopacity="0.49803922"
@@ -1276,9 +1276,9 @@
      showgrid="false"
      inkscape:current-layer="svg8"
      inkscape:document-units="px"
-     inkscape:cy="168.12113"
-     inkscape:cx="344.05349"
-     inkscape:zoom="2"
+     inkscape:cy="171.88387"
+     inkscape:cx="146.6"
+     inkscape:zoom="2.8284271"
      inkscape:pageshadow="2"
      inkscape:pageopacity="1"
      borderopacity="0.16470588"
@@ -8856,4 +8856,20 @@
      style="fill:none;stroke:#eaeae3;stroke-width:0.69999999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
      inkscape:export-xdpi="192"
      inkscape:export-ydpi="192" />
+  <rect
+     style="opacity:0.59299999;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     id="rect3462"
+     width="86.086533"
+     height="244.19656"
+     x="105"
+     y="0" />
+  <rect
+     style="opacity:0.32400004;fill:#66ff00;fill-opacity:1;stroke:none;stroke-width:0.55461246;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     id="rect840"
+     width="19"
+     height="19"
+     x="191.08653"
+     y="244.19656"
+     rx="0"
+     ry="0" />
 </svg>

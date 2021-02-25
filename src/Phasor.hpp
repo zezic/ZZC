@@ -1,5 +1,10 @@
 #include "ZZC.hpp"
 
+struct RatioDisplayData {
+  float numerator = 1.f;
+  float denominator = 1.f;
+};
+
 struct Phasor : Module {
   enum ParamIds {
     REVERSE_PARAM,
@@ -31,6 +36,8 @@ struct Phasor : Module {
     USELESS_LIGHT,
     NUM_LIGHTS
   };
+
+  std::shared_ptr<RatioDisplayData> rddPtr;
 
   Phasor();
   void process(const ProcessArgs &args) override;

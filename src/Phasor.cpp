@@ -2,6 +2,7 @@
 #include "Phasor.hpp"
 
 Phasor::Phasor() {
+  this->rddPtr = std::make_shared<RatioDisplayData>();
   config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 }
 
@@ -21,9 +22,50 @@ struct PhasorWidget : ModuleWidget {
   void appendContextMenu(Menu *menu) override;
 };
 
+struct VerticalRatioDisplayWidget : BaseDisplayWidget {
+  float *value = nullptr;
+  int *mode = nullptr;
+  std::shared_ptr<Font> font;
+  NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
+  NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+  std::shared_ptr<RatioDisplayData> rddPtr = nullptr;
+
+  VerticalRatioDisplayWidget() {
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+  };
+
+  void draw(const DrawArgs &args) override {
+    drawBackground(args);
+
+    nvgFontSize(args.vg, 11);
+    nvgFontFaceId(args.vg, font->handle);
+    nvgTextLetterSpacing(args.vg, 1.0);
+    nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
+
+    Vec textPos0 = Vec(box.size.x - 7.f, 16.0f);
+    Vec textPos1 = Vec(box.size.x - 7.f, 36.0f);
+
+    nvgFillColor(args.vg, lcdGhostColor);
+    nvgText(args.vg, textPos0.x, textPos0.y, "88", NULL);
+    nvgText(args.vg, textPos1.x, textPos1.y, "88", NULL);
+
+    float value0 = rddPtr ? rddPtr.get()->numerator : 1.f;
+    float value1 = rddPtr ? rddPtr.get()->denominator : 1.f;
+
+    nvgFillColor(args.vg, lcdTextColor);
+    nvgText(args.vg, textPos0.x, textPos0.y, "1", NULL);
+    nvgText(args.vg, textPos1.x, textPos1.y, "1", NULL);
+  }
+};
+
 PhasorWidget::PhasorWidget(Phasor *module) {
   setModule(module);
   setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/panels/Phasor.svg")));
+
+  VerticalRatioDisplayWidget *display = new VerticalRatioDisplayWidget();
+  display->box.pos = Vec(46.f, 131.f);
+  display->box.size = Vec(28.f, 41.f);
+  addChild(display);
 
   addParam(createParam<ZZC_CrossKnob45>(Vec(30.5f, 54.5f), module, Phasor::FREQ_CRSE_PARAM));
   addParam(createParam<ZZC_Switch2Vertical>(Vec(12.f, 71.f), module, Phasor::REVERSE_PARAM));
@@ -38,6 +80,17 @@ PhasorWidget::PhasorWidget(Phasor *module) {
   addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(86.386f, 199.12f), module, Phasor::HARDSYNC_LED));
 
   addParam(createParam<ZZC_CrossKnob29>(Vec(39.5f, 209.173f), module, Phasor::FREQ_FINE_PARAM));
+
+  addParam(createParam<ZZC_KnobWithDot19>(Vec(14.913f, 244.197), module, Phasor::PM_PARAM));
+  addParam(createParam<ZZC_KnobWithDot19>(Vec(86.087f, 244.197), module, Phasor::FM_PARAM));
+
+  addInput(createInput<ZZC_PJ_Port>(Vec(11.914f, 275.f), module, Phasor::PM_INPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(47.5f, 275.f), module, Phasor::VOCT_INPUT));
+  addInput(createInput<ZZC_PJ_Port>(Vec(83.086f, 275.f), module, Phasor::FM_INPUT));
+
+  addOutput(createOutput<ZZC_PJ_Port>(Vec(11.914f, 320.f), module, Phasor::SIN_OUTPUT));
+  addOutput(createOutput<ZZC_PJ_Port>(Vec(47.5f, 320.f), module, Phasor::COS_OUTPUT));
+  addOutput(createOutput<ZZC_PJ_Port>(Vec(83.086f, 320.f), module, Phasor::PHASE_OUTPUT));
 
   addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
   addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
