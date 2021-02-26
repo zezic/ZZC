@@ -3,7 +3,10 @@
 
 Phasor::Phasor() {
   this->rddPtr = std::make_shared<RatioDisplayData>();
+  this->rddFeedDivider.setDivision(1000);
   config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+  configParam(NUMERATOR_PARAM, 1.f, 99.f, 1.f, "Ratio Numerator");
+  configParam(DENOMINATOR_PARAM, 1.f, 99.f, 1.f, "Ratio Denominator");
 }
 
 json_t *Phasor::dataToJson() {
@@ -15,6 +18,11 @@ void Phasor::dataFromJson(json_t *rootJ) {
 }
 
 void Phasor::process(const ProcessArgs &args) {
+  if (this->rddFeedDivider.process()) {
+    RatioDisplayData* rdd = this->rddPtr.get();
+    rdd->numerator = this->params[NUMERATOR_PARAM].getValue();
+    rdd->denominator = this->params[DENOMINATOR_PARAM].getValue();
+  }
 }
 
 struct PhasorWidget : ModuleWidget {
@@ -28,7 +36,7 @@ struct VerticalRatioDisplayWidget : BaseDisplayWidget {
   std::shared_ptr<Font> font;
   NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
   NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
-  std::shared_ptr<RatioDisplayData> rddPtr = nullptr;
+  std::shared_ptr<RatioDisplayData> rddPtr;
 
   VerticalRatioDisplayWidget() {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
@@ -42,8 +50,8 @@ struct VerticalRatioDisplayWidget : BaseDisplayWidget {
     nvgTextLetterSpacing(args.vg, 1.0);
     nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
 
-    Vec textPos0 = Vec(box.size.x - 7.f, 16.0f);
-    Vec textPos1 = Vec(box.size.x - 7.f, 36.0f);
+    Vec textPos0 = Vec(box.size.x - 5.f, 16.0f);
+    Vec textPos1 = Vec(box.size.x - 5.f, 36.0f);
 
     nvgFillColor(args.vg, lcdGhostColor);
     nvgText(args.vg, textPos0.x, textPos0.y, "88", NULL);
@@ -53,8 +61,28 @@ struct VerticalRatioDisplayWidget : BaseDisplayWidget {
     float value1 = rddPtr ? rddPtr.get()->denominator : 1.f;
 
     nvgFillColor(args.vg, lcdTextColor);
-    nvgText(args.vg, textPos0.x, textPos0.y, "1", NULL);
-    nvgText(args.vg, textPos1.x, textPos1.y, "1", NULL);
+    nvgText(args.vg, textPos0.x, textPos0.y, string::f("%d", (int)value0).c_str(), NULL);
+    nvgText(args.vg, textPos1.x, textPos1.y, string::f("%d", (int)value1).c_str(), NULL);
+
+    nvgBeginPath(args.vg);
+    nvgRect(args.vg, 4.f, this->box.size.y * 0.5f - 0.5f, this->box.size.x - 8.f, 1.f);
+    nvgFillColor(args.vg, lcdGhostColor);
+    nvgFill(args.vg);
+
+    if (value0 != value1) {
+      float delta = (value0 - value1) / 98.f;
+      float barLength = std::abs(delta) * 0.5f * (this->box.size.x - 4.f * 2.f);
+      nvgBeginPath(args.vg);
+      nvgRect(
+        args.vg,
+        delta > 0.f ? this->box.size.x * 0.5f : this->box.size.x * 0.5f - barLength,
+        this->box.size.y * 0.5f - 0.5f,
+        barLength,
+        1.f
+      );
+      nvgFillColor(args.vg, lcdTextColor);
+      nvgFill(args.vg);
+    }
   }
 };
 
@@ -65,6 +93,9 @@ PhasorWidget::PhasorWidget(Phasor *module) {
   VerticalRatioDisplayWidget *display = new VerticalRatioDisplayWidget();
   display->box.pos = Vec(46.f, 131.f);
   display->box.size = Vec(28.f, 41.f);
+  if (module) {
+    display->rddPtr = module->rddPtr;
+  }
   addChild(display);
 
   addParam(createParam<ZZC_CrossKnob45>(Vec(30.5f, 54.5f), module, Phasor::FREQ_CRSE_PARAM));

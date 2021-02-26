@@ -38,6 +38,7 @@ struct Phasor : Module {
   };
 
   std::shared_ptr<RatioDisplayData> rddPtr;
+  dsp::ClockDivider rddFeedDivider;
 
   Phasor();
   void process(const ProcessArgs &args) override;
