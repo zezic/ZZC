@@ -163,6 +163,26 @@ struct ZZC_CrossKnob : ZZC_BaseKnob {
   }
 };
 
+struct ZZC_CrossKnob29 : ZZC_BaseKnob {
+  ZZC_CrossKnob29() {
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Cross-Knob-29.svg")) );
+    shadow->box.size = Vec(31, 31);
+    shadow->box.pos = Vec(5, 10);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
+  }
+};
+
+struct ZZC_CrossKnob45 : ZZC_BaseKnob {
+  ZZC_CrossKnob45() {
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Cross-Knob-45.svg")) );
+    shadow->box.size = Vec(49, 49);
+    shadow->box.pos = Vec(5, 12);
+    shadow->blurRadius = 21.0f;
+    shadow->opacity = 1.0f;
+  }
+};
+
 struct ZZC_CrossKnobSnappy : ZZC_CrossKnob {
   ZZC_CrossKnobSnappy() {
     snap = true;
@@ -222,5 +242,15 @@ struct ZZC_EncoderKnob : SvgKnob {
       newValue += delta;
       paramQuantity->setValue(eucMod(newValue, paramQuantity->getMaxValue()));
     }
+  }
+};
+
+struct ZZC_KnobWithDot19 : ZZC_BaseKnob {
+  ZZC_KnobWithDot19() {
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-With-Dot-19.svg")) );
+    shadow->box.size = Vec(25, 25);
+    shadow->box.pos = Vec(-3, 2);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
   }
 };

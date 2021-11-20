@@ -101,7 +101,7 @@ struct FN3DisplayWidget : BaseDisplayWidget {
 
     NVGcolor graphColor = channelsVal == 1 ? monoColor : polyColor;
 
-		for (int c = 0; c < channelsVal; c += 4) {
+    for (int c = 0; c < channelsVal; c += 4) {
       simd::float_4 pwValSimd = pw ? pw[c / 4] : 0.5f;
       simd::float_4 shiftValSimd = shift ? shift[c / 4] : 0.f;
       int chunkSize = std::min(4, channelsVal - c);
@@ -136,7 +136,9 @@ struct FN3DisplayWidget : BaseDisplayWidget {
         nvgLineCap(args.vg, NVG_ROUND);
         nvgMiterLimit(args.vg, 2.0f);
         nvgStrokeWidth(args.vg, 1.0f);
-        nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
+        if (channelsVal != 1) {
+          nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
+        }
         nvgStroke(args.vg);
       }
     }
