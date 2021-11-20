@@ -48,8 +48,13 @@ jobs:
           export RACK_DIR=$HOME/Rack-SDK
           make -j dep
           make -j dist
+
+      - name: Extract slug and version
+        run: |
+          echo "PLUGIN_SLUG=$(jq -r '.slug' plugin.json)" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$(jq -r '.version' plugin.json)" >> $GITHUB_ENV
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          path: dist
-          name: ${{ matrix.config.name }}
+          path: dist/${{ env.PLUGIN_SLUG }}-${{ env.PLUGIN_VERSION }}-${{ matrix.config.os-slug }}.vcvplugin
+          name: ${{ env.PLUGIN_SLUG }}-${{ env.PLUGIN_VERSION }}-${{ matrix.config.os-slug }}
