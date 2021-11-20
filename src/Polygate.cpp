@@ -1,6 +1,6 @@
 #include "ZZC.hpp"
 
-const int NUM_CHANNELS = 16;
+static const int NUM_CHANNELS = 16;
 
 enum PolygateModes {
   SMART_MODE,

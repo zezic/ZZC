@@ -1,6 +1,3 @@
-#include "rack0.hpp"
-#include "window.hpp"
-
 #ifndef KNOB_SENSITIVITY_CONST
 #define KNOB_SENSITIVITY_CONST
 static const float KNOB_SENSITIVITY = 0.0015f;
@@ -69,7 +66,6 @@ struct ZZC_Knob19 : ZZC_BaseKnob {
 struct ZZC_Knob19NoRand : ZZC_Knob19 {
   ZZC_Knob19NoRand() {
   }
-  void randomize() override {}
 };
 
 struct ZZC_Knob19SnappyNoRand : ZZC_Knob19NoRand {
@@ -111,7 +107,6 @@ struct ZZC_Knob25 : ZZC_BaseKnob {
 struct ZZC_Knob25NoRand : ZZC_Knob25 {
   ZZC_Knob25NoRand() {
   }
-  void randomize() override {}
 };
 
 struct ZZC_Knob25SnappyNoRand : ZZC_Knob25 {
@@ -119,7 +114,6 @@ struct ZZC_Knob25SnappyNoRand : ZZC_Knob25 {
     snap = true;
     smooth = false;
   }
-  void randomize() override {}
 };
 
 struct ZZC_Knob27 : ZZC_BaseKnob {
@@ -159,6 +153,26 @@ struct ZZC_CrossKnob : ZZC_BaseKnob {
     shadow->box.size = Vec(43, 43);
     shadow->box.pos = Vec(3, 8);
     shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
+  }
+};
+
+struct ZZC_CrossKnob29 : ZZC_BaseKnob {
+  ZZC_CrossKnob29() {
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Cross-Knob-29.svg")) );
+    shadow->box.size = Vec(31, 31);
+    shadow->box.pos = Vec(5, 10);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
+  }
+};
+
+struct ZZC_CrossKnob45 : ZZC_BaseKnob {
+  ZZC_CrossKnob45() {
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Cross-Knob-45.svg")) );
+    shadow->box.size = Vec(49, 49);
+    shadow->box.pos = Vec(5, 12);
+    shadow->blurRadius = 21.0f;
     shadow->opacity = 1.0f;
   }
 };
@@ -207,9 +221,8 @@ struct ZZC_EncoderKnob : SvgKnob {
     shadow->opacity = 0.8f;
   }
 
-  void randomize() override {}
-
   void onDragMove(const event::DragMove &e) override {
+    engine::ParamQuantity* paramQuantity = this->getParamQuantity();
     if (paramQuantity) {
       float range = paramQuantity->getRange();
       float delta = KNOB_SENSITIVITY * -e.mouseDelta.y * speed * range;
@@ -222,5 +235,15 @@ struct ZZC_EncoderKnob : SvgKnob {
       newValue += delta;
       paramQuantity->setValue(eucMod(newValue, paramQuantity->getMaxValue()));
     }
+  }
+};
+
+struct ZZC_KnobWithDot19 : ZZC_BaseKnob {
+  ZZC_KnobWithDot19() {
+    setSvg( APP->window->loadSvg(asset::plugin(pluginInstance, "res/knobs/ZZC-Knob-With-Dot-19.svg")) );
+    shadow->box.size = Vec(25, 25);
+    shadow->box.pos = Vec(-3, 2);
+    shadow->blurRadius = 15.0f;
+    shadow->opacity = 1.0f;
   }
 };

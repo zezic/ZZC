@@ -191,7 +191,7 @@ SRCWidget::SRCWidget(SRC *module) {
   addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 242), module, SRC::ON_INPUT));
 
   addParam(createParam<ZZC_LEDBezelDark>(Vec(11.3f, 276.0f), module, SRC::ON_SWITCH_PARAM));
-  addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(13.1f, 277.7f), module, SRC::ON_LED));
+  addChild(createLight<LedLight<ZZC_YellowLight>>(Vec(13.35f, 277.95f), module, SRC::ON_LED));
 
   addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 320), module, SRC::VOLTAGE_OUTPUT));
 

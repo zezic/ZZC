@@ -1,6 +1,3 @@
-#include "rack0.hpp"
-#include "window.hpp"
-
 using namespace rack;
 
 extern Plugin *pluginInstance;

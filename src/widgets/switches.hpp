@@ -1,5 +1,3 @@
-#include "rack0.hpp"
-
 using namespace rack;
 
 extern Plugin *pluginInstance;
@@ -8,6 +6,13 @@ struct ZZC_Switch2 : SvgSwitch {
   ZZC_Switch2() {
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-Switch-2_0.svg")));
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-Switch-2_1.svg")));
+  }
+};
+
+struct ZZC_Switch2Vertical : SvgSwitch {
+  ZZC_Switch2Vertical() {
+    addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-Switch-2-Vertical_0.svg")));
+    addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-Switch-2-Vertical_1.svg")));
   }
 };
 
