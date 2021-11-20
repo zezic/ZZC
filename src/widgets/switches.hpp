@@ -1,5 +1,3 @@
-#include "rack0.hpp"
-
 using namespace rack;
 
 extern Plugin *pluginInstance;

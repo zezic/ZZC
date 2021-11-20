@@ -238,7 +238,7 @@ struct SCVCAWidget : ModuleWidget {
     addOutput(createOutput<ZZC_PJ_Port>(Vec(8, 319.75), module, SCVCA::SIG1_OUTPUT));
     addOutput(createOutput<ZZC_PJ_Port>(Vec(42.5, 319.75), module, SCVCA::SIG2_OUTPUT));
 
-    addChild(createLight<SmallLight<GreenRedLight>>(Vec(34.2f, 43.9f), module, SCVCA::CLIPPING_POS_LIGHT));
+    addChild(createLight<SmallLight<GreenRedLight>>(Vec(34.45f, 44.15f), module, SCVCA::CLIPPING_POS_LIGHT));
 
     addChild(createWidget<ZZC_Screw>(Vec(RACK_GRID_WIDTH, 0)));
     addChild(createWidget<ZZC_Screw>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

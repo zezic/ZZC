@@ -1,6 +1,3 @@
-#include "rack0.hpp"
-#include "window.hpp"
-
 #ifndef KNOB_SENSITIVITY_CONST
 #define KNOB_SENSITIVITY_CONST
 static const float KNOB_SENSITIVITY = 0.0015f;
@@ -69,7 +66,6 @@ struct ZZC_Knob19 : ZZC_BaseKnob {
 struct ZZC_Knob19NoRand : ZZC_Knob19 {
   ZZC_Knob19NoRand() {
   }
-  void randomize() override {}
 };
 
 struct ZZC_Knob19SnappyNoRand : ZZC_Knob19NoRand {
@@ -111,7 +107,6 @@ struct ZZC_Knob25 : ZZC_BaseKnob {
 struct ZZC_Knob25NoRand : ZZC_Knob25 {
   ZZC_Knob25NoRand() {
   }
-  void randomize() override {}
 };
 
 struct ZZC_Knob25SnappyNoRand : ZZC_Knob25 {
@@ -119,7 +114,6 @@ struct ZZC_Knob25SnappyNoRand : ZZC_Knob25 {
     snap = true;
     smooth = false;
   }
-  void randomize() override {}
 };
 
 struct ZZC_Knob27 : ZZC_BaseKnob {
@@ -227,9 +221,8 @@ struct ZZC_EncoderKnob : SvgKnob {
     shadow->opacity = 0.8f;
   }
 
-  void randomize() override {}
-
   void onDragMove(const event::DragMove &e) override {
+    engine::ParamQuantity* paramQuantity = this->getParamQuantity();
     if (paramQuantity) {
       float range = paramQuantity->getRange();
       float delta = KNOB_SENSITIVITY * -e.mouseDelta.y * speed * range;

@@ -76,7 +76,7 @@ bool SurgeStorage::load_wt_wt(std::string filename, Wavetable *wt)
     wt_header wh;
     memset(&wh, 0, sizeof(wt_header));
 
-    size_t read = fread(&wh, sizeof(wt_header), 1, f);
+    size_t read __attribute__((unused)) = fread(&wh, sizeof(wt_header), 1, f);
     // I'm not sure why this ever worked but it is checking the 4 bytes against vawt so...
     // if (wh.tag != vt_read_int32BE('vawt'))
     if (!(wh.tag[0] == 'v' && wh.tag[1] == 'a' && wh.tag[2] == 'w' && wh.tag[3] == 't'))
@@ -157,8 +157,8 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
 
     // WAV HEADER
     unsigned short audioFormat, numChannels;
-    unsigned int sampleRate, byteRate;
-    unsigned short blockAlign, bitsPerSample;
+    unsigned int sampleRate __attribute__((unused)), byteRate __attribute__((unused));
+    unsigned short blockAlign __attribute__((unused)), bitsPerSample;
 
     // Result of data read
     bool hasSMPL = false;
@@ -175,7 +175,7 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
     // Now start reading chunks
     int tbr = 4;
     char *wavdata = nullptr;
-    int datasz = 0, datasamples;
+    int datasz __attribute__((unused)) = 0, datasamples __attribute__((unused)) = 0;
     while (true)
     {
         char chunkType[4], chunkSzD[4];
@@ -270,7 +270,7 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
         {
             hasSRGE = true;
             char *dp = data;
-            int version = pl_int(dp);
+            int version __attribute__((unused)) = pl_int(dp);
             dp += 4;
             srgeLEN = pl_int(dp);
             free(data);
@@ -279,7 +279,7 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
         {
             hasSRGO = true;
             char *dp = data;
-            int version = pl_int(dp);
+            int version __attribute__((unused)) = pl_int(dp);
             dp += 4;
             srgeLEN = pl_int(dp);
             free(data);
@@ -305,7 +305,7 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
             // Now are my chunkstarts regular
             int d = -1;
             bool regular = true;
-            for (auto i = 1; i < chunkStarts.size(); ++i)
+            for (size_t i = 1; i < chunkStarts.size(); ++i)
             {
                 if (d == -1)
                     d = chunkStarts[i] - chunkStarts[i - 1];
@@ -358,7 +358,7 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
                 // FIXME
             }
 
-            for (int i = 0; i < nloops && i < 1; ++i)
+            for (size_t i = 0; i < nloops && i < 1; ++i)
             {
                 unsigned int loopdata[6];
                 for (int j = 0; j < 6; ++j)
@@ -483,7 +483,7 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
     }
 
     wh.n_samples = 1 << sh;
-    int mask = wt->size - 1;
+    int mask __attribute__((unused)) = wt->size - 1;
     int sample_length = std::min(datasamples, max_wtable_size * max_subtables);
     wh.n_tables = std::min(max_subtables, (sample_length >> sh));
 
@@ -499,7 +499,7 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
         wh.n_tables = (int)(sample_length / windowSize);
     }
 
-    int channels = 1;
+    int channels __attribute__((unused)) = 1;
 
     if ((audioFormat == 1 /* WAVE_FORMAT_PCM */) && (bitsPerSample == 16) && numChannels == 1)
     {

@@ -19,7 +19,7 @@ struct DivBase : Module {
   };
 
   PhaseDivider phaseDivider;
-  PulseGenerator pulseGenerator;
+  dsp::PulseGenerator pulseGenerator;
 
   float combinedMultiplier = 1.f;
   bool combinedMultiplierDirty = false;
@@ -118,7 +118,7 @@ struct Div : DivBase {
     NUM_LIGHTS
   };
 
-  SchmittTrigger schmittTrigger;
+  dsp::SchmittTrigger schmittTrigger;
 
   Div() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -237,7 +237,7 @@ struct DivExp : DivBase {
     NUM_LIGHTS
   };
 
-  SchmittTrigger syncButtonTriger;
+  dsp::SchmittTrigger syncButtonTriger;
   bool resetWasHitForMessage = false;
   TransportSources transportSource = TS_CLOCK;
   TransportSources lastTimeDrivenBy = TS_NONE;
@@ -431,8 +431,8 @@ DivExpWidget::DivExpWidget(DivExp *module) {
 
   addParam(createParam<ZZC_Switch2>(Vec(12.f, 204.f), module, DivExp::DIR_PARAM));
 
-  addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(12.25f, 236.5f), module, DivExp::DIR_LEFT_LED));
-  addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(26.5f, 236.5f), module, DivExp::DIR_RIGHT_LED));
+  addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(12.35f, 236.6f), module, DivExp::DIR_LEFT_LED));
+  addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(26.6f, 236.6f), module, DivExp::DIR_RIGHT_LED));
 
   addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 272), module, DivExp::CLOCK_OUTPUT));
   addOutput(createOutput<ZZC_PJ_Port>(Vec(10.5, 320), module, DivExp::PHASE_OUTPUT));

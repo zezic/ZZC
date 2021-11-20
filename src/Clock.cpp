@@ -401,7 +401,7 @@ ClockWidget::ClockWidget(Clock *module) {
   }
   addChild(bpmDisplay);
 
-  addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(71.75, 66.5), module, Clock::CLOCK_LED));
+  addChild(createLight<SmallLight<ZZC_YellowLight>>(Vec(72.0, 66.75), module, Clock::CLOCK_LED));
 
   addParam(createParam<ZZC_BigKnobSnappy>(Vec(41.5, 82.5), module, Clock::BPM_PARAM));
   addChild(createLight<TinyLight<GreenLight>>(Vec(111.5f, 83), module, Clock::INTERNAL_MODE_LED));

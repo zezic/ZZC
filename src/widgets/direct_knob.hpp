@@ -1,6 +1,3 @@
-#include "rack0.hpp"
-#include "window.hpp"
-
 #ifndef KNOB_SENSITIVITY_CONST
 #define KNOB_SENSITIVITY_CONST
 static const float KNOB_SENSITIVITY = 0.0015f;
@@ -206,6 +203,8 @@ struct ZZC_CallbackKnob : Knob {
       lastRotation = rotation;
       fb->dirty = true;
     }
+
+    engine::ParamQuantity* paramQuantity = this->getParamQuantity();
     if (paramQuantity) {
       float quantityValue = paramQuantity->getValue();
       if (lastQuantityValueP) {

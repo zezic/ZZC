@@ -154,7 +154,7 @@ void WavetablePlayer::selectFile() {
 
   if (this->filename != "") {
     std::cout << "Filename: " << this->filename << std::endl;
-    dir = string::directory(this->filename);
+    dir = system::getDirectory(this->filename);
   }
 
   std::cout << "Opening directory: " << dir << std::endl;
@@ -169,7 +169,7 @@ void WavetablePlayer::selectFile() {
 void WavetablePlayer::switchFile(int delta) {
   if (this->filename == "") { return; }
 
-  std::string dir = string::directory(this->filename);
+  std::string dir = system::getDirectory(this->filename);
   std::vector<std::string> entries = {};
 
   for (std::string wtPath : system::getEntries(dir)) {
@@ -261,7 +261,7 @@ struct WavetableWidget : TransparentWidget {
     textPos = Vec(box.size.x / 2.f, box.size.y * 0.89f);
     nvgFillColor(args.vg, brightColor);
 
-    std::string fullFilename = string::filenameBase(string::filename(*this->filename));
+    std::string fullFilename = system::getFilename(*this->filename);
     std::string finalFilename = fullFilename;
 
     size_t maxLength = 16;

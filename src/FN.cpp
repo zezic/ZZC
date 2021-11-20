@@ -1,5 +1,4 @@
 #include "ZZC.hpp"
-#include "window.hpp"
 
 using simd::float_4;
 

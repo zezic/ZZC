@@ -1,6 +1,3 @@
-#include "rack0.hpp"
-#include "window.hpp"
-
 #ifndef DISPLAYS_H
 #define DISPLAYS_H
 #include "displays.hpp"
@@ -137,10 +134,6 @@ struct XYDisplayWidget : ParamWidget {
 
 	  APP->window->cursorUnlock();
   }
-  void reset() override {
-    this->onReset();
-    fb->dirty = true;
-  }
 
   void onInput(float deltaX, float deltaY) {
     if (paramQuantityX && paramQuantityY) {
@@ -175,13 +168,6 @@ struct XYDisplayWidget : ParamWidget {
     }
 
     Widget::step();
-  }
-
-  void randomize() override {
-    if (paramQuantityX && paramQuantityY) {
-      paramQuantityX->setValue(math::rescale(random::uniform(), 0.f, 1.f, paramQuantityX->getMinValue(), paramQuantityX->getMaxValue()));
-      paramQuantityY->setValue(math::rescale(random::uniform(), 0.f, 1.f, paramQuantityY->getMinValue(), paramQuantityY->getMaxValue()));
-    }
   }
 
   void onButton(const event::Button &e) override {
