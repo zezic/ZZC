@@ -184,7 +184,7 @@ void WavetablePlayer::switchFile(int delta) {
     int targetIdx = math::eucMod(currentIdx + delta, entries.size());
     std::string targetPath = entries.at(targetIdx);
     this->tryToLoadWT(targetPath);
-  } else if (entries.size() > 0) {
+  } else if (!entries.empty()) {
     this->tryToLoadWT(entries.front());
   }
 }
@@ -256,7 +256,7 @@ struct WavetableWidget : TransparentWidget {
     nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
     Vec textPos = Vec(box.size.x / 2.f, box.size.y * 0.13f);
     nvgFillColor(args.vg, dimmedColor);
-    nvgText(args.vg, textPos.x, textPos.y, string::f("%d x %d", wt->size, wt->n_tables).c_str(), NULL);
+    nvgText(args.vg, textPos.x, textPos.y, string::f("%d x %d", wt->size, wt->n_tables).c_str(), nullptr);
 
     textPos = Vec(box.size.x / 2.f, box.size.y * 0.89f);
     nvgFillColor(args.vg, brightColor);
@@ -282,7 +282,7 @@ struct WavetableWidget : TransparentWidget {
       }
     }
 
-    nvgText(args.vg, textPos.x, textPos.y, finalFilename.c_str(), NULL);
+    nvgText(args.vg, textPos.x, textPos.y, finalFilename.c_str(), nullptr);
     // nvgText(args.vg, textPos.x, textPos.y, "Filename", NULL);
   }
 };

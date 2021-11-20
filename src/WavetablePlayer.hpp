@@ -39,7 +39,7 @@ struct WavetablePlayer : Module {
   float lastPhase = 0.f;
   dsp::ClockDivider debugDivider;
 
-  std::string filename = "";
+  std::string filename;
 
   WavetablePlayer();
   void process(const ProcessArgs &args) override;
