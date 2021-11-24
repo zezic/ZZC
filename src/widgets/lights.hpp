@@ -20,21 +20,7 @@ struct ZZC_BaseLight : GrayModuleLightWidget {
 
   ZZC_BaseLight() {
   }
-  void drawHalo(const DrawArgs &args) override {
-    float radius = box.size.x / 2.0;
-    float oradius = radius + 15.0;
 
-    nvgBeginPath(args.vg);
-    nvgRect(args.vg, radius - oradius, radius - oradius, 2*oradius, 2*oradius);
-
-    NVGpaint paint;
-    NVGcolor icol = color::mult(color, 0.04);
-    NVGcolor ocol = nvgRGB(0, 0, 0);
-    paint = nvgRadialGradient(args.vg, radius, radius, radius, oradius, icol, ocol);
-    nvgFillPaint(args.vg, paint);
-    nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
-    nvgFill(args.vg);
-  }
   void step() override {
     if (module) {
       assert(module->lights.size() >= firstLightId + baseColors.size());
@@ -62,6 +48,7 @@ struct ZZC_BaseLight : GrayModuleLightWidget {
     }
     setBrightnesses(values);
   }
+
   void setBrightnesses(const std::vector<float> &brightnesses) {
     color = nvgRGBAf(0, 0, 0, 0);
     for (size_t i = 0; i < baseColors.size(); i++) {

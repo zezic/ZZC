@@ -31,10 +31,8 @@ struct VoltageDisplayWidget : BaseDisplayWidget {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
-  void draw(const DrawArgs &args) override {
-    drawBackground(args);
-    NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
-    NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer != 1) { return; }
 
     // Text (integer part)
     nvgFontSize(args.vg, 11);
@@ -64,6 +62,9 @@ struct VoltageDisplayWidget : BaseDisplayWidget {
     }
     nvgFillColor(args.vg, lcdTextColor);
     nvgText(args.vg, textPos.x, textPos.y, text, NULL);
+
+    nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+    drawHalo(args);
   }
 };
 

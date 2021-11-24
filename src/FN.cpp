@@ -34,11 +34,11 @@ inline T applyPW(T phase, T pw) {
 }
 
 struct FN3TextDisplayWidget : TransparentWidget {
-  float *hook = nullptr;
-  float prevHook = 0.0f;
-  float *text = nullptr;
-  bool displayText = false;
-  double textUpdatedAt = 0.0;
+  float *value = nullptr;
+  std::string **text = nullptr;
+
+  NVGcolor lcdColor = nvgRGB(0x12, 0x12, 0x12);
+  NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
 
   std::shared_ptr<Font> font;
 
@@ -46,29 +46,15 @@ struct FN3TextDisplayWidget : TransparentWidget {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito/Nunito-Black.ttf"));
   };
 
-  void draw(const DrawArgs &args) override {
-    NVGcolor lcdColor = nvgRGB(0x12, 0x12, 0x12);
-    NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
-
-    if (hook && prevHook == *hook) {
-      double curTime = glfwGetTime();
-      if ((curTime - textUpdatedAt) > 2.0) {
-        return;
-      }
-    } else {
-      textUpdatedAt = glfwGetTime();
-      prevHook = hook ? *hook : 0.0f;
-    }
-
-    // LCD
-    nvgBeginPath(args.vg);
-    nvgRoundedRect(args.vg, 0.0, 0.0, box.size.x, box.size.y, 0.0);
-    nvgFillColor(args.vg, lcdColor);
-    nvgFill(args.vg);
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer != 1) { return; }
 
     char textString[10];
-    if (text) {
-      snprintf(textString, sizeof(textString), "%3.1f", *text > 0.04 ? *text - 0.04 : *text + 0.04);
+
+    if (text && *text) {
+      snprintf(textString, sizeof(textString), "%s", (**text).c_str());
+    } else if (value) {
+      snprintf(textString, sizeof(textString), "%3.1f", *value > 0.04 ? *value - 0.04 : *value + 0.04);
     } else {
       snprintf(textString, sizeof(textString), "%3.1f", 0.00);
     }
@@ -82,7 +68,6 @@ struct FN3TextDisplayWidget : TransparentWidget {
     nvgFillColor(args.vg, lcdTextColor);
     nvgText(args.vg, textPos.x, textPos.y, textString, NULL);
   }
-
 };
 
 struct FN3DisplayWidget : BaseDisplayWidget {
@@ -94,11 +79,17 @@ struct FN3DisplayWidget : BaseDisplayWidget {
   NVGcolor polyColor = nvgRGB(0x29, 0xb2, 0xef);
 
   void draw(const DrawArgs &args) override {
+    drawBackground(args);
+  }
+
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer != 1) { return; }
+
     float waveVal = wave ? *wave : 0.0f;
     int channelsVal = channels ? *channels : 1;
-    drawBackground(args);
 
     NVGcolor graphColor = channelsVal == 1 ? monoColor : polyColor;
+    this->haloColor = graphColor;
 
     for (int c = 0; c < channelsVal; c += 4) {
       simd::float_4 pwValSimd = pw ? pw[c / 4] : 0.5f;
@@ -141,9 +132,13 @@ struct FN3DisplayWidget : BaseDisplayWidget {
         nvgStroke(args.vg);
       }
     }
+
+    nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+    drawHalo(args);
   }
 };
 
+const int TEXT_DIVIDER_RATIO = 4410;
 
 struct FN3 : Module {
   enum ParamIds {
@@ -176,11 +171,17 @@ struct FN3 : Module {
 
   float pwParam = 0.5f;
   float lastPwParam = 0.5f;
-  float pwDisplay = 50.0f;
 
   float shiftParam = 0.f;
   float lastShiftParam = 0.f;
-  float shiftDisplay = 0.f;
+
+  float valueDisplay = 50.0f;
+  std::string *textDisplay = nullptr;
+
+  std::string modeNames[3] = {"SIN", "TRI", "SQR"};
+
+  float textDisplayTimeout = 2.f;
+  dsp::ClockDivider textDisplayDivider;
 
   inline float snap(float value) {
     if (value > 0.33f && value < 0.34f) {
@@ -202,6 +203,7 @@ struct FN3 : Module {
     configParam(WAVE_PARAM, 0.0f, 2.0f, 0.0f, "Waveform");
     configParam(OFFSET_PARAM, 0.0f, 1.0f, 0.0f, "Bipolar Mode");
     configParam(SHIFT_PARAM, 1.0f, -1.0f, 0.0f, "Phase Shift");
+    textDisplayDivider.setDivision(TEXT_DIVIDER_RATIO); // 10 FPS at 44100 Hz samplerate
   }
   void process(const ProcessArgs &args) override;
 };
@@ -214,7 +216,6 @@ void FN3::process(const ProcessArgs &args) {
 
   if (params[PW_PARAM].getValue() != lastPwParam) {
     pwParam = snap(params[PW_PARAM].getValue());
-    lastPwParam = params[PW_PARAM].getValue();
   }
 
   if (inputs[PW_INPUT].isConnected()) {
@@ -228,11 +229,16 @@ void FN3::process(const ProcessArgs &args) {
       pw[c / 4] = clamp(pw[c / 4], 0.f, 1.f);
     }
   }
-  pwDisplay = pwParam * 100.0f;
+
+  if (pwParam != lastPwParam) {
+    this->textDisplay = nullptr;
+    valueDisplay = pwParam * 100.0f;
+    lastPwParam = pwParam;
+    textDisplayTimeout = 2.f;
+  }
 
   if (params[SHIFT_PARAM].getValue() != lastShiftParam) {
     shiftParam = snap(params[SHIFT_PARAM].getValue());
-    lastShiftParam = params[SHIFT_PARAM].getValue();
   }
 
   if (inputs[SHIFT_INPUT].isConnected()) {
@@ -244,7 +250,13 @@ void FN3::process(const ProcessArgs &args) {
       shift[c / 4] = shiftParam;
     }
   }
-  shiftDisplay = shiftParam * -100.0f;
+
+  if (shiftParam != lastShiftParam) {
+    this->textDisplay = nullptr;
+    valueDisplay = shiftParam * 100.0f;
+    lastShiftParam = shiftParam;
+    textDisplayTimeout = 2.f;
+  }
 
   if (inputs[PHASE_INPUT].isConnected()) {
 		for (int c = 0; c < channels; c += 4) {
@@ -284,6 +296,17 @@ void FN3::process(const ProcessArgs &args) {
     outputs[WAVE_OUTPUT].setVoltageSimd(output[c / 4], c);
   }
   outputs[WAVE_OUTPUT].setChannels(channels);
+
+  if (!this->textDisplay && textDisplayDivider.process()) {
+    if (this->textDisplayTimeout > 0.f) {
+      float extrapolatedTimeDelta = args.sampleTime * TEXT_DIVIDER_RATIO;
+      this->textDisplayTimeout -= extrapolatedTimeDelta;
+    } else {
+      size_t modeIdx = wave;
+      this->textDisplay = &this->modeNames[modeIdx];
+    }
+  }
+
 }
 
 
@@ -308,23 +331,14 @@ struct FN3Widget : ModuleWidget {
     addParam(createParam<ZZC_FN3WaveSwitch>(Vec(8, 126), module, FN3::WAVE_PARAM));
     addParam(createParam<ZZC_FN3UniBiSwitch>(Vec(8, 152), module, FN3::OFFSET_PARAM));
 
-    FN3TextDisplayWidget *pwDisplay = new FN3TextDisplayWidget();
-    pwDisplay->box.pos = Vec(11.0f, 129.0f);
-    pwDisplay->box.size = Vec(23.0f, 13.0f);
+    FN3TextDisplayWidget *textDisplay = new FN3TextDisplayWidget();
+    textDisplay->box.pos = Vec(11.0f, 129.0f);
+    textDisplay->box.size = Vec(23.0f, 13.0f);
     if (module) {
-      pwDisplay->hook = &module->pwParam;
-      pwDisplay->text = &module->pwDisplay;
+      textDisplay->value = &module->valueDisplay;
+      textDisplay->text = &module->textDisplay;
     }
-    addChild(pwDisplay);
-
-    FN3TextDisplayWidget *shiftDisplay = new FN3TextDisplayWidget();
-    shiftDisplay->box.pos = Vec(11.0f, 129.0f);
-    shiftDisplay->box.size = Vec(23.0f, 13.0f);
-    if (module) {
-      shiftDisplay->hook = &module->shiftParam;
-      shiftDisplay->text = &module->shiftDisplay;
-    }
-    addChild(shiftDisplay);
+    addChild(textDisplay);
 
     addInput(createInput<ZZC_PJ_Port>(Vec(10.5, 194), module, FN3::SHIFT_INPUT));
     addParam(createParam<ZZC_Knob25>(Vec(10, 229), module, FN3::SHIFT_PARAM));

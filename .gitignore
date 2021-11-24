@@ -9,5 +9,6 @@ tags
 compile_commands.json
 *.d
 .vscode/ipch
+.vscode/settings.json
 .ccls-cache
 .clangd

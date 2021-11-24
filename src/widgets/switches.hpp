@@ -39,6 +39,11 @@ struct ZZC_FN3UniBiSwitch : SvgSwitch {
     addFrame(APP->window->loadSvg(asset::plugin(pluginInstance,"res/switches/ZZC-FN-3-Uni-Bi-Switch_1.svg")));
     shadow->opacity = 0.f;
   }
+
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer != 1) { return; }
+    this->draw(args);
+  }
 };
 
 struct ZZC_LEDBezelDark : SvgSwitch {

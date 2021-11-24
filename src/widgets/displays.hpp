@@ -1,3 +1,5 @@
+#include <iostream>
+
 using namespace rack;
 
 extern Plugin *pluginInstance;
@@ -5,6 +7,13 @@ extern Plugin *pluginInstance;
 struct BaseDisplayWidget : TransparentWidget {
   NVGcolor backgroundColor = nvgRGB(0x01, 0x01, 0x01);
   NVGcolor lcdColor = nvgRGB(0x12, 0x12, 0x12);
+  NVGcolor lcdGhostColor = nvgRGBA(0xff, 0xff, 0xff, 0x10);
+  NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+  NVGcolor haloColor = lcdTextColor;
+
+  void draw(const DrawArgs &args) override {
+    drawBackground(args);
+  }
 
   void drawBackground(const DrawArgs &args) {
     // Background
@@ -19,6 +28,35 @@ struct BaseDisplayWidget : TransparentWidget {
     nvgFillColor(args.vg, lcdColor);
     nvgFill(args.vg);
   }
+
+  void drawHalo(const DrawArgs& args) {
+    // Don't draw halo if rendering in a framebuffer, e.g. screenshots or Module Browser
+    if (args.fb)
+      return;
+
+    const float halo = settings::haloBrightness;
+    if (halo == 0.f)
+      return;
+
+    // If light is off, rendering the halo gives no effect.
+    if (this->lcdTextColor.r == 0.f && this->lcdTextColor.g == 0.f && this->lcdTextColor.b == 0.f)
+      return;
+
+    math::Vec c = box.size.div(2);
+    float radius = 0.f;
+    float oradius = std::max(box.size.x, box.size.y);
+
+    nvgBeginPath(args.vg);
+    nvgRect(args.vg, c.x - oradius, c.y - oradius, 2 * oradius, 2 * oradius);
+
+    float ourHalo = std::min(halo * 0.5f, 0.15f);
+    NVGcolor icol = color::mult(this->haloColor, ourHalo);
+    NVGcolor ocol = nvgRGBA(this->haloColor.r, this->haloColor.g, this->haloColor.b, 0);
+    // NVGcolor ocol = nvgRGBA(0xff, 0x00, 0x00, 0x1f);
+    NVGpaint paint = nvgRadialGradient(args.vg, c.x, c.y, radius, oradius, icol, ocol);
+    nvgFillPaint(args.vg, paint);
+    nvgFill(args.vg);
+  }
 };
 
 struct Display32Widget : BaseDisplayWidget {
@@ -30,11 +68,10 @@ struct Display32Widget : BaseDisplayWidget {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
-  void draw(const DrawArgs &args) override {
-    drawBackground(args);
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer != 1) { return; }
+
     float valueToDraw = std::abs(value ? *value : 120.0f);
-    NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
-    NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
 
     // Text (integer part)
     nvgFontSize(args.vg, 11);
@@ -83,6 +120,9 @@ struct Display32Widget : BaseDisplayWidget {
     nvgText(args.vg, textPos.x, textPos.y, "88", NULL);
     nvgFillColor(args.vg, lcdTextColor);
     nvgText(args.vg, textPos.x, textPos.y, fractionalPartString, NULL);
+
+    nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+    drawHalo(args);
   }
 };
 
@@ -94,10 +134,8 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
-  void draw(const DrawArgs &args) override {
-    drawBackground(args);
-    NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
-    NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer != 1) { return; }
 
     // Text (integer part)
     nvgFontSize(args.vg, 11);
@@ -114,6 +152,9 @@ struct DisplayIntpartWidget : BaseDisplayWidget {
     nvgText(args.vg, textPos.x, textPos.y, "88", NULL);
     nvgFillColor(args.vg, lcdTextColor);
     nvgText(args.vg, textPos.x, textPos.y, integerPartString, NULL);
+
+    nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+    drawHalo(args);
   }
 };
 
@@ -125,8 +166,6 @@ struct IntDisplayWidget : BaseDisplayWidget {
   int blinkingPhase = 0;
   std::string textGhost = "88";
   std::shared_ptr<Font> font;
-  NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
-  NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
   NVGcolor lcdTextColorBlink = nvgRGB(0x8a, 0x72, 0x17);
   NVGcolor negColor = nvgRGB(0xe7, 0x34, 0x2d);
   NVGcolor negColorBlink = nvgRGB(0x8a, 0x1f, 0x1b);
@@ -139,8 +178,8 @@ struct IntDisplayWidget : BaseDisplayWidget {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
-  void draw(const DrawArgs &args) override {
-    drawBackground(args);
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer != 1) { return; }
 
     nvgFontSize(args.vg, 11);
     nvgFontFaceId(args.vg, font->handle);
@@ -161,19 +200,30 @@ struct IntDisplayWidget : BaseDisplayWidget {
     nvgFillColor(args.vg, lcdGhostColor);
     nvgText(args.vg, textPos.x, textPos.y, textGhost.c_str(), NULL);
     if (isPoly && *isPoly) {
-      nvgFillColor(args.vg, blink ? polyColorBlink : polyColor);
+      NVGcolor fillColor = blink ? polyColorBlink : polyColor;
+      nvgFillColor(args.vg, fillColor);
+      this->haloColor = fillColor;
     } else {
       if (polarity) {
         if (*polarity == 0) {
-          nvgFillColor(args.vg, blink ? lcdTextColorBlink : lcdTextColor);
+          NVGcolor fillColor = blink ? lcdTextColorBlink : lcdTextColor;
+          nvgFillColor(args.vg, fillColor);
+          this->haloColor = fillColor;
         } else {
-          nvgFillColor(args.vg, *polarity > 0 ? (blink ? posColorBlink : posColor) : (blink ? negColorBlink : negColor));
+          NVGcolor fillColor = *polarity > 0 ? (blink ? posColorBlink : posColor) : (blink ? negColorBlink : negColor);
+          nvgFillColor(args.vg, fillColor);
+          this->haloColor = fillColor;
         }
       } else {
-        nvgFillColor(args.vg, blink ? lcdTextColorBlink : lcdTextColor);
+        NVGcolor fillColor = blink ? lcdTextColorBlink : lcdTextColor;
+        nvgFillColor(args.vg, fillColor);
+        this->haloColor = fillColor;
       }
     }
     nvgText(args.vg, textPos.x, textPos.y, integerString, NULL);
+
+    nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+    drawHalo(args);
   }
 };
 
@@ -186,10 +236,8 @@ struct RatioDisplayWidget : BaseDisplayWidget {
     font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
   };
 
-  void draw(const DrawArgs &args) override {
-    drawBackground(args);
-    NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
-    NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer != 1) { return; }
 
     nvgFontSize(args.vg, 11);
     nvgFontFaceId(args.vg, font->handle);
@@ -232,5 +280,8 @@ struct RatioDisplayWidget : BaseDisplayWidget {
 
     nvgFillColor(args.vg, lcdTextColor);
     nvgText(args.vg, textPos.x, textPos.y, ":", NULL);
+
+    nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+    drawHalo(args);
   }
 };
