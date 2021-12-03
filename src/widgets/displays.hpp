@@ -62,14 +62,12 @@ struct BaseDisplayWidget : TransparentWidget {
 struct Display32Widget : BaseDisplayWidget {
   float *value = nullptr;
   bool *disabled = nullptr;
-  std::shared_ptr<Font> font;
-
-  Display32Widget() {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
-  };
 
   void drawLayer(const DrawArgs &args, int layer) override {
     if (layer != 1) { return; }
+
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    if (!font) { return; }
 
     float valueToDraw = std::abs(value ? *value : 120.0f);
 
@@ -128,14 +126,12 @@ struct Display32Widget : BaseDisplayWidget {
 
 struct DisplayIntpartWidget : BaseDisplayWidget {
   float *value = nullptr;
-  std::shared_ptr<Font> font;
-
-  DisplayIntpartWidget() {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
-  };
 
   void drawLayer(const DrawArgs &args, int layer) override {
     if (layer != 1) { return; }
+
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    if (!font) { return; }
 
     // Text (integer part)
     nvgFontSize(args.vg, 11);
@@ -165,7 +161,6 @@ struct IntDisplayWidget : BaseDisplayWidget {
   bool *blinking = nullptr;
   int blinkingPhase = 0;
   std::string textGhost = "88";
-  std::shared_ptr<Font> font;
   NVGcolor lcdTextColorBlink = nvgRGB(0x8a, 0x72, 0x17);
   NVGcolor negColor = nvgRGB(0xe7, 0x34, 0x2d);
   NVGcolor negColorBlink = nvgRGB(0x8a, 0x1f, 0x1b);
@@ -174,12 +169,11 @@ struct IntDisplayWidget : BaseDisplayWidget {
   NVGcolor polyColor = nvgRGB(0x76, 0xdc, 0xfa);
   NVGcolor polyColorBlink = nvgRGB(0x43, 0x7e, 0x8f);
 
-  IntDisplayWidget() {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
-  };
-
   void drawLayer(const DrawArgs &args, int layer) override {
     if (layer != 1) { return; }
+
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    if (!font) { return; }
 
     nvgFontSize(args.vg, 11);
     nvgFontFaceId(args.vg, font->handle);
@@ -230,14 +224,12 @@ struct IntDisplayWidget : BaseDisplayWidget {
 struct RatioDisplayWidget : BaseDisplayWidget {
   float *from = nullptr;
   float *to = nullptr;
-  std::shared_ptr<Font> font;
-
-  RatioDisplayWidget() {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
-  };
 
   void drawLayer(const DrawArgs &args, int layer) override {
     if (layer != 1) { return; }
+
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    if (!font) { return; }
 
     nvgFontSize(args.vg, 11);
     nvgFontFaceId(args.vg, font->handle);

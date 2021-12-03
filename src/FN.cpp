@@ -40,14 +40,14 @@ struct FN3TextDisplayWidget : TransparentWidget {
   NVGcolor lcdColor = nvgRGB(0x12, 0x12, 0x12);
   NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
 
-  std::shared_ptr<Font> font;
-
   FN3TextDisplayWidget() {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito/Nunito-Black.ttf"));
   };
 
   void drawLayer(const DrawArgs &args, int layer) override {
     if (layer != 1) { return; }
+
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito/Nunito-Black.ttf"));
+    if (!font) { return; }
 
     char textString[10];
 

@@ -33,16 +33,14 @@ struct PhasorWidget : ModuleWidget {
 struct VerticalRatioDisplayWidget : BaseDisplayWidget {
   float *value = nullptr;
   int *mode = nullptr;
-  std::shared_ptr<Font> font;
   NVGcolor lcdGhostColor = nvgRGB(0x1e, 0x1f, 0x1d);
   NVGcolor lcdTextColor = nvgRGB(0xff, 0xd4, 0x2a);
   std::shared_ptr<RatioDisplayData> rddPtr;
 
-  VerticalRatioDisplayWidget() {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
-  };
-
   void draw(const DrawArgs &args) override {
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    if (!font) { return; }
+
     drawBackground(args);
 
     nvgFontSize(args.vg, 11);

@@ -232,15 +232,15 @@ struct WavetableWidget : TransparentWidget {
   NVGcolor brightColor = nvgRGB(0xff, 0xd4, 0x2a);
   NVGcolor graphColor = nvgRGBA(0xfe, 0xc3, 0x00, 0x40);
   WaveformDimensions wd;
-  std::shared_ptr<Font> font;
   std::string* filename = nullptr;
 
-  WavetableWidget() {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/SKODANext/SKODANext-Regular.ttf"));
-  }
-
   void draw(const DrawArgs &args) override {
+
     if (!this->wtPtr) { return; }
+
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/SKODANext/SKODANext-Regular.ttf"));
+    if (!font) { return; }
+
     Wavetable* wt = this->wtPtr.get();
 
     nvgStrokeColor(args.vg, this->graphColor);

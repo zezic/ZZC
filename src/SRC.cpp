@@ -25,14 +25,12 @@ void writeMusicalNotation(char *output, size_t size, float voltage) {
 struct VoltageDisplayWidget : BaseDisplayWidget {
   float *value = nullptr;
   int *mode = nullptr;
-  std::shared_ptr<Font> font;
-
-  VoltageDisplayWidget() {
-    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
-  };
 
   void drawLayer(const DrawArgs &args, int layer) override {
     if (layer != 1) { return; }
+
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG/DSEG7ClassicMini-Italic.ttf"));
+    if (!font) { return; }
 
     // Text (integer part)
     nvgFontSize(args.vg, 11);
