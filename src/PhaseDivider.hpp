@@ -9,12 +9,14 @@ struct PhaseDivider {
   float lastPhaseInDelta = 0.f;
   double phase = 0.0;
   double lastPhase = 0.0;
+  bool inResetState = true;
 
   void reset() {
     this->phase = 0.0;
     this->lastPhase = 0.0;
     this->lastPhaseIn = 0.f;
     this->lastPhaseInDelta = 0.f;
+    this->inResetState = true;
   }
 
   void requestRatio(float newRatio) {
@@ -64,6 +66,7 @@ struct PhaseDivider {
     } else {
       this->phase = newPhase;
     }
+    this->inResetState = ( this->inResetState ? phaseIn == this->lastPhaseIn : false );
     lastPhase = this->phase;
     lastPhaseIn = phaseIn;
     return slaveFlipped;
