@@ -157,7 +157,7 @@ void Div::process(const ProcessArgs &args) {
 
   outputs[PHASE_OUTPUT].setVoltage(this->phaseDivider.phase);
   outputs[CLOCK_OUTPUT].setVoltage(
-    (this->gateMode ? this->phaseDivider.inResetState == false && this->phaseDivider.phase < 5.0 : this->pulseGenerator.process(args.sampleTime)) ? 10.f : 0.f
+    (this->gateMode ? !this->phaseDivider.inResetState && this->phaseDivider.phase < 5.0 : this->pulseGenerator.process(args.sampleTime)) ? 10.f : 0.f
   );
 
   if (rightExpander.module &&
@@ -394,7 +394,7 @@ void DivExp::process(const ProcessArgs &args) {
 
   outputs[PHASE_OUTPUT].setVoltage(this->phaseDivider.phase);
   outputs[CLOCK_OUTPUT].setVoltage(
-    (this->gateMode ? this->phaseDivider.inResetState == false && this->phaseDivider.phase < 5.0 : this->pulseGenerator.process(args.sampleTime)) ? 10.f : 0.f
+    (this->gateMode ? !this->phaseDivider.isInResetState && this->phaseDivider.phase < 5.0 : this->pulseGenerator.process(args.sampleTime)) ? 10.f : 0.f
   );
   resetWasHitForMessage = false;
   this->firstCycle = false;
