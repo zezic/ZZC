@@ -238,7 +238,7 @@ struct WavetableWidget : TransparentWidget {
 
     if (!this->wtPtr) { return; }
 
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/SKODANext/SKODANext-Regular.ttf"));
+    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito/Nunito-Regular.ttf"));
     if (!font) { return; }
 
     Wavetable* wt = this->wtPtr.get();

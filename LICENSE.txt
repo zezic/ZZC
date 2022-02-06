@@ -1,7 +1,10 @@
-ZZC Logo Copyright (c) 2019 Sergey Ukolov, All rights reserved.
-ZZC Panel Graphics Copyright (c) 2019 Sergey Ukolov. Please, contact
-author via email zezic51@yandex.ru or https://github.com/zezic/ZZC/issues
-if you want to use graphics for public works.
+ZZC Logo Copyright (c) 2019 Sergey Ukolov, can be used within the ZZC modules
+even if they are ported to the environment different from VCV Rack as long as
+they look and perform like the original ZZC modules from the next repository:
+https://github.com/zezic/ZZC
+
+ZZC Panel Graphics is CC BY-NC-SA 3.0:
+https://creativecommons.org/licenses/by-nc-sa/3.0/
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
