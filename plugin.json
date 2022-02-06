@@ -3,7 +3,7 @@
   "name": "ZZC",
   "brand": "ZZC",
   "version": "2.0.2",
-  "license": "GPL-3.0-only",
+  "license": "GPL-3.0-or-later",
   "author": "Sergey Ukolov",
   "authorEmail": "zezic51@yandex.ru",
   "authorUrl": "https://github.com/zezic",
