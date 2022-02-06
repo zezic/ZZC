@@ -1,10 +1,10 @@
-ZZC Logo Copyright (c) 2019 Sergey Ukolov, can be used within the ZZC modules
-even if they are ported to the environment different from VCV Rack as long as
-they look and perform like the original ZZC modules from the next repository:
-https://github.com/zezic/ZZC
+ZZC Panel Graphics are licensed under CC BY-NC-SA 4.0:
+https://creativecommons.org/licenses/by-nc-sa/4.0/
 
-ZZC Panel Graphics is CC BY-NC-SA 3.0:
-https://creativecommons.org/licenses/by-nc-sa/3.0/
+The ZZC Logo is Copyright (c) 2019 Sergey Ukolov and cannot be used in
+derivative works.
+ZZC plugin ports to other environments than VCV Rack that leave graphics
+intact do not constitute a derivative work.
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
