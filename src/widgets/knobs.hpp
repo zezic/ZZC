@@ -231,7 +231,7 @@ struct ZZC_EncoderKnob : SvgKnob {
         delta /= 16.f;
       }
 
-      float newValue = paramQuantity->getSmoothValue();
+      float newValue = paramQuantity->getValue();
       newValue += delta;
       paramQuantity->setValue(eucMod(newValue, paramQuantity->getMaxValue()));
     }
