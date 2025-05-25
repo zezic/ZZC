@@ -37,41 +37,47 @@ struct ZZC_DirectKnobDisplay : TransparentWidget {
     colored = true;
   }
 
-  void draw(const DrawArgs &args) override {
-    lastDrawnAt = glfwGetTime();
-    drawnValue = value;
-    // return;
-    nvgLineCap(args.vg, NSVG_CAP_ROUND);
-    nvgStrokeWidth(args.vg, strokeWidth);
+  void drawLayer(const DrawArgs &args, int layer) override {
+    if (layer == 1) {
+      // Dim it but don't darken it completely
+      float b = std::max(0.4f, settings::rackBrightness);
+      nvgGlobalTint(args.vg, nvgRGBAf(b, b, b, 1.f));
 
-    nvgStrokeColor(args.vg, backdropColor);
-    nvgBeginPath(args.vg);
-    nvgArc(
-      args.vg,
-      box.size.x / 2.0, box.size.y / 2.0, box.size.x / 2.0 - strokeWidth / 2.0,
-      (center + girth) * 2 * M_PI,
-      (center - girth) * 2 * M_PI,
-      1
-    );
-    nvgStroke(args.vg);
+      lastDrawnAt = glfwGetTime();
+      drawnValue = value;
+      // return;
+      nvgLineCap(args.vg, NSVG_CAP_ROUND);
+      nvgStrokeWidth(args.vg, strokeWidth);
 
-    if (drawnValue == 0.0) {
-      return;
+      nvgStrokeColor(args.vg, backdropColor);
+      nvgBeginPath(args.vg);
+      nvgArc(
+        args.vg,
+        box.size.x / 2.0, box.size.y / 2.0, box.size.x / 2.0 - strokeWidth / 2.0,
+        (center + girth) * 2 * M_PI,
+        (center - girth) * 2 * M_PI,
+        1
+      );
+      nvgStroke(args.vg);
+
+      if (drawnValue == 0.0) {
+        return;
+      }
+      if (colored) {
+        nvgStrokeColor(args.vg, drawnValue > 0.0 ? posColor : negColor);
+      } else {
+        nvgStrokeColor(args.vg, valueColor);
+      }
+      nvgBeginPath(args.vg);
+      nvgArc(
+        args.vg,
+        box.size.x / 2.0, box.size.y / 2.0, box.size.x / 2.0 - strokeWidth / 2.0,
+        startFrom * 2 * M_PI,
+        (startFrom + (drawnValue / maxVal) * range) * 2 * M_PI,
+        drawnValue >= 0 ? 2 : 1
+      );
+      nvgStroke(args.vg);
     }
-    if (colored) {
-      nvgStrokeColor(args.vg, drawnValue > 0.0 ? posColor : negColor);
-    } else {
-      nvgStrokeColor(args.vg, valueColor);
-    }
-    nvgBeginPath(args.vg);
-    nvgArc(
-      args.vg,
-      box.size.x / 2.0, box.size.y / 2.0, box.size.x / 2.0 - strokeWidth / 2.0,
-      startFrom * 2 * M_PI,
-      (startFrom + (drawnValue / maxVal) * range) * 2 * M_PI,
-      drawnValue >= 0 ? 2 : 1
-    );
-    nvgStroke(args.vg);
   }
 
   bool shouldUpdate(float *newValue) {
