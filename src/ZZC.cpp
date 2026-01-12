@@ -15,6 +15,7 @@ void init(Plugin *p) {
   p->addModel(modelDiv);
   p->addModel(modelDivExp);
   p->addModel(modelPolygate);
+  p->addModel(modelPhaseque);
   // p->addModel(modelWavetablePlayer);
   // p->addModel(modelPhasor);
 

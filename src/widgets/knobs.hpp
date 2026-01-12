@@ -1,7 +1,4 @@
-#ifndef KNOB_SENSITIVITY_CONST
-#define KNOB_SENSITIVITY_CONST
-static const float KNOB_SENSITIVITY = 0.0015f;
-#endif
+#pragma once
 
 using namespace rack;
 

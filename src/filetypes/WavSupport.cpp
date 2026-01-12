@@ -173,7 +173,6 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
     int srgeLEN = 0;
 
     // Now start reading chunks
-    int tbr = 4;
     char *wavdata = nullptr;
     int datasz __attribute__((unused)) = 0, datasamples __attribute__((unused)) = 0;
     while (true)
@@ -194,7 +193,6 @@ bool SurgeStorage::load_wt_wav_portable(std::string fn, Wavetable *wt)
             std::cout << chunkType[i];
         std::cout << "`  sz=" << cs << std::endl;
 #endif
-        tbr += 8 + cs;
 
         char *data = (char *)malloc(cs);
         br = fread(data, 1, cs, fp);

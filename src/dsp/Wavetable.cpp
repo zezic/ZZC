@@ -73,7 +73,7 @@ void i16toi15_block(short *s, short *o, int n)
 
 int min_F32_tables = 3;
 
-#if ARCH_MAC || ARCH_LIN
+#if !ARCH_WIN
 bool _BitScanReverse(unsigned int *result, unsigned int bits)
 {
     *result = __builtin_ctz(bits);

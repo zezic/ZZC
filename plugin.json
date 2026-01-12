@@ -2,7 +2,7 @@
   "slug": "ZZC",
   "name": "ZZC",
   "brand": "ZZC",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "license": "GPL-3.0-or-later",
   "author": "Sergey Ukolov",
   "authorEmail": "zezic51@yandex.ru",
@@ -17,78 +17,61 @@
       "slug": "Clock",
       "name": "Clock",
       "description": "Clock & Phase Generator",
-      "tags": [
-        "Clock generator"
-      ]
+      "tags": ["Clock generator"]
     },
     {
       "slug": "Divider",
       "name": "Divider",
       "description": "Phase Clock Divider (Scaler)",
-      "tags": [
-        "Clock modulator"
-      ]
+      "tags": ["Clock modulator"]
     },
     {
       "slug": "FN-3",
       "name": "FN-3",
       "description": "Function Generator",
-      "tags": [
-        "Function generator",
-        "Polyphonic"
-      ]
+      "tags": ["Function generator", "Polyphonic"]
     },
     {
       "slug": "SC-VCA",
       "name": "SC-VCA",
       "description": "Soft Clipping VCA",
-      "tags": [
-        "VCA",
-        "Waveshaper",
-        "Polyphonic"
-      ]
+      "tags": ["VCA", "Waveshaper", "Polyphonic"]
     },
     {
       "slug": "SH-8",
       "name": "SH-8",
       "description": "Sample & Hold",
-      "tags": [
-        "Noise",
-        "Sample and hold"
-      ]
+      "tags": ["Noise", "Sample and hold"]
     },
     {
       "slug": "SRC",
       "name": "SRC",
       "description": "Voltage Source",
-      "tags": [
-        "Quantizer",
-        "Utility"
-      ]
+      "tags": ["Quantizer", "Utility"]
     },
     {
       "slug": "Div",
       "name": "Div",
       "description": "Phase Clock Divider (Compact)",
-      "tags": [
-        "Clock modulator"
-      ]
+      "tags": ["Clock modulator"]
     },
     {
       "slug": "DivExp",
       "name": "Div (Expander)",
       "description": "Phase Clock Divider (Expander)",
-      "tags": [
-        "Clock modulator", "Expander"
-      ]
+      "tags": ["Clock modulator", "Expander"]
     },
     {
       "slug": "Polygate",
       "name": "Polygate",
       "description": "Polyphonic Gate Bank",
-      "tags": [
-        "Controller", "Polyphonic", "Switch", "Utility"
-      ]
+      "tags": ["Controller", "Polyphonic", "Switch", "Utility"]
+    },
+    {
+      "slug": "Phaseque",
+      "name": "Phaseque",
+      "description": "Phase-driven Sequencer",
+      "tags": ["Sequencer"]
     }
   ]
 }

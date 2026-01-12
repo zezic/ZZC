@@ -1,3 +1,5 @@
+#pragma once
+
 static const NVGcolor COLOR_ZZC_YELLOW = nvgRGB(0xff, 0xd4, 0x2a);
 static const NVGcolor COLOR_NEG = nvgRGB(0xe7, 0x34, 0x2d);
 static const NVGcolor COLOR_POS = nvgRGB(0x90, 0xc7, 0x3e);

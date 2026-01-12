@@ -1,12 +1,6 @@
-#ifndef DISPLAYS_H
-#define DISPLAYS_H
-#include "displays.hpp"
-#endif
+#pragma once
 
-#ifndef KNOB_SENSITIVITY_CONST
-#define KNOB_SENSITIVITY_CONST
-static const float KNOB_SENSITIVITY = 0.0015f;
-#endif
+#include "displays.hpp"
 
 using namespace rack;
 
