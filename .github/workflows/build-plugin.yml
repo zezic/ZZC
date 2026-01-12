@@ -10,29 +10,8 @@ defaults:
     shell: bash
 
 jobs:
-
-  modify-plugin-version:
-    name: Modify plugin version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        id: plugin-version-cache
-        with:
-          path: plugin.json
-          key: ${{ github.sha }}-${{ github.run_id }}
-      - name: Run modify version
-        # only modify plugin version if no tag was created
-        if: "! startsWith(github.ref, 'refs/tags/v')"
-        run: |
-          gitrev=`git rev-parse --short HEAD`
-          pluginversion=`jq -r '.version' plugin.json`
-          echo "Set plugin version from $pluginversion to $pluginversion-$gitrev"
-          cat <<< `jq --arg VERSION "$pluginversion-$gitrev" '.version=$VERSION' plugin.json` > plugin.json
-
   build:
     name: ${{ matrix.platform }}
-    needs: modify-plugin-version
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/qno/rack-plugin-toolchain-win-linux
@@ -62,7 +41,6 @@ jobs:
 
   build-mac:
     name: mac
-    needs: modify-plugin-version
     runs-on: macos-latest
     strategy:
       fail-fast: false
