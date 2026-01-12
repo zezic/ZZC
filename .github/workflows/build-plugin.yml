@@ -96,7 +96,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           name: ZZC ${{ env.CI_REF_NAME }}
-          draft: true
+          draft: false
           prerelease: false
       - uses: actions/download-artifact@v4
         with:
